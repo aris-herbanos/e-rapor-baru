@@ -37,7 +37,7 @@ export async function GET(request: Request) {
 
     // Hitung rekap kehadiran dari tabel Attendance
     let sakit = 0, izin = 0, alpa = 0;
-    student.attendances.forEach(att => {
+    student.attendances.forEach((att: any) => {
       if (att.status === 'SAKIT') sakit++;
       else if (att.status === 'IZIN') izin++;
       else if (att.status === 'ALPA') alpa++;
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     // Hitung rata-rata nilai angka untuk ringkasan
     let totalScore = 0;
     let countScore = 0;
-    student.scoreRecords.forEach(sc => {
+    student.scoreRecords.forEach((sc: any) => {
       if (sc.scoreNumber > 0) {
         totalScore += sc.scoreNumber;
         countScore++;
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
       attendance: { sakit, izin, alpa },
       averageScore,
       totalStudents: totalStudentsInClass,
-      rank: 1, // Bisa disesuaikan dengan logic ranking jika sudah ada
+      rank: 1,
     };
 
     return NextResponse.json({ report: reportData }, { status: 200 });
