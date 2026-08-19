@@ -93,7 +93,7 @@ model Student {
   attendances  Attendance[]
   scoreRecords ScoreRecord[]
   personality  Personality?
-  homeroomNote HomeroomNote? // Relasi balikan untuk catatan wali kelas
+  homeroomNote HomeroomNote?
 }
 
 /**
@@ -250,8 +250,8 @@ model HomeroomNote {
   id        Int      @id @default(autoincrement())
   studentId Int      @unique
   student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  className String   // Contoh: 7A
-  note      String   @default("") // Catatan / Nasihat Wali Kelas
+  className String
+  note      String   @default("")
   updatedAt DateTime @updatedAt
 
   @@index([className])
