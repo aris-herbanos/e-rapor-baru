@@ -13,14 +13,14 @@ datasource db {
  */
 
 model Teacher {
-  id              Int      @id @default(autoincrement())
-  identity_number String   @unique
+  id              Int          @id @default(autoincrement())
+  identity_number String       @unique
   password        String
   fullname        String
-  role            String   @default("TEACHER")
+  role            String       @default("TEACHER")
 
-  subjects    Subject[]
-  assignments Assignment[]
+  subjects        Subject[]
+  assignments     Assignment[]
 }
 
 /**
@@ -30,15 +30,17 @@ model Teacher {
  */
 
 model Subject {
-  id   Int    @id @default(autoincrement())
-  name String
+  id            Int            @id @default(autoincrement())
+  name          String
 
-  teacherId Int
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId     Int
+  teacher       Teacher        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
-  cps          CP[]
-  assignments  Assignment[]
-  scoreRecords ScoreRecord[]
+  cps           CP[]
+  assignments   Assignment[]
+  scoreRecords  ScoreRecord[]
+
+  @@index([teacherId])
 }
 
 /**
@@ -48,14 +50,16 @@ model Subject {
  */
 
 model CP {
-  id          Int    @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   code        String
   description String
 
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId   Int
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
-  tps TP[]
+  tps         TP[]
+
+  @@index([subjectId])
 }
 
 /**
@@ -65,14 +69,16 @@ model CP {
  */
 
 model TP {
-  id          Int    @id @default(autoincrement())
-  code        String
-  description String
+  id           Int           @id @default(autoincrement())
+  code         String
+  description  String
 
-  cpId Int
-  cp   CP   @relation(fields: [cpId], references: [id], onDelete: Cascade)
+  cpId         Int
+  cp           CP            @relation(fields: [cpId], references: [id], onDelete: Cascade)
 
-  assessments Assessment[]
+  assessments  Assessment[]
+
+  @@index([cpId])
 }
 
 /**
@@ -82,11 +88,11 @@ model TP {
  */
 
 model Student {
-  id         Int    @id @default(autoincrement())
-  nisn       String @unique
-  fullname   String
-  gender     String
-  class_name String
+  id           Int           @id @default(autoincrement())
+  nisn         String        @unique
+  fullname     String
+  gender       String
+  class_name   String
 
   assessments  Assessment[]
   tahfidzs     Tahfidz[]
@@ -94,6 +100,8 @@ model Student {
   scoreRecords ScoreRecord[]
   personality  Personality?
   homeroomNote HomeroomNote?
+
+  @@index([class_name])
 }
 
 /**
@@ -103,16 +111,20 @@ model Student {
  */
 
 model Assessment {
-  id Int @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
 
-  studentId Int
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   Int
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  tpId Int
-  tp   TP   @relation(fields: [tpId], references: [id], onDelete: Cascade)
+  tpId        Int
+  tp          TP        @relation(fields: [tpId], references: [id], onDelete: Cascade)
 
-  score Int
-  type  String
+  score       Int
+  type        String
+
+  @@index([studentId])
+  @@index([tpId])
+  @@index([type])
 }
 
 /**
@@ -122,16 +134,19 @@ model Assessment {
  */
 
 model Tahfidz {
-  id Int @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
 
-  studentId Int
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   Int
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  juz       Int
-  surah     String
-  ayat      String
-  predicate String
-  date      DateTime @default(now())
+  juz         Int
+  surah       String
+  ayat        String
+  predicate   String
+  date        DateTime  @default(now())
+
+  @@index([studentId])
+  @@index([date])
 }
 
 /**
@@ -141,16 +156,17 @@ model Tahfidz {
  */
 
 model Attendance {
-  id Int @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
 
-  studentId Int
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   Int
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  status String
-  date   DateTime @default(now())
+  status      String
+  date        DateTime  @default(now())
 
   @@index([studentId])
   @@index([date])
+  @@index([status])
 }
 
 /**
@@ -160,14 +176,15 @@ model Attendance {
  */
 
 model ClassRoom {
-  id     Int    @id @default(autoincrement())
-  name   String @unique
-  level  String
-  grade  Int
-  status String @default("Aktif")
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  level       String
+  grade       Int
+  status      String    @default("Aktif")
 
   @@index([level])
   @@index([grade])
+  @@index([status])
 }
 
 /**
@@ -177,21 +194,22 @@ model ClassRoom {
  */
 
 model Assignment {
-  id Int @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
 
-  teacherId Int
-  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId     Int
+  teacher       Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId     Int
+  subject       Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
-  className    String
-  academicYear String @default("2026/2027")
+  className     String
+  academicYear  String    @default("2026/2027")
 
   @@unique([teacherId, subjectId, className, academicYear])
   @@index([teacherId])
   @@index([subjectId])
   @@index([className])
+  @@index([academicYear])
 }
 
 /**
@@ -201,23 +219,24 @@ model Assignment {
  */
 
 model ScoreRecord {
-  id Int @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
 
-  studentId Int
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId    Int
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  subjectId Int
-  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId    Int
+  subject      Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
-  className   String
-  type        String
-  scoreNumber Int    @default(0)
-  scoreText   String @default("")
+  className    String
+  type         String
+  scoreNumber  Int       @default(0)
+  scoreText    String    @default("")
 
   @@unique([studentId, subjectId, type])
   @@index([studentId])
   @@index([subjectId])
   @@index([className])
+  @@index([type])
 }
 
 /**
@@ -227,17 +246,18 @@ model ScoreRecord {
  */
 
 model Personality {
-  id         Int    @id @default(autoincrement())
-  studentId  Int    @unique
-  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  className  String
-  suluk      String @default("-")
-  muwadhotah String @default("-")
-  nadzofah   String @default("-")
-  indhiplat  String @default("-")
+  id           Int       @id @default(autoincrement())
+  studentId    Int       @unique
+
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  className    String
+  suluk        String    @default("-")
+  muwadhotah   String    @default("-")
+  nadzofah     String    @default("-")
+  indhiplat    String    @default("-")
 
   @@index([className])
-  @@index([studentId])
 }
 
 /**
@@ -247,15 +267,16 @@ model Personality {
  */
 
 model HomeroomNote {
-  id        Int      @id @default(autoincrement())
-  studentId Int      @unique
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  className String
-  note      String   @default("")
-  updatedAt DateTime @updatedAt
+  id           Int       @id @default(autoincrement())
+  studentId    Int       @unique
+
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  className    String
+  note         String    @default("")
+  updatedAt    DateTime  @updatedAt
 
   @@index([className])
-  @@index([studentId])
 }
 
 /**
@@ -265,10 +286,11 @@ model HomeroomNote {
  */
 
 model SystemSetting {
-  id            Int      @id @default(autoincrement())
-  schoolName    String   @default("Pondok Pesantren Terpadu Ulul Albab")
-  academicYear  String   @default("2026/2027")
-  semester      String   @default("Ganjil")
-  principalName String   @default("Pimpinan Pesantren")
-  updatedAt     DateTime @updatedAt
+  id             Int       @id @default(autoincrement())
+  schoolName     String    @default("Pondok Pesantren Terpadu Ulul Albab")
+  academicYear   String    @default("2026/2027")
+  semester       String    @default("Ganjil")
+  principalName  String    @default("Pimpinan Pesantren")
+
+  updatedAt      DateTime  @updatedAt
 }

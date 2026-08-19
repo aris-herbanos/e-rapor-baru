@@ -3,12 +3,12 @@ import { defineConfig, env } from "@prisma/config";
 
 export default defineConfig({
   // =========================================================
-  // PRISMA SCHEMA
+  // SCHEMA PRISMA
   // =========================================================
   schema: "prisma/schema.prisma",
 
   // =========================================================
-  // MIGRATIONS
+  // MIGRATION & SEED
   // =========================================================
   migrations: {
     path: "prisma/migrations",
