@@ -12,9 +12,30 @@ type Subject = {
   } | null;
 };
 
+// Daftar referensi mapel standar pesantren
+const DEFAULT_SUBJECTS = [
+  'Bahasa Arab (اللغة العربية)',
+  'Hadist (الحديث)',
+  'Imla dan Khot (الإملاء والخط)',
+  'Mahfudzot (المحفوظات)',
+  "Muroja'ah (المراجعة)",
+  'Nahwu / Sorof (النحو و الصرف)',
+  'Pendidikan Agama Islam',
+  'Pidato (الخطابة)',
+  'Siroh Nabawiyah (السيرة النبوية)',
+  'Tahfidz / Tahsin (تحفيظ القرآن)',
+  'Tajwid (تجويد)',
+  'Tsaqofah Islamiyah (الثقافة الإسلامية)',
+];
+
 export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [name, setName] = useState('');
+  
+  // State form mapel dengan opsi dropdown & custom
+  const [selectedSubjectOption, setSelectedSubjectOption] = useState('');
+  const [customSubjectName, setCustomSubjectName] = useState('');
+  const [isCustomMode, setIsCustomMode] = useState(false);
+
   const [teacherId, setTeacherId] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
@@ -40,7 +61,7 @@ export default function SubjectsPage() {
         );
       }
 
-      setSubjects(Array.isArray(data) ? data : []);
+      setSubjects(Array.isArray(data) ? data : data?.data || []);
       setSelectedIds([]);
     } catch (err) {
       console.error(err);
@@ -58,7 +79,9 @@ export default function SubjectsPage() {
     e.preventDefault();
     setMessage('');
 
-    if (!name.trim()) {
+    const finalName = isCustomMode ? customSubjectName.trim() : selectedSubjectOption;
+
+    if (!finalName) {
       setMessage('Nama mata pelajaran wajib diisi.');
       return;
     }
@@ -83,7 +106,7 @@ export default function SubjectsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: name.trim(),
+          name: finalName,
           teacherId: Number(teacherId),
         }),
       });
@@ -102,7 +125,9 @@ export default function SubjectsPage() {
           : 'Sukses! Mata pelajaran berhasil ditambahkan.'
       );
 
-      setName('');
+      setSelectedSubjectOption('');
+      setCustomSubjectName('');
+      setIsCustomMode(false);
       setTeacherId('');
       setEditingId(null);
 
@@ -118,7 +143,18 @@ export default function SubjectsPage() {
 
   const handleEdit = (subject: Subject) => {
     setEditingId(subject.id);
-    setName(subject.name);
+    
+    // Cek apakah nama mapel ada di daftar bawaan atau custom
+    if (DEFAULT_SUBJECTS.includes(subject.name)) {
+      setSelectedSubjectOption(subject.name);
+      setIsCustomMode(false);
+      setCustomSubjectName('');
+    } else {
+      setIsCustomMode(true);
+      setCustomSubjectName(subject.name);
+      setSelectedSubjectOption('');
+    }
+
     setTeacherId(
       subject.teacherId ? String(subject.teacherId) : ''
     );
@@ -131,7 +167,9 @@ export default function SubjectsPage() {
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setName('');
+    setSelectedSubjectOption('');
+    setCustomSubjectName('');
+    setIsCustomMode(false);
     setTeacherId('');
   };
 
@@ -284,7 +322,7 @@ export default function SubjectsPage() {
               </div>
 
               <p className="mt-0.5 text-[11px] text-slate-500">
-                Kelola mata pelajaran dan pengajar.
+                Kelola mata pelajaran pesantren dan pengajar.
               </p>
             </div>
           </div>
@@ -355,7 +393,7 @@ export default function SubjectsPage() {
         )}
 
         {/* ================= MAIN ================= */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[290px_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
 
           {/* ================= FORM ================= */}
           <section className="h-fit rounded-xl border border-slate-200 bg-white shadow-[0_3px_16px_rgba(15,23,42,0.035)]">
@@ -371,7 +409,7 @@ export default function SubjectsPage() {
                 <p className="mt-0.5 text-[10px] text-slate-400">
                   {editingId
                     ? 'Perbarui data yang dipilih.'
-                    : 'Masukkan data mata pelajaran.'}
+                    : 'Pilih atau ketik mata pelajaran.'}
                 </p>
               </div>
 
@@ -395,16 +433,60 @@ export default function SubjectsPage() {
                   Nama Mata Pelajaran
                 </label>
 
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) =>
-                    setName(e.target.value)
-                  }
-                  required
-                  placeholder="Contoh: Fiqih"
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
-                />
+                {!isCustomMode ? (
+                  <div className="space-y-2">
+                    <select
+                      value={selectedSubjectOption}
+                      onChange={(e) =>
+                        setSelectedSubjectOption(e.target.value)
+                      }
+                      required={!isCustomMode}
+                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
+                    >
+                      <option value="">-- Pilih Mata Pelajaran --</option>
+                      {DEFAULT_SUBJECTS.map((subj) => (
+                        <option key={subj} value={subj}>
+                          {subj}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomMode(true);
+                        setSelectedSubjectOption('');
+                      }}
+                      className="text-[11px] font-semibold text-emerald-700 hover:underline"
+                    >
+                      + Tambah Mapel Lain (Ketik Sendiri)
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={customSubjectName}
+                      onChange={(e) =>
+                        setCustomSubjectName(e.target.value)
+                      }
+                      required={isCustomMode}
+                      placeholder="Ketik nama mapel baru..."
+                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomMode(false);
+                        setCustomSubjectName('');
+                      }}
+                      className="text-[11px] font-semibold text-slate-500 hover:underline"
+                    >
+                      ← Kembali ke pilihan standar
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -656,7 +738,7 @@ export default function SubjectsPage() {
         {/* ================= FOOTER ================= */}
         <footer className="mt-5 flex items-center justify-between border-t border-slate-200/70 pt-3 text-[9px] text-slate-400">
           <span>
-            Sistem Akademik · Pondok Pesantren Terpadu Ulul Albab
+            Sistem Akademik · Pondok Pesantren Terpadu Ulil Albab
           </span>
 
           <span className="hidden font-serif text-slate-500 sm:block">
