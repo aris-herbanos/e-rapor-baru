@@ -84,7 +84,7 @@ export default function PersonalityPage() {
   const [message, setMessage] = useState('');
 
   /* ============================================================
-     LOAD KELAS (DENGAN FALLBACK CERDAS KE DATA SANTRI)
+     LOAD KELAS (DENGAN FALLBACK AMAN)
   ============================================================ */
 
   useEffect(() => {
@@ -101,7 +101,6 @@ export default function PersonalityPage() {
         const data = await res.json();
         let classList = Array.isArray(data) ? data : data?.data || [];
 
-        // Jika tabel kelas kosong, ambil kelas unik langsung dari data santri
         if (classList.length === 0) {
           const studentRes = await fetch('/api/students', { cache: 'no-store' });
           const studentData = await studentRes.json();
@@ -113,9 +112,9 @@ export default function PersonalityPage() {
                 .map((s: any) => String(s.class_name ?? '').trim())
                 .filter(Boolean)
             )
-          ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+          ).sort((a: any, b: any) => a.localeCompare(b, undefined, { numeric: true }));
 
-          classList = uniqueClasses.map((className, index) => ({
+          classList = uniqueClasses.map((className: any, index: number) => ({
             id: index + 1,
             name: className,
             level: '-',
