@@ -27,15 +27,15 @@ model Teacher {
 // =========================================================
 
 model Subject {
-  id            Int           @id @default(autoincrement())
-  name          String
+  id           Int           @id @default(autoincrement())
+  name         String
 
-  teacherId     Int
-  teacher       Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId    Int
+  teacher      Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
-  cps           CP[]
-  assignments   Assignment[]
-  scoreRecords  ScoreRecord[]
+  cps          CP[]
+  assignments  Assignment[]
+  scoreRecords ScoreRecord[]
 
   @@index([teacherId])
 }

@@ -2,7 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "../app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import bcrypt from "bcrypt";
+import * as bcrypt from "bcrypt";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -15,7 +15,7 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  console.log("🌱 Menjalankan database seeder...");
+  console.log("🌱 Menjalankan database seed...");
 
   const hashedPassword = await bcrypt.hash("password", 10);
 
@@ -26,8 +26,8 @@ async function main() {
 
     update: {
       fullname: "Administrator Utama",
-      password: hashedPassword,
       role: "ADMIN",
+      password: hashedPassword,
     },
 
     create: {
@@ -38,10 +38,15 @@ async function main() {
     },
   });
 
+  console.log("========================================");
   console.log("✅ Seeder berhasil!");
-  console.log("👤 Admin:", admin.fullname);
-  console.log("🆔 Identity Number:", admin.identity_number);
-  console.log("🔐 Password: password");
+  console.log("========================================");
+  console.log("ID       :", admin.id);
+  console.log("Nama     :", admin.fullname);
+  console.log("NIP/NIK  :", admin.identity_number);
+  console.log("Role     :", admin.role);
+  console.log("Password : password");
+  console.log("========================================");
 }
 
 main()
