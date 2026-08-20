@@ -25,6 +25,8 @@ import {
   MessageSquare,
   Award,
   Sparkles,
+  ArrowUpCircle,
+  History,
 } from 'lucide-react';
 
 /* ============================================================
@@ -39,6 +41,10 @@ const menus = [
     category: 'Utama',
   },
 
+  /* ==========================================================
+     DATA MASTER
+  ========================================================== */
+
   {
     title: 'Guru & Ustadz',
     href: '/dashboard/teachers',
@@ -49,6 +55,18 @@ const menus = [
     title: 'Santri',
     href: '/dashboard/students',
     icon: GraduationCap,
+    category: 'Data Master',
+  },
+  {
+    title: 'Kenaikan Kelas',
+    href: '/dashboard/promotions',
+    icon: ArrowUpCircle,
+    category: 'Data Master',
+  },
+  {
+    title: 'Riwayat Kenaikan',
+    href: '/dashboard/promotions/history',
+    icon: History,
     category: 'Data Master',
   },
   {
@@ -75,6 +93,10 @@ const menus = [
     icon: FileText,
     category: 'Data Master',
   },
+
+  /* ==========================================================
+     AKADEMIK
+  ========================================================== */
 
   {
     title: 'Kehadiran',
@@ -106,6 +128,10 @@ const menus = [
     icon: MessageSquare,
     category: 'Akademik',
   },
+
+  /* ==========================================================
+     RAPOR
+  ========================================================== */
 
   {
     title: 'Rapor Santri',
@@ -142,8 +168,39 @@ export default function DashboardLayout({
   ========================================================== */
 
   const isActive = (href: string) => {
+    /*
+      Dashboard harus benar-benar /dashboard.
+      Supaya /dashboard/students tidak ikut dianggap
+      sebagai Dashboard aktif.
+    */
     if (href === '/dashboard') {
       return pathname === '/dashboard';
+    }
+
+    /*
+      Khusus Riwayat Kenaikan:
+      /dashboard/promotions/history harus aktif pada
+      halaman riwayat, bukan menu Kenaikan Kelas.
+    */
+    if (href === '/dashboard/promotions/history') {
+      return pathname.startsWith('/dashboard/promotions/history');
+    }
+
+    /*
+      Menu Kenaikan Kelas hanya aktif untuk:
+      /dashboard/promotions
+
+      dan tidak aktif ketika berada di:
+      /dashboard/promotions/history
+    */
+    if (href === '/dashboard/promotions') {
+      return (
+        pathname === '/dashboard/promotions' ||
+        (
+          pathname.startsWith('/dashboard/promotions/') &&
+          !pathname.startsWith('/dashboard/promotions/history')
+        )
+      );
     }
 
     return pathname.startsWith(href);
@@ -182,8 +239,12 @@ export default function DashboardLayout({
       router.refresh();
     } catch (error) {
       console.error('Logout error:', error);
+
       setLoggingOut(false);
-      alert('Gagal keluar dari sistem. Silakan coba lagi.');
+
+      alert(
+        'Gagal keluar dari sistem. Silakan coba lagi.'
+      );
     }
   };
 
@@ -199,6 +260,7 @@ export default function DashboardLayout({
         <div className="flex items-center gap-3">
 
           <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-[#063d31] text-white shadow-sm">
+
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-transparent" />
 
             <GraduationCap
@@ -206,9 +268,11 @@ export default function DashboardLayout({
               strokeWidth={1.7}
               className="relative"
             />
+
           </div>
 
           <div>
+
             <div className="text-sm font-bold tracking-tight text-slate-800">
               E-Rapor
             </div>
@@ -216,6 +280,7 @@ export default function DashboardLayout({
             <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-700/60">
               Ulil Albab
             </div>
+
           </div>
 
         </div>
@@ -223,13 +288,23 @@ export default function DashboardLayout({
         <button
           type="button"
           onClick={() => setMobileOpen((prev) => !prev)}
-          aria-label={mobileOpen ? 'Tutup menu' : 'Buka menu'}
+          aria-label={
+            mobileOpen
+              ? 'Tutup menu'
+              : 'Buka menu'
+          }
           className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
         >
           {mobileOpen ? (
-            <X size={19} strokeWidth={1.8} />
+            <X
+              size={19}
+              strokeWidth={1.8}
+            />
           ) : (
-            <Menu size={19} strokeWidth={1.8} />
+            <Menu
+              size={19}
+              strokeWidth={1.8}
+            />
           )}
         </button>
 
@@ -262,11 +337,15 @@ export default function DashboardLayout({
           'shadow-[8px_0_30px_rgba(15,23,42,0.10)]',
           'transition-transform duration-300 ease-out',
           'lg:translate-x-0',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          mobileOpen
+            ? 'translate-x-0'
+            : '-translate-x-full',
         ].join(' ')}
       >
 
-        {/* DECORATION */}
+        {/* ====================================================
+            DECORATION
+        ===================================================== */}
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
 
@@ -399,34 +478,45 @@ export default function DashboardLayout({
                           'rounded-xl px-2.5',
                           'text-[12.5px]',
                           'transition-all duration-200',
+
                           active
                             ? 'bg-white/[0.075] text-white shadow-[0_4px_18px_rgba(0,0,0,0.08)]'
                             : 'text-emerald-50/50 hover:bg-white/[0.04] hover:text-emerald-50/80',
                         ].join(' ')}
                       >
 
+                        {/* ACTIVE INDICATOR */}
+
                         {active && (
                           <span className="absolute bottom-2.5 left-0 top-2.5 w-[2px] rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" />
                         )}
+
+                        {/* ICON */}
 
                         <span
                           className={[
                             'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
                             'transition-all duration-200',
+
                             active
                               ? 'bg-emerald-400/10 text-emerald-300'
                               : 'bg-white/[0.025] text-emerald-200/40 group-hover:bg-emerald-400/[0.06] group-hover:text-emerald-200/70',
                           ].join(' ')}
                         >
+
                           <Icon
                             size={16}
                             strokeWidth={1.65}
                           />
+
                         </span>
+
+                        {/* TITLE */}
 
                         <span
                           className={[
                             'flex-1 truncate',
+
                             active
                               ? 'font-semibold'
                               : 'font-medium',
@@ -434,6 +524,8 @@ export default function DashboardLayout({
                         >
                           {menu.title}
                         </span>
+
+                        {/* ARROW */}
 
                         {active && (
                           <ChevronRight
@@ -477,6 +569,7 @@ export default function DashboardLayout({
                 'rounded-xl px-2.5',
                 'text-[12.5px]',
                 'transition-all duration-200',
+
                 isActive('/dashboard/settings')
                   ? 'bg-white/[0.075] text-white'
                   : 'text-emerald-50/50 hover:bg-white/[0.04] hover:text-emerald-50/80',
@@ -490,15 +583,18 @@ export default function DashboardLayout({
               <span
                 className={[
                   'flex h-8 w-8 items-center justify-center rounded-lg',
+
                   isActive('/dashboard/settings')
                     ? 'bg-emerald-400/10 text-emerald-300'
                     : 'bg-white/[0.025] text-emerald-200/40',
                 ].join(' ')}
               >
+
                 <Settings
                   size={16}
                   strokeWidth={1.65}
                 />
+
               </span>
 
               <span
@@ -596,10 +692,12 @@ export default function DashboardLayout({
               disabled={loggingOut}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-emerald-100/35 transition-all duration-200 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
+
               <LogOut
                 size={16}
                 strokeWidth={1.65}
               />
+
             </button>
 
           </div>
@@ -627,7 +725,9 @@ export default function DashboardLayout({
             <div className="flex items-center gap-2">
 
               <span className="relative flex h-5 w-5 items-center justify-center rounded-md bg-emerald-50">
+
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+
               </span>
 
               <span className="text-[11px] font-medium text-slate-400">
@@ -674,7 +774,9 @@ export default function DashboardLayout({
 
         </header>
 
-        {/* PAGE */}
+        {/* ====================================================
+            PAGE
+        ===================================================== */}
 
         <main>
           {children}

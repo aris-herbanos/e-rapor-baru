@@ -158,7 +158,8 @@ exports.Prisma.StudentScalarFieldEnum = {
   birth_info: 'birth_info',
   gender: 'gender',
   class_name: 'class_name',
-  address: 'address'
+  address: 'address',
+  status: 'status'
 };
 
 exports.Prisma.AssessmentScalarFieldEnum = {
@@ -239,6 +240,17 @@ exports.Prisma.SystemSettingScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.StudentPromotionScalarFieldEnum = {
+  id: 'id',
+  studentId: 'studentId',
+  academicYear: 'academicYear',
+  fromClass: 'fromClass',
+  toClass: 'toClass',
+  status: 'status',
+  note: 'note',
+  promotedAt: 'promotedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -269,7 +281,8 @@ exports.Prisma.ModelName = {
   ScoreRecord: 'ScoreRecord',
   Personality: 'Personality',
   HomeroomNote: 'HomeroomNote',
-  SystemSetting: 'SystemSetting'
+  SystemSetting: 'SystemSetting',
+  StudentPromotion: 'StudentPromotion'
 };
 
 /**

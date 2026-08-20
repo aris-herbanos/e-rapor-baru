@@ -67,14 +67,20 @@ model Student {
   class_name String
   address    String?
 
+  // Status siswa:
+  // Aktif / Lulus / Tinggal Kelas / Pindah
+  status String @default("Aktif")
+
   assessments  Assessment[]
   attendances  Attendance[]
   homeroomNote HomeroomNote?
   personality  Personality?
   scoreRecords ScoreRecord[]
   tahfidzs     Tahfidz[]
+  promotions   StudentPromotion[]
 
   @@index([class_name])
+  @@index([status])
 }
 
 model Assessment {
@@ -197,4 +203,23 @@ model SystemSetting {
   semester      String   @default("Ganjil")
   principalName String   @default("Pimpinan Pesantren")
   updatedAt     DateTime @updatedAt
+}
+
+model StudentPromotion {
+  id           Int      @id @default(autoincrement())
+  studentId    Int
+  academicYear String
+  fromClass    String
+  toClass      String
+  status       String   @default("NAIK")
+  note         String?
+  promotedAt   DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, academicYear])
+  @@index([studentId])
+  @@index([academicYear])
+  @@index([fromClass])
+  @@index([toClass])
 }
