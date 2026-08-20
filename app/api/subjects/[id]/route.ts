@@ -4,10 +4,11 @@ import prisma from '@/lib/prisma';
 // PUT: Update Mata Pelajaran
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const resolvedParams = await params;
+    const id = parseInt(resolvedParams.id);
     const { name, teacherId } = await request.json();
 
     if (!name || !teacherId) {
@@ -32,10 +33,11 @@ export async function PUT(
 // DELETE: Hapus Mata Pelajaran
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const resolvedParams = await params;
+    const id = parseInt(resolvedParams.id);
 
     await prisma.subject.delete({
       where: { id },
