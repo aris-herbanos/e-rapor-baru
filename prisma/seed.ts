@@ -1,8 +1,9 @@
 import "dotenv/config";
-import { PrismaClient } from "../app/generated/prisma/client";
+
+import { PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import * as bcrypt from "bcrypt";
+import bcrypt from "bcrypt";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -15,7 +16,9 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  console.log("🌱 Menjalankan database seed...");
+  console.log("========================================");
+  console.log("Memulai Prisma Seeder...");
+  console.log("========================================");
 
   const hashedPassword = await bcrypt.hash("password", 10);
 
@@ -38,21 +41,24 @@ async function main() {
     },
   });
 
-  console.log("========================================");
-  console.log("✅ Seeder berhasil!");
-  console.log("========================================");
-  console.log("ID       :", admin.id);
-  console.log("Nama     :", admin.fullname);
-  console.log("NIP/NIK  :", admin.identity_number);
-  console.log("Role     :", admin.role);
-  console.log("Password : password");
-  console.log("========================================");
+  console.log("");
+  console.log("✓ Seeder berhasil");
+  console.log("");
+  console.log("Akun Administrator:");
+  console.log("----------------------------------------");
+  console.log("Nomor Identitas : 987654321");
+  console.log("Password        : password");
+  console.log("Nama            : Administrator Utama");
+  console.log("Role            : ADMIN");
+  console.log("----------------------------------------");
 }
 
 main()
   .catch((error) => {
-    console.error("❌ Seeder gagal:");
+    console.error("");
+    console.error("✗ Seeder gagal:");
     console.error(error);
+
     process.exit(1);
   })
   .finally(async () => {
