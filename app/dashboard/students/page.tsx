@@ -395,40 +395,76 @@ export default function StudentsPage() {
   };
 
   // =========================
-  // DOWNLOAD CSV TEMPLATE
-  // =========================
+// DOWNLOAD CSV TEMPLATE
+// RAPI & AMAN DIBUKA DI EXCEL
+// =========================
 
-  const downloadTemplate = () => {
-    const csvContent =
-      'nisn,fullname,birth_info,class_name,gender,address\n' +
-      '3123456789,Ahmad Fauzi,Purwokerto 12 Januari 2012,7A,L,Jl. Masjid No. 1 Purwokerto\n' +
-      '3123456790,Fatimah Zahra,Jakarta 5 Mei 2012,7A,P,Jl. Merdeka No. 45 Jakarta';
+const downloadTemplate = () => {
+  const rows = [
+    [
+      'nisn',
+      'fullname',
+      'birth_info',
+      'class_name',
+      'gender',
+      'address',
+    ],
+    [
+      '3123456789',
+      'Ahmad Fauzi',
+      'Purwokerto 12 Januari 2012',
+      '7A',
+      'L',
+      'Jl. Masjid No. 1 Purwokerto',
+    ],
+    [
+      '3123456790',
+      'Fatimah Zahra',
+      'Jakarta 5 Mei 2012',
+      '7A',
+      'P',
+      'Jl. Merdeka No. 45 Jakarta',
+    ],
+  ];
 
-    const blob = new Blob(
-      [csvContent],
-      {
-        type: 'text/csv;charset=utf-8;',
-      }
-    );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const link =
-      document.createElement('a');
-
-    link.href = url;
-    link.download =
-      'template_import_santri.csv';
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
+  // Escape CSV agar aman jika ada koma, titik koma,
+  // tanda kutip, atau karakter khusus.
+  const escapeCsv = (value: string) => {
+    return `"${String(value).replace(/"/g, '""')}"`;
   };
+
+  const csvContent =
+    '\uFEFF' +
+    rows
+      .map((row) =>
+        row.map(escapeCsv).join(';')
+      )
+      .join('\r\n');
+
+  const blob = new Blob(
+    [csvContent],
+    {
+      type: 'text/csv;charset=utf-8;',
+    }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = 'template_import_santri.csv';
+
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+
+  // Bersihkan object URL setelah download
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 100);
+};
 
   // =========================
   // IMPORT CSV
