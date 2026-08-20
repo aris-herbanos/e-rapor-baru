@@ -2414,6 +2414,7 @@ export namespace Prisma {
     education: string | null
     address: string | null
     role: string | null
+    status: string | null
   }
 
   export type TeacherMaxAggregateOutputType = {
@@ -2425,6 +2426,7 @@ export namespace Prisma {
     education: string | null
     address: string | null
     role: string | null
+    status: string | null
   }
 
   export type TeacherCountAggregateOutputType = {
@@ -2436,6 +2438,7 @@ export namespace Prisma {
     education: number
     address: number
     role: number
+    status: number
     _all: number
   }
 
@@ -2457,6 +2460,7 @@ export namespace Prisma {
     education?: true
     address?: true
     role?: true
+    status?: true
   }
 
   export type TeacherMaxAggregateInputType = {
@@ -2468,6 +2472,7 @@ export namespace Prisma {
     education?: true
     address?: true
     role?: true
+    status?: true
   }
 
   export type TeacherCountAggregateInputType = {
@@ -2479,6 +2484,7 @@ export namespace Prisma {
     education?: true
     address?: true
     role?: true
+    status?: true
     _all?: true
   }
 
@@ -2577,6 +2583,7 @@ export namespace Prisma {
     education: string | null
     address: string | null
     role: string
+    status: string
     _count: TeacherCountAggregateOutputType | null
     _avg: TeacherAvgAggregateOutputType | null
     _sum: TeacherSumAggregateOutputType | null
@@ -2607,6 +2614,7 @@ export namespace Prisma {
     education?: boolean
     address?: boolean
     role?: boolean
+    status?: boolean
     assignments?: boolean | Teacher$assignmentsArgs<ExtArgs>
     subjects?: boolean | Teacher$subjectsArgs<ExtArgs>
     _count?: boolean | TeacherCountOutputTypeDefaultArgs<ExtArgs>
@@ -2621,6 +2629,7 @@ export namespace Prisma {
     education?: boolean
     address?: boolean
     role?: boolean
+    status?: boolean
   }, ExtArgs["result"]["teacher"]>
 
   export type TeacherSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -2632,6 +2641,7 @@ export namespace Prisma {
     education?: boolean
     address?: boolean
     role?: boolean
+    status?: boolean
   }, ExtArgs["result"]["teacher"]>
 
   export type TeacherSelectScalar = {
@@ -2643,9 +2653,10 @@ export namespace Prisma {
     education?: boolean
     address?: boolean
     role?: boolean
+    status?: boolean
   }
 
-  export type TeacherOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "identity_number" | "password" | "fullname" | "birth_date" | "education" | "address" | "role", ExtArgs["result"]["teacher"]>
+  export type TeacherOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "identity_number" | "password" | "fullname" | "birth_date" | "education" | "address" | "role" | "status", ExtArgs["result"]["teacher"]>
   export type TeacherInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     assignments?: boolean | Teacher$assignmentsArgs<ExtArgs>
     subjects?: boolean | Teacher$subjectsArgs<ExtArgs>
@@ -2669,6 +2680,7 @@ export namespace Prisma {
       education: string | null
       address: string | null
       role: string
+      status: string
     }, ExtArgs["result"]["teacher"]>
     composites: {}
   }
@@ -3102,6 +3114,7 @@ export namespace Prisma {
     readonly education: FieldRef<"Teacher", 'String'>
     readonly address: FieldRef<"Teacher", 'String'>
     readonly role: FieldRef<"Teacher", 'String'>
+    readonly status: FieldRef<"Teacher", 'String'>
   }
     
 
@@ -19331,7 +19344,8 @@ export namespace Prisma {
     birth_date: 'birth_date',
     education: 'education',
     address: 'address',
-    role: 'role'
+    role: 'role',
+    status: 'status'
   };
 
   export type TeacherScalarFieldEnum = (typeof TeacherScalarFieldEnum)[keyof typeof TeacherScalarFieldEnum]
@@ -19599,6 +19613,7 @@ export namespace Prisma {
     education?: StringNullableFilter<"Teacher"> | string | null
     address?: StringNullableFilter<"Teacher"> | string | null
     role?: StringFilter<"Teacher"> | string
+    status?: StringFilter<"Teacher"> | string
     assignments?: AssignmentListRelationFilter
     subjects?: SubjectListRelationFilter
   }
@@ -19612,6 +19627,7 @@ export namespace Prisma {
     education?: SortOrderInput | SortOrder
     address?: SortOrderInput | SortOrder
     role?: SortOrder
+    status?: SortOrder
     assignments?: AssignmentOrderByRelationAggregateInput
     subjects?: SubjectOrderByRelationAggregateInput
   }
@@ -19628,6 +19644,7 @@ export namespace Prisma {
     education?: StringNullableFilter<"Teacher"> | string | null
     address?: StringNullableFilter<"Teacher"> | string | null
     role?: StringFilter<"Teacher"> | string
+    status?: StringFilter<"Teacher"> | string
     assignments?: AssignmentListRelationFilter
     subjects?: SubjectListRelationFilter
   }, "id" | "identity_number">
@@ -19641,6 +19658,7 @@ export namespace Prisma {
     education?: SortOrderInput | SortOrder
     address?: SortOrderInput | SortOrder
     role?: SortOrder
+    status?: SortOrder
     _count?: TeacherCountOrderByAggregateInput
     _avg?: TeacherAvgOrderByAggregateInput
     _max?: TeacherMaxOrderByAggregateInput
@@ -19660,6 +19678,7 @@ export namespace Prisma {
     education?: StringNullableWithAggregatesFilter<"Teacher"> | string | null
     address?: StringNullableWithAggregatesFilter<"Teacher"> | string | null
     role?: StringWithAggregatesFilter<"Teacher"> | string
+    status?: StringWithAggregatesFilter<"Teacher"> | string
   }
 
   export type SubjectWhereInput = {
@@ -20547,6 +20566,7 @@ export namespace Prisma {
     education?: string | null
     address?: string | null
     role?: string
+    status?: string
     assignments?: AssignmentCreateNestedManyWithoutTeacherInput
     subjects?: SubjectCreateNestedManyWithoutTeacherInput
   }
@@ -20560,6 +20580,7 @@ export namespace Prisma {
     education?: string | null
     address?: string | null
     role?: string
+    status?: string
     assignments?: AssignmentUncheckedCreateNestedManyWithoutTeacherInput
     subjects?: SubjectUncheckedCreateNestedManyWithoutTeacherInput
   }
@@ -20572,6 +20593,7 @@ export namespace Prisma {
     education?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUpdateManyWithoutTeacherNestedInput
     subjects?: SubjectUpdateManyWithoutTeacherNestedInput
   }
@@ -20585,6 +20607,7 @@ export namespace Prisma {
     education?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUncheckedUpdateManyWithoutTeacherNestedInput
     subjects?: SubjectUncheckedUpdateManyWithoutTeacherNestedInput
   }
@@ -20598,6 +20621,7 @@ export namespace Prisma {
     education?: string | null
     address?: string | null
     role?: string
+    status?: string
   }
 
   export type TeacherUpdateManyMutationInput = {
@@ -20608,6 +20632,7 @@ export namespace Prisma {
     education?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
   }
 
   export type TeacherUncheckedUpdateManyInput = {
@@ -20619,6 +20644,7 @@ export namespace Prisma {
     education?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
   }
 
   export type SubjectCreateInput = {
@@ -21528,6 +21554,7 @@ export namespace Prisma {
     education?: SortOrder
     address?: SortOrder
     role?: SortOrder
+    status?: SortOrder
   }
 
   export type TeacherAvgOrderByAggregateInput = {
@@ -21543,6 +21570,7 @@ export namespace Prisma {
     education?: SortOrder
     address?: SortOrder
     role?: SortOrder
+    status?: SortOrder
   }
 
   export type TeacherMinOrderByAggregateInput = {
@@ -21554,6 +21582,7 @@ export namespace Prisma {
     education?: SortOrder
     address?: SortOrder
     role?: SortOrder
+    status?: SortOrder
   }
 
   export type TeacherSumOrderByAggregateInput = {
@@ -23296,6 +23325,7 @@ export namespace Prisma {
     education?: string | null
     address?: string | null
     role?: string
+    status?: string
     assignments?: AssignmentCreateNestedManyWithoutTeacherInput
   }
 
@@ -23308,6 +23338,7 @@ export namespace Prisma {
     education?: string | null
     address?: string | null
     role?: string
+    status?: string
     assignments?: AssignmentUncheckedCreateNestedManyWithoutTeacherInput
   }
 
@@ -23408,6 +23439,7 @@ export namespace Prisma {
     education?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUpdateManyWithoutTeacherNestedInput
   }
 
@@ -23420,6 +23452,7 @@ export namespace Prisma {
     education?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUncheckedUpdateManyWithoutTeacherNestedInput
   }
 
@@ -24313,6 +24346,7 @@ export namespace Prisma {
     education?: string | null
     address?: string | null
     role?: string
+    status?: string
     subjects?: SubjectCreateNestedManyWithoutTeacherInput
   }
 
@@ -24325,6 +24359,7 @@ export namespace Prisma {
     education?: string | null
     address?: string | null
     role?: string
+    status?: string
     subjects?: SubjectUncheckedCreateNestedManyWithoutTeacherInput
   }
 
@@ -24372,6 +24407,7 @@ export namespace Prisma {
     education?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
     subjects?: SubjectUpdateManyWithoutTeacherNestedInput
   }
 
@@ -24384,6 +24420,7 @@ export namespace Prisma {
     education?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
     subjects?: SubjectUncheckedUpdateManyWithoutTeacherNestedInput
   }
 

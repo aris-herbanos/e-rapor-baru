@@ -128,7 +128,8 @@ exports.Prisma.TeacherScalarFieldEnum = {
   birth_date: 'birth_date',
   education: 'education',
   address: 'address',
-  role: 'role'
+  role: 'role',
+  status: 'status'
 };
 
 exports.Prisma.SubjectScalarFieldEnum = {

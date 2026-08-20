@@ -48,6 +48,11 @@ export async function PUT(
           body.address !== undefined && body.address !== null
             ? String(body.address)
             : null,
+
+        status:
+          body.status !== undefined && body.status !== null
+            ? String(body.status)
+            : undefined,
       },
     });
 

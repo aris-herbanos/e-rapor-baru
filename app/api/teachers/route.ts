@@ -1,58 +1,70 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma'; // Menggunakan instance prisma terpusat
-import * as bcrypt from 'bcrypt';
+import prisma from '@/lib/prisma';
+import bcrypt from 'bcrypt';
 
-// GET: Ambil semua daftar guru
-export async function GET() {
-  try {
-    const teachers = await prisma.teacher.findMany({
-      select: {
-        id: true,
-        identity_number: true,
-        fullname: true,
-        role: true,
-      },
-    });
-    return NextResponse.json(teachers, { status: 200 });
-  } catch (error) {
-    console.error('Error fetching teachers:', error);
-    return NextResponse.json({ message: 'Gagal memuat data guru' }, { status: 500 });
-  }
-}
-
-// POST: Tambah guru baru
+// POST: Tambah Guru Baru
 export async function POST(request: Request) {
   try {
-    const { identity_number, fullname, password, role } = await request.json();
+    const body = await request.json();
+    const { identity_number, fullname, password, birth_date, education, address, status } = body;
 
     if (!identity_number || !fullname || !password) {
-      return NextResponse.json({ message: 'NIP/NIK, Nama Lengkap, dan Password wajib diisi!' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'NIK, Nama Lengkap, dan Password wajib diisi!' },
+        { status: 400 }
+      );
     }
 
-    // Hash password sebelum disimpan
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newTeacher = await prisma.teacher.create({
       data: {
-        identity_number,
-        fullname,
+        identity_number: String(identity_number).trim(),
+        fullname: String(fullname).trim(),
         password: hashedPassword,
-        role: role || 'TEACHER', // ADMIN atau TEACHER
+        birth_date: birth_date ? String(birth_date).trim() : null,
+        education: education ? String(education).trim() : null,
+        address: address ? String(address).trim() : null,
+        status: status ? String(status).trim() : 'Aktif',
+        role: 'TEACHER',
       },
     });
 
-    return NextResponse.json({ 
-      message: 'Guru berhasil didaftarkan', 
-      data: { id: newTeacher.id, fullname: newTeacher.fullname } 
-    }, { status: 201 });
+    return NextResponse.json(
+      { message: 'Ustadz/Guru berhasil ditambahkan', data: newTeacher },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error('Error creating teacher:', error);
-    
-    // Penanganan error duplikasi NIP/NIK (Unique Constraint Violation)
+
     if (error?.code === 'P2002') {
-      return NextResponse.json({ message: 'NIP/NIK sudah terdaftar di sistem!' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'NIK / Nomor identitas sudah terdaftar dalam sistem.' },
+        { status: 409 }
+      );
     }
-    
-    return NextResponse.json({ message: 'Gagal mendaftarkan guru' }, { status: 500 });
+
+    return NextResponse.json(
+      { message: 'Gagal mendaftarkan guru' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET: Ambil Daftar Guru (Disesuaikan agar mendukung pembungkusan objek data)
+export async function GET() {
+  try {
+    const teachers = await prisma.teacher.findMany({
+      orderBy: { id: 'desc' },
+    });
+
+    // Mengembalikan format objek { data: [...] } agar aman dibaca frontend
+    return NextResponse.json({ data: teachers }, { status: 200 });
+  } catch (error) {
+    console.error('Error fetching teachers:', error);
+    return NextResponse.json(
+      { message: 'Gagal memuat daftar guru' },
+      { status: 500 }
+    );
   }
 }

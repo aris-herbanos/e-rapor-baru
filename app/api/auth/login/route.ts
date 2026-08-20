@@ -65,6 +65,19 @@ export async function POST(request: Request) {
     }
 
     // =========================================================
+    // CEK STATUS AKUN (AKTIF / NONAKTIF)
+    // =========================================================
+
+    if (user.status === 'Nonaktif') {
+      return NextResponse.json(
+        {
+          message: 'Akun Anda sedang dinonaktifkan sementara oleh Administrator.',
+        },
+        { status: 403 }
+      );
+    }
+
+    // =========================================================
     // CEK PASSWORD
     // =========================================================
 

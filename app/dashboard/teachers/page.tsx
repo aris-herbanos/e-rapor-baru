@@ -10,6 +10,7 @@ type Teacher = {
   education?: string | null;
   address?: string | null;
   role: string;
+  status: string; // Tambahan status akun
 };
 
 export default function TeachersPage() {
@@ -26,6 +27,7 @@ export default function TeachersPage() {
   const [education, setEducation] = useState('');
   const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
+  const [status, setStatus] = useState('Aktif'); // State status form
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -88,6 +90,7 @@ export default function TeachersPage() {
     setEducation('');
     setAddress('');
     setPassword('');
+    setStatus('Aktif');
     setEditingId(null);
   };
 
@@ -116,6 +119,7 @@ export default function TeachersPage() {
         birth_date: string;
         education: string;
         address: string;
+        status: string;
         password?: string;
       } = {
         identity_number: identityNumber.trim(),
@@ -123,9 +127,9 @@ export default function TeachersPage() {
         birth_date: birthDate.trim(),
         education: education.trim(),
         address: address.trim(),
+        status: status,
       };
 
-      // Password hanya dikirim ketika menambah guru baru
       if (!editingId) {
         payload.password = password;
       }
@@ -185,7 +189,6 @@ export default function TeachersPage() {
       teacher.birth_date || ''
     );
 
-    // PENDIDIKAN TERAKHIR
     setEducation(
       teacher.education || ''
     );
@@ -194,13 +197,53 @@ export default function TeachersPage() {
       teacher.address || ''
     );
 
-    // Password tidak diubah ketika edit
+    setStatus(
+      teacher.status || 'Aktif'
+    );
+
     setPassword('');
 
     window.scrollTo({
       top: 0,
       behavior: 'smooth',
     });
+  };
+
+  // =========================
+  // TOGGLE STATUS (AKTIF / NONAKTIF)
+  // =========================
+  const handleToggleStatus = async (teacher: Teacher) => {
+    try {
+      const newStatus = teacher.status === 'Nonaktif' ? 'Aktif' : 'Nonaktif';
+      setMessage('');
+
+      const res = await fetch(`/api/teachers/${teacher.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          identity_number: teacher.identity_number,
+          fullname: teacher.fullname,
+          birth_date: teacher.birth_date,
+          education: teacher.education,
+          address: teacher.address,
+          status: newStatus,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || 'Gagal mengubah status akun guru.');
+      }
+
+      setMessage(`Sukses! Status akun ${teacher.fullname} diubah menjadi ${newStatus}.`);
+      await fetchTeachers();
+    } catch (err: any) {
+      console.error('Toggle status error:', err);
+      setMessage(err?.message || 'Gagal mengubah status akun.');
+    }
   };
 
   // =========================
@@ -343,9 +386,7 @@ export default function TeachersPage() {
   return (
     <main className="min-h-screen bg-[#f5f8f6] text-slate-800 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
 
-      {/* =========================
-          HEADER
-      ========================== */}
+      {/* HEADER */}
       <header className="rounded-2xl bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857] px-6 py-7 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-100">
@@ -357,15 +398,12 @@ export default function TeachersPage() {
           </h1>
 
           <p className="text-xs text-emerald-50/80 mt-1">
-            Kelola data tenaga pengajar, pendidikan,
-            alamat, edit, hapus satuan, dan hapus massal.
+            Kelola data tenaga pengajar, pendidikan, alamat, status akun, edit, hapus satuan, dan hapus massal.
           </p>
         </div>
       </header>
 
-      {/* =========================
-          MESSAGE
-      ========================== */}
+      {/* MESSAGE */}
       {message && (
         <div
           className={`p-4 rounded-xl text-sm border font-medium ${
@@ -380,9 +418,7 @@ export default function TeachersPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* =========================
-            FORM TAMBAH / EDIT
-        ========================== */}
+        {/* FORM TAMBAH / EDIT */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
 
           <div className="flex justify-between items-center mb-4">
@@ -467,9 +503,7 @@ export default function TeachersPage() {
               />
             </div>
 
-            {/* =========================
-                PENDIDIKAN TERAKHIR
-            ========================== */}
+            {/* PENDIDIKAN TERAKHIR */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Pendidikan Terakhir
@@ -486,11 +520,6 @@ export default function TeachersPage() {
                 placeholder="Contoh: S1 Pendidikan Agama Islam"
                 className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
               />
-
-              <p className="mt-1 text-[10px] text-slate-400">
-                Contoh: SMA/MA, D3, S1 PAI, S1 PGSD,
-                S2 Manajemen Pendidikan
-              </p>
             </div>
 
             {/* ALAMAT */}
@@ -512,6 +541,22 @@ export default function TeachersPage() {
               />
             </div>
 
+            {/* STATUS AKUN */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Status Akun Login
+              </label>
+
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 bg-white"
+              >
+                <option value="Aktif">Aktif (Bisa Login)</option>
+                <option value="Nonaktif">Nonaktif (Blokir Sementara)</option>
+              </select>
+            </div>
+
             {/* PASSWORD */}
             {!editingId && (
               <div>
@@ -531,10 +576,6 @@ export default function TeachersPage() {
                   placeholder="••••••••"
                   className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                 />
-
-                <p className="mt-1 text-[10px] text-slate-400">
-                  Password digunakan guru untuk login.
-                </p>
               </div>
             )}
 
@@ -554,14 +595,10 @@ export default function TeachersPage() {
           </form>
         </div>
 
-        {/* =========================
-            DAFTAR GURU
-        ========================== */}
+        {/* DAFTAR GURU */}
         <div className="lg:col-span-2 space-y-4">
 
-          {/* TOOLBAR */}
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
-
             <h2 className="font-bold text-slate-800 text-sm">
               Daftar Pengajar Terdaftar ({teachers.length})
             </h2>
@@ -580,9 +617,6 @@ export default function TeachersPage() {
             )}
           </div>
 
-          {/* =========================
-              TABEL
-          ========================== */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 
             {loading ? (
@@ -600,7 +634,6 @@ export default function TeachersPage() {
 
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-
                       <th className="p-3 w-10 text-center">
                         <input
                           type="checkbox"
@@ -615,31 +648,11 @@ export default function TeachersPage() {
                           className="rounded text-emerald-600 cursor-pointer"
                         />
                       </th>
-
-                      <th className="p-3">
-                        ID Sistem / NIK
-                      </th>
-
-                      <th className="p-3">
-                        Nama
-                      </th>
-
-                      <th className="p-3">
-                        Pendidikan Terakhir
-                      </th>
-
-                      <th className="p-3">
-                        Tanggal Lahir
-                      </th>
-
-                      <th className="p-3">
-                        Alamat
-                      </th>
-
-                      <th className="p-3 text-right">
-                        Aksi
-                      </th>
-
+                      <th className="p-3">ID / NIK</th>
+                      <th className="p-3">Nama</th>
+                      <th className="p-3">Pendidikan</th>
+                      <th className="p-3">Status Login</th>
+                      <th className="p-3 text-right">Aksi</th>
                     </tr>
                   </thead>
 
@@ -660,8 +673,6 @@ export default function TeachersPage() {
                               : ''
                           }`}
                         >
-
-                          {/* CHECKBOX */}
                           <td className="p-3 text-center">
                             <input
                               type="checkbox"
@@ -675,62 +686,51 @@ export default function TeachersPage() {
                             />
                           </td>
 
-                          {/* ID */}
                           <td className="p-3">
                             <div className="font-bold text-emerald-700">
                               #{teacher.id}
                             </div>
-
                             <div className="text-[11px] text-slate-400">
-                              NIK:{' '}
-                              {teacher.identity_number ||
-                                '-'}
+                              {teacher.identity_number || '-'}
                             </div>
                           </td>
 
-                          {/* NAMA */}
                           <td className="p-3">
                             <div className="font-bold text-slate-800">
                               {teacher.fullname}
                             </div>
-
-                            <div className="text-[10px] text-slate-400 mt-0.5">
-                              Guru / Ustadz
+                            <div className="text-[10px] text-slate-400">
+                              {teacher.birth_date || '-'}
                             </div>
                           </td>
 
-                          {/* =========================
-                              PENDIDIKAN TERAKHIR
-                          ========================== */}
                           <td className="p-3">
                             {teacher.education ? (
                               <span className="inline-flex items-center rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 border border-emerald-100">
                                 {teacher.education}
                               </span>
                             ) : (
-                              <span className="text-slate-400">
-                                -
-                              </span>
+                              <span className="text-slate-400">-</span>
                             )}
                           </td>
 
-                          {/* TANGGAL LAHIR */}
-                          <td className="p-3 whitespace-nowrap">
-                            {teacher.birth_date ||
-                              '-'}
+                          {/* TOMBOL TOGGLE STATUS LOGIN */}
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(teacher)}
+                              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition shadow-sm ${
+                                teacher.status === 'Nonaktif'
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                  : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                              }`}
+                              title="Klik untuk mengubah status login"
+                            >
+                              {teacher.status === 'Nonaktif' ? '🔴 Nonaktif' : '🟢 Aktif'}
+                            </button>
                           </td>
 
-                          {/* ALAMAT */}
-                          <td className="p-3 max-w-[220px]">
-                            <div className="truncate">
-                              {teacher.address ||
-                                '-'}
-                            </div>
-                          </td>
-
-                          {/* AKSI */}
-                          <td className="p-3 text-right whitespace-nowrap">
-
+                          <td className="p-3 text-right whitespace-nowrap space-x-1.5">
                             <button
                               type="button"
                               onClick={() =>
@@ -738,7 +738,7 @@ export default function TeachersPage() {
                                   teacher
                                 )
                               }
-                              className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 font-semibold hover:bg-amber-100 transition mr-1"
+                              className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 font-semibold hover:bg-amber-100 transition"
                             >
                               Edit
                             </button>
@@ -754,7 +754,6 @@ export default function TeachersPage() {
                             >
                               Hapus
                             </button>
-
                           </td>
 
                         </tr>
@@ -767,6 +766,7 @@ export default function TeachersPage() {
             )}
           </div>
         </div>
+
       </div>
     </main>
   );

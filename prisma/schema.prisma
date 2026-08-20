@@ -8,17 +8,18 @@ datasource db {
 }
 
 model Teacher {
-  id              Int     @id @default(autoincrement())
-  identity_number String  @unique
+  id              Int          @id @default(autoincrement())
+  identity_number String       @unique
   password        String
   fullname        String
   birth_date      String?
   education       String?
   address         String?
-  role            String  @default("TEACHER")
+  role            String       @default("TEACHER")
+  status          String       @default("Aktif") // Tambahan status akun (Aktif/Nonaktif)
 
-  assignments Assignment[]
-  subjects    Subject[]
+  assignments     Assignment[]
+  subjects        Subject[]
 }
 
 model Subject {

@@ -16,6 +16,7 @@ model Teacher {
   education       String?
   address         String?
   role            String  @default("TEACHER")
+  status          String  @default("Aktif") // Tambahan status akun (Aktif/Nonaktif)
 
   assignments Assignment[]
   subjects    Subject[]
