@@ -7,180 +7,125 @@ datasource db {
   provider = "postgresql"
 }
 
-// =========================================================
-// GURU / USTADZ
-// =========================================================
-
 model Teacher {
   id              Int          @id @default(autoincrement())
   identity_number String       @unique
   password        String
   fullname        String
   role            String       @default("TEACHER")
-
-  subjects        Subject[]
   assignments     Assignment[]
+  subjects        Subject[]
 }
-
-// =========================================================
-// MATA PELAJARAN
-// =========================================================
 
 model Subject {
   id           Int           @id @default(autoincrement())
   name         String
-
   teacherId    Int
-  teacher      Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-
-  cps          CP[]
   assignments  Assignment[]
+  cps          CP[]
   scoreRecords ScoreRecord[]
+  teacher      Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@index([teacherId])
 }
 
-// =========================================================
-// CAPAIAN PEMBELAJARAN
-// =========================================================
-
 model CP {
-  id          Int       @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   code        String
   description String
-
   subjectId   Int
-  subject     Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-
+  subject     Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   tps         TP[]
 
   @@index([subjectId])
 }
 
-// =========================================================
-// TUJUAN PEMBELAJARAN
-// =========================================================
-
 model TP {
-  id           Int           @id @default(autoincrement())
-  code         String
-  description  String
-
-  cpId         Int
-  cp           CP            @relation(fields: [cpId], references: [id], onDelete: Cascade)
-
-  assessments  Assessment[]
+  id          Int          @id @default(autoincrement())
+  description String
+  code        String
+  cpId        Int
+  assessments Assessment[]
+  cp          CP           @relation(fields: [cpId], references: [id], onDelete: Cascade)
 
   @@index([cpId])
 }
 
-// =========================================================
-// SANTRI
-// =========================================================
-
 model Student {
-  id            Int           @id @default(autoincrement())
-  nisn          String        @unique
-  fullname      String
-  gender        String
-  class_name    String
+  id           Int           @id @default(autoincrement())
+  nisn         String        @unique
+  fullname     String
+  birth_info   String?
+  gender       String
+  class_name   String
+  address      String?
 
-  assessments   Assessment[]
-  tahfidzs      Tahfidz[]
-  attendances   Attendance[]
-  scoreRecords  ScoreRecord[]
-  personality   Personality?
-  homeroomNote  HomeroomNote?
+  assessments  Assessment[]
+  attendances  Attendance[]
+  homeroomNote HomeroomNote?
+  personality  Personality?
+  scoreRecords ScoreRecord[]
+  tahfidzs     Tahfidz[]
 
   @@index([class_name])
 }
 
-// =========================================================
-// ASESMEN
-// =========================================================
-
 model Assessment {
-  id          Int       @id @default(autoincrement())
-
-  studentId   Int
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  tpId        Int
-  tp          TP        @relation(fields: [tpId], references: [id], onDelete: Cascade)
-
-  score       Int
-  type        String
+  id        Int     @id @default(autoincrement())
+  studentId Int
+  tpId      Int
+  score     Int
+  type      String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tp        TP      @relation(fields: [tpId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
   @@index([tpId])
 }
 
-// =========================================================
-// TAHFIDZ
-// =========================================================
-
 model Tahfidz {
-  id          Int       @id @default(autoincrement())
-
-  studentId   Int
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  juz         Int
-  surah       String
-  ayat        String
-  predicate   String
-  date        DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  juz       Int
+  surah     String
+  ayat      String
+  predicate String
+  date      DateTime @default(now())
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
 }
 
-// =========================================================
-// KEHADIRAN
-// =========================================================
-
 model Attendance {
-  id          Int       @id @default(autoincrement())
-
-  studentId   Int
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  status      String
-  date        DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  status    String
+  date      DateTime @default(now())
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
   @@index([date])
 }
 
-// =========================================================
-// KELAS
-// =========================================================
-
 model ClassRoom {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  level       String
-  grade       Int
-  status      String    @default("Aktif")
+  id     Int    @id @default(autoincrement())
+  name   String @unique
+  level  String
+  grade  Int
+  status String @default("Aktif")
 
   @@index([level])
   @@index([grade])
 }
 
-// =========================================================
-// PENUGASAN GURU
-// =========================================================
-
 model Assignment {
-  id            Int       @id @default(autoincrement())
-
-  teacherId     Int
-  teacher       Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-
-  subjectId     Int
-  subject       Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-
-  className     String
-  academicYear  String    @default("2026/2027")
+  id           Int     @id @default(autoincrement())
+  teacherId    Int
+  subjectId    Int
+  className    String
+  academicYear String  @default("2026/2027")
+  subject      Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher      Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, subjectId, className, academicYear])
   @@index([teacherId])
@@ -188,23 +133,16 @@ model Assignment {
   @@index([className])
 }
 
-// =========================================================
-// NILAI PESANTREN
-// =========================================================
-
 model ScoreRecord {
-  id           Int       @id @default(autoincrement())
-
-  studentId    Int
-  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  subjectId    Int
-  subject      Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-
-  className    String
-  type         String
-  scoreNumber  Int       @default(0)
-  scoreText    String    @default("")
+  id          Int     @id @default(autoincrement())
+  studentId   Int
+  subjectId   Int
+  className   String
+  type        String
+  scoreNumber Int     @default(0)
+  scoreText   String  @default("")
+  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject     Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, subjectId, type])
   @@index([studentId])
@@ -212,53 +150,37 @@ model ScoreRecord {
   @@index([className])
 }
 
-// =========================================================
-// KEPRIBADIAN / AKHLAK SANTRI
-// =========================================================
-
 model Personality {
-  id           Int       @id @default(autoincrement())
-  studentId    Int       @unique
-
-  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  className    String
-  suluk        String    @default("-")
-  muwadhotah   String    @default("-")
-  nadzofah     String    @default("-")
-  indhiplat    String    @default("-")
+  id         Int     @id @default(autoincrement())
+  studentId  Int     @unique
+  className  String
+  suluk      String  @default("-")
+  muwadhotah String  @default("-")
+  nadzofah   String  @default("-")
+  indhiplat  String  @default("-")
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([className])
   @@index([studentId])
 }
-
-// =========================================================
-// CATATAN WALI KELAS
-// =========================================================
 
 model HomeroomNote {
-  id          Int       @id @default(autoincrement())
-  studentId   Int       @unique
-
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  className   String
-  note        String    @default("")
-  updatedAt   DateTime  @updatedAt
+  id        Int      @id @default(autoincrement())
+  studentId Int      @unique
+  className String
+  note      String   @default("")
+  updatedAt DateTime @updatedAt
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([className])
   @@index([studentId])
 }
 
-// =========================================================
-// PENGATURAN SISTEM
-// =========================================================
-
 model SystemSetting {
-  id             Int       @id @default(autoincrement())
-  schoolName     String    @default("Pondok Pesantren Terpadu Ulul Albab")
-  academicYear   String    @default("2026/2027")
-  semester       String    @default("Ganjil")
-  principalName  String    @default("Pimpinan Pesantren")
-  updatedAt      DateTime  @updatedAt
+  id            Int      @id @default(autoincrement())
+  schoolName    String   @default("Pondok Pesantren Terpadu Ulul Albab")
+  academicYear  String   @default("2026/2027")
+  semester      String   @default("Ganjil")
+  principalName String   @default("Pimpinan Pesantren")
+  updatedAt     DateTime @updatedAt
 }

@@ -204,20 +204,20 @@ export type SubjectWhereInput = {
   id?: Prisma.IntFilter<"Subject"> | number
   name?: Prisma.StringFilter<"Subject"> | string
   teacherId?: Prisma.IntFilter<"Subject"> | number
-  teacher?: Prisma.XOR<Prisma.TeacherScalarRelationFilter, Prisma.TeacherWhereInput>
-  cps?: Prisma.CPListRelationFilter
   assignments?: Prisma.AssignmentListRelationFilter
+  cps?: Prisma.CPListRelationFilter
   scoreRecords?: Prisma.ScoreRecordListRelationFilter
+  teacher?: Prisma.XOR<Prisma.TeacherScalarRelationFilter, Prisma.TeacherWhereInput>
 }
 
 export type SubjectOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   teacherId?: Prisma.SortOrder
-  teacher?: Prisma.TeacherOrderByWithRelationInput
-  cps?: Prisma.CPOrderByRelationAggregateInput
   assignments?: Prisma.AssignmentOrderByRelationAggregateInput
+  cps?: Prisma.CPOrderByRelationAggregateInput
   scoreRecords?: Prisma.ScoreRecordOrderByRelationAggregateInput
+  teacher?: Prisma.TeacherOrderByWithRelationInput
 }
 
 export type SubjectWhereUniqueInput = Prisma.AtLeast<{
@@ -227,10 +227,10 @@ export type SubjectWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.SubjectWhereInput | Prisma.SubjectWhereInput[]
   name?: Prisma.StringFilter<"Subject"> | string
   teacherId?: Prisma.IntFilter<"Subject"> | number
-  teacher?: Prisma.XOR<Prisma.TeacherScalarRelationFilter, Prisma.TeacherWhereInput>
-  cps?: Prisma.CPListRelationFilter
   assignments?: Prisma.AssignmentListRelationFilter
+  cps?: Prisma.CPListRelationFilter
   scoreRecords?: Prisma.ScoreRecordListRelationFilter
+  teacher?: Prisma.XOR<Prisma.TeacherScalarRelationFilter, Prisma.TeacherWhereInput>
 }, "id">
 
 export type SubjectOrderByWithAggregationInput = {
@@ -255,35 +255,35 @@ export type SubjectScalarWhereWithAggregatesInput = {
 
 export type SubjectCreateInput = {
   name: string
-  teacher: Prisma.TeacherCreateNestedOneWithoutSubjectsInput
-  cps?: Prisma.CPCreateNestedManyWithoutSubjectInput
   assignments?: Prisma.AssignmentCreateNestedManyWithoutSubjectInput
+  cps?: Prisma.CPCreateNestedManyWithoutSubjectInput
   scoreRecords?: Prisma.ScoreRecordCreateNestedManyWithoutSubjectInput
+  teacher: Prisma.TeacherCreateNestedOneWithoutSubjectsInput
 }
 
 export type SubjectUncheckedCreateInput = {
   id?: number
   name: string
   teacherId: number
-  cps?: Prisma.CPUncheckedCreateNestedManyWithoutSubjectInput
   assignments?: Prisma.AssignmentUncheckedCreateNestedManyWithoutSubjectInput
+  cps?: Prisma.CPUncheckedCreateNestedManyWithoutSubjectInput
   scoreRecords?: Prisma.ScoreRecordUncheckedCreateNestedManyWithoutSubjectInput
 }
 
 export type SubjectUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  teacher?: Prisma.TeacherUpdateOneRequiredWithoutSubjectsNestedInput
-  cps?: Prisma.CPUpdateManyWithoutSubjectNestedInput
   assignments?: Prisma.AssignmentUpdateManyWithoutSubjectNestedInput
+  cps?: Prisma.CPUpdateManyWithoutSubjectNestedInput
   scoreRecords?: Prisma.ScoreRecordUpdateManyWithoutSubjectNestedInput
+  teacher?: Prisma.TeacherUpdateOneRequiredWithoutSubjectsNestedInput
 }
 
 export type SubjectUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
   teacherId?: Prisma.IntFieldUpdateOperationsInput | number
-  cps?: Prisma.CPUncheckedUpdateManyWithoutSubjectNestedInput
   assignments?: Prisma.AssignmentUncheckedUpdateManyWithoutSubjectNestedInput
+  cps?: Prisma.CPUncheckedUpdateManyWithoutSubjectNestedInput
   scoreRecords?: Prisma.ScoreRecordUncheckedUpdateManyWithoutSubjectNestedInput
 }
 
@@ -432,16 +432,16 @@ export type SubjectUpdateOneRequiredWithoutScoreRecordsNestedInput = {
 
 export type SubjectCreateWithoutTeacherInput = {
   name: string
-  cps?: Prisma.CPCreateNestedManyWithoutSubjectInput
   assignments?: Prisma.AssignmentCreateNestedManyWithoutSubjectInput
+  cps?: Prisma.CPCreateNestedManyWithoutSubjectInput
   scoreRecords?: Prisma.ScoreRecordCreateNestedManyWithoutSubjectInput
 }
 
 export type SubjectUncheckedCreateWithoutTeacherInput = {
   id?: number
   name: string
-  cps?: Prisma.CPUncheckedCreateNestedManyWithoutSubjectInput
   assignments?: Prisma.AssignmentUncheckedCreateNestedManyWithoutSubjectInput
+  cps?: Prisma.CPUncheckedCreateNestedManyWithoutSubjectInput
   scoreRecords?: Prisma.ScoreRecordUncheckedCreateNestedManyWithoutSubjectInput
 }
 
@@ -482,9 +482,9 @@ export type SubjectScalarWhereInput = {
 
 export type SubjectCreateWithoutCpsInput = {
   name: string
-  teacher: Prisma.TeacherCreateNestedOneWithoutSubjectsInput
   assignments?: Prisma.AssignmentCreateNestedManyWithoutSubjectInput
   scoreRecords?: Prisma.ScoreRecordCreateNestedManyWithoutSubjectInput
+  teacher: Prisma.TeacherCreateNestedOneWithoutSubjectsInput
 }
 
 export type SubjectUncheckedCreateWithoutCpsInput = {
@@ -513,9 +513,9 @@ export type SubjectUpdateToOneWithWhereWithoutCpsInput = {
 
 export type SubjectUpdateWithoutCpsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  teacher?: Prisma.TeacherUpdateOneRequiredWithoutSubjectsNestedInput
   assignments?: Prisma.AssignmentUpdateManyWithoutSubjectNestedInput
   scoreRecords?: Prisma.ScoreRecordUpdateManyWithoutSubjectNestedInput
+  teacher?: Prisma.TeacherUpdateOneRequiredWithoutSubjectsNestedInput
 }
 
 export type SubjectUncheckedUpdateWithoutCpsInput = {
@@ -528,9 +528,9 @@ export type SubjectUncheckedUpdateWithoutCpsInput = {
 
 export type SubjectCreateWithoutAssignmentsInput = {
   name: string
-  teacher: Prisma.TeacherCreateNestedOneWithoutSubjectsInput
   cps?: Prisma.CPCreateNestedManyWithoutSubjectInput
   scoreRecords?: Prisma.ScoreRecordCreateNestedManyWithoutSubjectInput
+  teacher: Prisma.TeacherCreateNestedOneWithoutSubjectsInput
 }
 
 export type SubjectUncheckedCreateWithoutAssignmentsInput = {
@@ -559,9 +559,9 @@ export type SubjectUpdateToOneWithWhereWithoutAssignmentsInput = {
 
 export type SubjectUpdateWithoutAssignmentsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  teacher?: Prisma.TeacherUpdateOneRequiredWithoutSubjectsNestedInput
   cps?: Prisma.CPUpdateManyWithoutSubjectNestedInput
   scoreRecords?: Prisma.ScoreRecordUpdateManyWithoutSubjectNestedInput
+  teacher?: Prisma.TeacherUpdateOneRequiredWithoutSubjectsNestedInput
 }
 
 export type SubjectUncheckedUpdateWithoutAssignmentsInput = {
@@ -574,17 +574,17 @@ export type SubjectUncheckedUpdateWithoutAssignmentsInput = {
 
 export type SubjectCreateWithoutScoreRecordsInput = {
   name: string
-  teacher: Prisma.TeacherCreateNestedOneWithoutSubjectsInput
-  cps?: Prisma.CPCreateNestedManyWithoutSubjectInput
   assignments?: Prisma.AssignmentCreateNestedManyWithoutSubjectInput
+  cps?: Prisma.CPCreateNestedManyWithoutSubjectInput
+  teacher: Prisma.TeacherCreateNestedOneWithoutSubjectsInput
 }
 
 export type SubjectUncheckedCreateWithoutScoreRecordsInput = {
   id?: number
   name: string
   teacherId: number
-  cps?: Prisma.CPUncheckedCreateNestedManyWithoutSubjectInput
   assignments?: Prisma.AssignmentUncheckedCreateNestedManyWithoutSubjectInput
+  cps?: Prisma.CPUncheckedCreateNestedManyWithoutSubjectInput
 }
 
 export type SubjectCreateOrConnectWithoutScoreRecordsInput = {
@@ -605,17 +605,17 @@ export type SubjectUpdateToOneWithWhereWithoutScoreRecordsInput = {
 
 export type SubjectUpdateWithoutScoreRecordsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  teacher?: Prisma.TeacherUpdateOneRequiredWithoutSubjectsNestedInput
-  cps?: Prisma.CPUpdateManyWithoutSubjectNestedInput
   assignments?: Prisma.AssignmentUpdateManyWithoutSubjectNestedInput
+  cps?: Prisma.CPUpdateManyWithoutSubjectNestedInput
+  teacher?: Prisma.TeacherUpdateOneRequiredWithoutSubjectsNestedInput
 }
 
 export type SubjectUncheckedUpdateWithoutScoreRecordsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
   teacherId?: Prisma.IntFieldUpdateOperationsInput | number
-  cps?: Prisma.CPUncheckedUpdateManyWithoutSubjectNestedInput
   assignments?: Prisma.AssignmentUncheckedUpdateManyWithoutSubjectNestedInput
+  cps?: Prisma.CPUncheckedUpdateManyWithoutSubjectNestedInput
 }
 
 export type SubjectCreateManyTeacherInput = {
@@ -625,16 +625,16 @@ export type SubjectCreateManyTeacherInput = {
 
 export type SubjectUpdateWithoutTeacherInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  cps?: Prisma.CPUpdateManyWithoutSubjectNestedInput
   assignments?: Prisma.AssignmentUpdateManyWithoutSubjectNestedInput
+  cps?: Prisma.CPUpdateManyWithoutSubjectNestedInput
   scoreRecords?: Prisma.ScoreRecordUpdateManyWithoutSubjectNestedInput
 }
 
 export type SubjectUncheckedUpdateWithoutTeacherInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  cps?: Prisma.CPUncheckedUpdateManyWithoutSubjectNestedInput
   assignments?: Prisma.AssignmentUncheckedUpdateManyWithoutSubjectNestedInput
+  cps?: Prisma.CPUncheckedUpdateManyWithoutSubjectNestedInput
   scoreRecords?: Prisma.ScoreRecordUncheckedUpdateManyWithoutSubjectNestedInput
 }
 
@@ -649,14 +649,14 @@ export type SubjectUncheckedUpdateManyWithoutTeacherInput = {
  */
 
 export type SubjectCountOutputType = {
-  cps: number
   assignments: number
+  cps: number
   scoreRecords: number
 }
 
 export type SubjectCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  cps?: boolean | SubjectCountOutputTypeCountCpsArgs
   assignments?: boolean | SubjectCountOutputTypeCountAssignmentsArgs
+  cps?: boolean | SubjectCountOutputTypeCountCpsArgs
   scoreRecords?: boolean | SubjectCountOutputTypeCountScoreRecordsArgs
 }
 
@@ -673,15 +673,15 @@ export type SubjectCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exte
 /**
  * SubjectCountOutputType without action
  */
-export type SubjectCountOutputTypeCountCpsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CPWhereInput
+export type SubjectCountOutputTypeCountAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AssignmentWhereInput
 }
 
 /**
  * SubjectCountOutputType without action
  */
-export type SubjectCountOutputTypeCountAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AssignmentWhereInput
+export type SubjectCountOutputTypeCountCpsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CPWhereInput
 }
 
 /**
@@ -696,10 +696,10 @@ export type SubjectSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   id?: boolean
   name?: boolean
   teacherId?: boolean
-  teacher?: boolean | Prisma.TeacherDefaultArgs<ExtArgs>
-  cps?: boolean | Prisma.Subject$cpsArgs<ExtArgs>
   assignments?: boolean | Prisma.Subject$assignmentsArgs<ExtArgs>
+  cps?: boolean | Prisma.Subject$cpsArgs<ExtArgs>
   scoreRecords?: boolean | Prisma.Subject$scoreRecordsArgs<ExtArgs>
+  teacher?: boolean | Prisma.TeacherDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.SubjectCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["subject"]>
 
@@ -725,10 +725,10 @@ export type SubjectSelectScalar = {
 
 export type SubjectOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "teacherId", ExtArgs["result"]["subject"]>
 export type SubjectInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  teacher?: boolean | Prisma.TeacherDefaultArgs<ExtArgs>
-  cps?: boolean | Prisma.Subject$cpsArgs<ExtArgs>
   assignments?: boolean | Prisma.Subject$assignmentsArgs<ExtArgs>
+  cps?: boolean | Prisma.Subject$cpsArgs<ExtArgs>
   scoreRecords?: boolean | Prisma.Subject$scoreRecordsArgs<ExtArgs>
+  teacher?: boolean | Prisma.TeacherDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.SubjectCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type SubjectIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -741,10 +741,10 @@ export type SubjectIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
 export type $SubjectPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Subject"
   objects: {
-    teacher: Prisma.$TeacherPayload<ExtArgs>
-    cps: Prisma.$CPPayload<ExtArgs>[]
     assignments: Prisma.$AssignmentPayload<ExtArgs>[]
+    cps: Prisma.$CPPayload<ExtArgs>[]
     scoreRecords: Prisma.$ScoreRecordPayload<ExtArgs>[]
+    teacher: Prisma.$TeacherPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1144,10 +1144,10 @@ readonly fields: SubjectFieldRefs;
  */
 export interface Prisma__SubjectClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  teacher<T extends Prisma.TeacherDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TeacherDefaultArgs<ExtArgs>>): Prisma.Prisma__TeacherClient<runtime.Types.Result.GetResult<Prisma.$TeacherPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  cps<T extends Prisma.Subject$cpsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Subject$cpsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CPPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   assignments<T extends Prisma.Subject$assignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Subject$assignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  cps<T extends Prisma.Subject$cpsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Subject$cpsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CPPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   scoreRecords<T extends Prisma.Subject$scoreRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Subject$scoreRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  teacher<T extends Prisma.TeacherDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TeacherDefaultArgs<ExtArgs>>): Prisma.Prisma__TeacherClient<runtime.Types.Result.GetResult<Prisma.$TeacherPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1581,30 +1581,6 @@ export type SubjectDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
 }
 
 /**
- * Subject.cps
- */
-export type Subject$cpsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CP
-   */
-  select?: Prisma.CPSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CP
-   */
-  omit?: Prisma.CPOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CPInclude<ExtArgs> | null
-  where?: Prisma.CPWhereInput
-  orderBy?: Prisma.CPOrderByWithRelationInput | Prisma.CPOrderByWithRelationInput[]
-  cursor?: Prisma.CPWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CPScalarFieldEnum | Prisma.CPScalarFieldEnum[]
-}
-
-/**
  * Subject.assignments
  */
 export type Subject$assignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1626,6 +1602,30 @@ export type Subject$assignmentsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.AssignmentScalarFieldEnum | Prisma.AssignmentScalarFieldEnum[]
+}
+
+/**
+ * Subject.cps
+ */
+export type Subject$cpsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CP
+   */
+  select?: Prisma.CPSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CP
+   */
+  omit?: Prisma.CPOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CPInclude<ExtArgs> | null
+  where?: Prisma.CPWhereInput
+  orderBy?: Prisma.CPOrderByWithRelationInput | Prisma.CPOrderByWithRelationInput[]
+  cursor?: Prisma.CPWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CPScalarFieldEnum | Prisma.CPScalarFieldEnum[]
 }
 
 /**

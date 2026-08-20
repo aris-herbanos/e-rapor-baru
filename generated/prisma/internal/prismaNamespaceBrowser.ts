@@ -115,8 +115,8 @@ export type CPScalarFieldEnum = (typeof CPScalarFieldEnum)[keyof typeof CPScalar
 
 export const TPScalarFieldEnum = {
   id: 'id',
-  code: 'code',
   description: 'description',
+  code: 'code',
   cpId: 'cpId'
 } as const
 
@@ -127,8 +127,10 @@ export const StudentScalarFieldEnum = {
   id: 'id',
   nisn: 'nisn',
   fullname: 'fullname',
+  birth_info: 'birth_info',
   gender: 'gender',
-  class_name: 'class_name'
+  class_name: 'class_name',
+  address: 'address'
 } as const
 
 export type StudentScalarFieldEnum = (typeof StudentScalarFieldEnum)[keyof typeof StudentScalarFieldEnum]
@@ -253,4 +255,12 @@ export const QueryMode = {
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 

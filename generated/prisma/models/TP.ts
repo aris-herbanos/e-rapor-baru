@@ -38,22 +38,22 @@ export type TPSumAggregateOutputType = {
 
 export type TPMinAggregateOutputType = {
   id: number | null
-  code: string | null
   description: string | null
+  code: string | null
   cpId: number | null
 }
 
 export type TPMaxAggregateOutputType = {
   id: number | null
-  code: string | null
   description: string | null
+  code: string | null
   cpId: number | null
 }
 
 export type TPCountAggregateOutputType = {
   id: number
-  code: number
   description: number
+  code: number
   cpId: number
   _all: number
 }
@@ -71,22 +71,22 @@ export type TPSumAggregateInputType = {
 
 export type TPMinAggregateInputType = {
   id?: true
-  code?: true
   description?: true
+  code?: true
   cpId?: true
 }
 
 export type TPMaxAggregateInputType = {
   id?: true
-  code?: true
   description?: true
+  code?: true
   cpId?: true
 }
 
 export type TPCountAggregateInputType = {
   id?: true
-  code?: true
   description?: true
+  code?: true
   cpId?: true
   _all?: true
 }
@@ -179,8 +179,8 @@ export type TPGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 
 export type TPGroupByOutputType = {
   id: number
-  code: string
   description: string
+  code: string
   cpId: number
   _count: TPCountAggregateOutputType | null
   _avg: TPAvgAggregateOutputType | null
@@ -209,20 +209,20 @@ export type TPWhereInput = {
   OR?: Prisma.TPWhereInput[]
   NOT?: Prisma.TPWhereInput | Prisma.TPWhereInput[]
   id?: Prisma.IntFilter<"TP"> | number
-  code?: Prisma.StringFilter<"TP"> | string
   description?: Prisma.StringFilter<"TP"> | string
+  code?: Prisma.StringFilter<"TP"> | string
   cpId?: Prisma.IntFilter<"TP"> | number
-  cp?: Prisma.XOR<Prisma.CPScalarRelationFilter, Prisma.CPWhereInput>
   assessments?: Prisma.AssessmentListRelationFilter
+  cp?: Prisma.XOR<Prisma.CPScalarRelationFilter, Prisma.CPWhereInput>
 }
 
 export type TPOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  code?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  code?: Prisma.SortOrder
   cpId?: Prisma.SortOrder
-  cp?: Prisma.CPOrderByWithRelationInput
   assessments?: Prisma.AssessmentOrderByRelationAggregateInput
+  cp?: Prisma.CPOrderByWithRelationInput
 }
 
 export type TPWhereUniqueInput = Prisma.AtLeast<{
@@ -230,17 +230,17 @@ export type TPWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.TPWhereInput | Prisma.TPWhereInput[]
   OR?: Prisma.TPWhereInput[]
   NOT?: Prisma.TPWhereInput | Prisma.TPWhereInput[]
-  code?: Prisma.StringFilter<"TP"> | string
   description?: Prisma.StringFilter<"TP"> | string
+  code?: Prisma.StringFilter<"TP"> | string
   cpId?: Prisma.IntFilter<"TP"> | number
-  cp?: Prisma.XOR<Prisma.CPScalarRelationFilter, Prisma.CPWhereInput>
   assessments?: Prisma.AssessmentListRelationFilter
+  cp?: Prisma.XOR<Prisma.CPScalarRelationFilter, Prisma.CPWhereInput>
 }, "id">
 
 export type TPOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  code?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  code?: Prisma.SortOrder
   cpId?: Prisma.SortOrder
   _count?: Prisma.TPCountOrderByAggregateInput
   _avg?: Prisma.TPAvgOrderByAggregateInput
@@ -254,57 +254,57 @@ export type TPScalarWhereWithAggregatesInput = {
   OR?: Prisma.TPScalarWhereWithAggregatesInput[]
   NOT?: Prisma.TPScalarWhereWithAggregatesInput | Prisma.TPScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"TP"> | number
-  code?: Prisma.StringWithAggregatesFilter<"TP"> | string
   description?: Prisma.StringWithAggregatesFilter<"TP"> | string
+  code?: Prisma.StringWithAggregatesFilter<"TP"> | string
   cpId?: Prisma.IntWithAggregatesFilter<"TP"> | number
 }
 
 export type TPCreateInput = {
-  code: string
   description: string
-  cp: Prisma.CPCreateNestedOneWithoutTpsInput
+  code: string
   assessments?: Prisma.AssessmentCreateNestedManyWithoutTpInput
+  cp: Prisma.CPCreateNestedOneWithoutTpsInput
 }
 
 export type TPUncheckedCreateInput = {
   id?: number
-  code: string
   description: string
+  code: string
   cpId: number
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutTpInput
 }
 
 export type TPUpdateInput = {
-  code?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  cp?: Prisma.CPUpdateOneRequiredWithoutTpsNestedInput
+  code?: Prisma.StringFieldUpdateOperationsInput | string
   assessments?: Prisma.AssessmentUpdateManyWithoutTpNestedInput
+  cp?: Prisma.CPUpdateOneRequiredWithoutTpsNestedInput
 }
 
 export type TPUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  code?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
   cpId?: Prisma.IntFieldUpdateOperationsInput | number
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutTpNestedInput
 }
 
 export type TPCreateManyInput = {
   id?: number
-  code: string
   description: string
+  code: string
   cpId: number
 }
 
 export type TPUpdateManyMutationInput = {
-  code?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type TPUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  code?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
   cpId?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
@@ -320,8 +320,8 @@ export type TPOrderByRelationAggregateInput = {
 
 export type TPCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  code?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  code?: Prisma.SortOrder
   cpId?: Prisma.SortOrder
 }
 
@@ -332,15 +332,15 @@ export type TPAvgOrderByAggregateInput = {
 
 export type TPMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  code?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  code?: Prisma.SortOrder
   cpId?: Prisma.SortOrder
 }
 
 export type TPMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  code?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  code?: Prisma.SortOrder
   cpId?: Prisma.SortOrder
 }
 
@@ -411,15 +411,15 @@ export type TPUpdateOneRequiredWithoutAssessmentsNestedInput = {
 }
 
 export type TPCreateWithoutCpInput = {
-  code: string
   description: string
+  code: string
   assessments?: Prisma.AssessmentCreateNestedManyWithoutTpInput
 }
 
 export type TPUncheckedCreateWithoutCpInput = {
   id?: number
-  code: string
   description: string
+  code: string
   assessments?: Prisma.AssessmentUncheckedCreateNestedManyWithoutTpInput
 }
 
@@ -454,21 +454,21 @@ export type TPScalarWhereInput = {
   OR?: Prisma.TPScalarWhereInput[]
   NOT?: Prisma.TPScalarWhereInput | Prisma.TPScalarWhereInput[]
   id?: Prisma.IntFilter<"TP"> | number
-  code?: Prisma.StringFilter<"TP"> | string
   description?: Prisma.StringFilter<"TP"> | string
+  code?: Prisma.StringFilter<"TP"> | string
   cpId?: Prisma.IntFilter<"TP"> | number
 }
 
 export type TPCreateWithoutAssessmentsInput = {
-  code: string
   description: string
+  code: string
   cp: Prisma.CPCreateNestedOneWithoutTpsInput
 }
 
 export type TPUncheckedCreateWithoutAssessmentsInput = {
   id?: number
-  code: string
   description: string
+  code: string
   cpId: number
 }
 
@@ -489,41 +489,41 @@ export type TPUpdateToOneWithWhereWithoutAssessmentsInput = {
 }
 
 export type TPUpdateWithoutAssessmentsInput = {
-  code?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
   cp?: Prisma.CPUpdateOneRequiredWithoutTpsNestedInput
 }
 
 export type TPUncheckedUpdateWithoutAssessmentsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  code?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
   cpId?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type TPCreateManyCpInput = {
   id?: number
-  code: string
   description: string
+  code: string
 }
 
 export type TPUpdateWithoutCpInput = {
-  code?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
   assessments?: Prisma.AssessmentUpdateManyWithoutTpNestedInput
 }
 
 export type TPUncheckedUpdateWithoutCpInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  code?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
   assessments?: Prisma.AssessmentUncheckedUpdateManyWithoutTpNestedInput
 }
 
 export type TPUncheckedUpdateManyWithoutCpInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  code?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -559,41 +559,41 @@ export type TPCountOutputTypeCountAssessmentsArgs<ExtArgs extends runtime.Types.
 
 export type TPSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  code?: boolean
   description?: boolean
+  code?: boolean
   cpId?: boolean
-  cp?: boolean | Prisma.CPDefaultArgs<ExtArgs>
   assessments?: boolean | Prisma.TP$assessmentsArgs<ExtArgs>
+  cp?: boolean | Prisma.CPDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.TPCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tP"]>
 
 export type TPSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  code?: boolean
   description?: boolean
+  code?: boolean
   cpId?: boolean
   cp?: boolean | Prisma.CPDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tP"]>
 
 export type TPSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  code?: boolean
   description?: boolean
+  code?: boolean
   cpId?: boolean
   cp?: boolean | Prisma.CPDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tP"]>
 
 export type TPSelectScalar = {
   id?: boolean
-  code?: boolean
   description?: boolean
+  code?: boolean
   cpId?: boolean
 }
 
-export type TPOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "description" | "cpId", ExtArgs["result"]["tP"]>
+export type TPOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "description" | "code" | "cpId", ExtArgs["result"]["tP"]>
 export type TPInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  cp?: boolean | Prisma.CPDefaultArgs<ExtArgs>
   assessments?: boolean | Prisma.TP$assessmentsArgs<ExtArgs>
+  cp?: boolean | Prisma.CPDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.TPCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TPIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -606,13 +606,13 @@ export type TPIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extension
 export type $TPPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "TP"
   objects: {
-    cp: Prisma.$CPPayload<ExtArgs>
     assessments: Prisma.$AssessmentPayload<ExtArgs>[]
+    cp: Prisma.$CPPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
-    code: string
     description: string
+    code: string
     cpId: number
   }, ExtArgs["result"]["tP"]>
   composites: {}
@@ -1008,8 +1008,8 @@ readonly fields: TPFieldRefs;
  */
 export interface Prisma__TPClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  cp<T extends Prisma.CPDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CPDefaultArgs<ExtArgs>>): Prisma.Prisma__CPClient<runtime.Types.Result.GetResult<Prisma.$CPPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   assessments<T extends Prisma.TP$assessmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TP$assessmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AssessmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  cp<T extends Prisma.CPDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CPDefaultArgs<ExtArgs>>): Prisma.Prisma__CPClient<runtime.Types.Result.GetResult<Prisma.$CPPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1040,8 +1040,8 @@ export interface Prisma__TPClient<T, Null = never, ExtArgs extends runtime.Types
  */
 export interface TPFieldRefs {
   readonly id: Prisma.FieldRef<"TP", 'Int'>
-  readonly code: Prisma.FieldRef<"TP", 'String'>
   readonly description: Prisma.FieldRef<"TP", 'String'>
+  readonly code: Prisma.FieldRef<"TP", 'String'>
   readonly cpId: Prisma.FieldRef<"TP", 'Int'>
 }
     
