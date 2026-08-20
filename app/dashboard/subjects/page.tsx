@@ -5,11 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 type Subject = {
   id: number;
   name: string;
-  teacherId?: number | null;
-  teacher?: {
-    id?: number;
-    fullname?: string | null;
-  } | null;
 };
 
 // Daftar referensi mapel standar pesantren
@@ -36,7 +31,6 @@ export default function SubjectsPage() {
   const [customSubjectName, setCustomSubjectName] = useState('');
   const [isCustomMode, setIsCustomMode] = useState(false);
 
-  const [teacherId, setTeacherId] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -86,11 +80,6 @@ export default function SubjectsPage() {
       return;
     }
 
-    if (!teacherId) {
-      setMessage('ID pengajar wajib diisi.');
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -107,7 +96,6 @@ export default function SubjectsPage() {
         },
         body: JSON.stringify({
           name: finalName,
-          teacherId: Number(teacherId),
         }),
       });
 
@@ -128,7 +116,6 @@ export default function SubjectsPage() {
       setSelectedSubjectOption('');
       setCustomSubjectName('');
       setIsCustomMode(false);
-      setTeacherId('');
       setEditingId(null);
 
       await fetchSubjects();
@@ -144,7 +131,6 @@ export default function SubjectsPage() {
   const handleEdit = (subject: Subject) => {
     setEditingId(subject.id);
     
-    // Cek apakah nama mapel ada di daftar bawaan atau custom
     if (DEFAULT_SUBJECTS.includes(subject.name)) {
       setSelectedSubjectOption(subject.name);
       setIsCustomMode(false);
@@ -154,10 +140,6 @@ export default function SubjectsPage() {
       setCustomSubjectName(subject.name);
       setSelectedSubjectOption('');
     }
-
-    setTeacherId(
-      subject.teacherId ? String(subject.teacherId) : ''
-    );
 
     window.scrollTo({
       top: 0,
@@ -170,7 +152,6 @@ export default function SubjectsPage() {
     setSelectedSubjectOption('');
     setCustomSubjectName('');
     setIsCustomMode(false);
-    setTeacherId('');
   };
 
   const handleDelete = async (id: number) => {
@@ -283,18 +264,6 @@ export default function SubjectsPage() {
   };
 
   const totalSubjects = subjects.length;
-
-  const totalTeachers = useMemo(() => {
-    const ids = subjects
-      .map((subject) => subject.teacherId)
-      .filter(
-        (id): id is number =>
-          id !== null && id !== undefined
-      );
-
-    return new Set(ids).size;
-  }, [subjects]);
-
   const allSelected =
     subjects.length > 0 &&
     selectedIds.length === subjects.length;
@@ -322,7 +291,7 @@ export default function SubjectsPage() {
               </div>
 
               <p className="mt-0.5 text-[11px] text-slate-500">
-                Kelola mata pelajaran pesantren dan pengajar.
+                Kelola daftar master mata pelajaran pesantren.
               </p>
             </div>
           </div>
@@ -339,17 +308,10 @@ export default function SubjectsPage() {
 
         {/* ================= SUMMARY ================= */}
         <div className="mb-5 flex flex-wrap items-center divide-x divide-slate-200 rounded-xl border border-slate-200/80 bg-white shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
-
           <MiniStat
-            label="Total Mapel"
+            label="Total Mata Pelajaran"
             value={totalSubjects}
             icon={<BookIcon />}
-          />
-
-          <MiniStat
-            label="Pengajar"
-            value={totalTeachers}
-            icon={<TeacherIcon />}
           />
 
           <div className="flex min-w-[150px] flex-1 items-center gap-2 px-4 py-3">
@@ -362,7 +324,6 @@ export default function SubjectsPage() {
                 <span className="text-sm font-bold text-slate-800">
                   Aktif
                 </span>
-
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               </div>
 
@@ -489,27 +450,6 @@ export default function SubjectsPage() {
                 )}
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                  ID Pengajar
-                </label>
-
-                <input
-                  type="number"
-                  value={teacherId}
-                  onChange={(e) =>
-                    setTeacherId(e.target.value)
-                  }
-                  required
-                  placeholder="Contoh: 1"
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
-                />
-
-                <p className="mt-1 text-[9px] text-slate-400">
-                  ID guru/pengajar yang terdaftar.
-                </p>
-              </div>
-
               <button
                 type="submit"
                 disabled={loading}
@@ -614,10 +554,9 @@ export default function SubjectsPage() {
                 <div className="overflow-hidden rounded-lg border border-slate-200">
 
                   {/* TABLE HEADER */}
-                  <div className="hidden grid-cols-[40px_minmax(0,1fr)_180px_90px] items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 sm:grid">
+                  <div className="hidden grid-cols-[40px_minmax(0,1fr)_90px] items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 sm:grid">
                     <span>No</span>
                     <span>Mata Pelajaran</span>
-                    <span>Pengampu</span>
                     <span className="text-right">
                       Aksi
                     </span>
@@ -634,7 +573,7 @@ export default function SubjectsPage() {
                       return (
                         <div
                           key={subject.id}
-                          className={`group grid grid-cols-1 gap-2 px-3 py-3 transition sm:grid-cols-[40px_minmax(0,1fr)_180px_90px] sm:items-center sm:gap-3 ${
+                          className={`group grid grid-cols-1 gap-2 px-3 py-3 transition sm:grid-cols-[40px_minmax(0,1fr)_90px] sm:items-center sm:gap-3 ${
                             isChecked
                               ? 'bg-emerald-50/60'
                               : 'bg-white hover:bg-slate-50/70'
@@ -670,30 +609,6 @@ export default function SubjectsPage() {
 
                               <span className="hidden shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[8px] font-semibold text-slate-400 sm:inline-block">
                                 ID {subject.id}
-                              </span>
-                            </div>
-
-                            <div className="mt-0.5 text-[9px] text-slate-400 sm:hidden">
-                              Pengampu:{' '}
-                              <span className="font-semibold text-emerald-700">
-                                {subject.teacher
-                                  ?.fullname ||
-                                  `Guru #${subject.teacherId}`}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* TEACHER */}
-                          <div className="hidden min-w-0 sm:block">
-                            <div className="flex items-center gap-1.5">
-                              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-600">
-                                <TeacherIcon />
-                              </div>
-
-                              <span className="truncate text-[10px] font-semibold text-slate-600">
-                                {subject.teacher
-                                  ?.fullname ||
-                                  `Guru #${subject.teacherId}`}
                               </span>
                             </div>
                           </div>
@@ -853,25 +768,6 @@ function BookIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M8 7h8M8 10h6"
-      />
-    </svg>
-  );
-}
-
-function TeacherIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
-    >
-      <circle cx="12" cy="8" r="3" />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M5 20a7 7 0 0 1 14 0"
       />
     </svg>
   );
