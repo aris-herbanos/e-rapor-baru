@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "id.my.ulilalbab.twa",
+        "sha256_cert_fingerprints": ["CE:8F:C6:05:5F:CD:6D:09:1D:C4:A8:94:69:23:C5:9E:3E:2E:FD:73:4E:59:D5:30:A7:2F:85:43:C2:04:14:89"]
+      }
+    }]
