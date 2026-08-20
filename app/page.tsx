@@ -54,7 +54,7 @@ export default function Home() {
             <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-lg shadow-emerald-900/5">
               <img
                 src="/logo.png"
-                alt="Logo Pondok Pesantren Terpadu Ulul Albab"
+                alt="Logo Pondok Pesantren Terpadu Ulil Albab"
                 className="h-full w-full object-contain p-1.5"
               />
             </div>
@@ -63,7 +63,7 @@ export default function Home() {
                 E-RAPOR
               </div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-600 sm:text-xs">
-                Ulul Albab
+                Ulil Albab
               </div>
             </div>
           </Link>
@@ -275,7 +275,7 @@ export default function Home() {
           <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-6 text-center sm:flex-row sm:text-left">
             <div>
               <p className="text-xs font-semibold text-emerald-900">
-                © {new Date().getFullYear()} Pondok Pesantren Terpadu Ulul Albab. Hak Cipta Dilindungi.
+                © {new Date().getFullYear()} Pondok Pesantren Terpadu Ulil Albab. Hak Cipta Dilindungi.
               </p>
               <p className="mt-1 text-[11px] text-slate-400">
                 E-Rapor • Sistem Akademik & Penilaian Santri Berbasis Digital
