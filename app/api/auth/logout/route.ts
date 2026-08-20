@@ -11,6 +11,7 @@ export async function POST() {
       }
     );
 
+    // Menghapus cookie token dengan menetapkan maxAge ke 0
     response.cookies.set({
       name: 'token',
       value: '',

@@ -214,7 +214,7 @@ export default function DashboardLayout({
             </div>
 
             <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-700/60">
-              Ulul Albab
+              Ulil Albab
             </div>
           </div>
 
@@ -339,7 +339,7 @@ export default function DashboardLayout({
             />
 
             <span>
-              Pondok Pesantren Terpadu Ulul Albab
+              Pondok Pesantren Terpadu Ulil Albab
             </span>
 
           </div>

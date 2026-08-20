@@ -263,7 +263,7 @@ export default function LoginPage() {
               <div>
 
                 <p className="text-[10px] font-semibold text-white/60">
-                  Pondok Pesantren Terpadu Ulul Albab
+                  Pondok Pesantren Terpadu Ulil Albab
                 </p>
 
                 <p className="mt-1 text-[8px] text-emerald-100/25">
@@ -318,7 +318,7 @@ export default function LoginPage() {
                 </h1>
 
                 <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  Sistem Akademik Ulul Albab
+                  Sistem Akademik Ulil Albab
                 </p>
 
                 <p
@@ -556,7 +556,7 @@ export default function LoginPage() {
               <div className="mt-8 border-t border-slate-100 pt-5 text-center">
 
                 <p className="text-[9px] leading-5 text-slate-300">
-                  © 2026 Pondok Pesantren Terpadu Ulul Albab
+                  © 2026 Pondok Pesantren Terpadu Ulil Albab Al Islami
                   <br />
                   Sistem Informasi Akademik
                 </p>

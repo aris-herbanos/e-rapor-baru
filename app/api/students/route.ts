@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import prisma from '@/lib/prisma'; // Menggunakan instance prisma terpusat
 
 // GET: Ambil semua data santri
 export async function GET() {
@@ -38,12 +32,21 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ message: 'Santri berhasil ditambahkan', data: newStudent }, { status: 201 });
+    return NextResponse.json(
+      { message: 'Santri berhasil ditambahkan', data: newStudent },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error('Error creating student:', error);
-    if (error.code === 'P2002') {
-      return NextResponse.json({ message: 'NISN / ID Santri sudah terdaftar di sistem!' }, { status: 400 });
+    
+    // Penanganan error jika NISN sudah ada (Unique Constraint Violation)
+    if (error?.code === 'P2002') {
+      return NextResponse.json(
+        { message: 'NISN / ID Santri sudah terdaftar di sistem!' },
+        { status: 400 }
+      );
     }
+    
     return NextResponse.json({ message: 'Gagal menyimpan data santri' }, { status: 500 });
   }
 }

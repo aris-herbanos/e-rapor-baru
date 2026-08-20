@@ -98,7 +98,7 @@ export default function DashboardPage() {
                 </h1>
 
                 <p className="mt-1 text-sm text-emerald-100/80">
-                  Pondok Pesantren Terpadu Ulul Albab
+                  Pondok Pesantren Terpadu Ulil Albab
                 </p>
               </div>
             </div>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
         <div className="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-600">
-              Pondok Pesantren Terpadu Ulul Albab
+              Pondok Pesantren Terpadu Ulil Albab
             </p>
 
             <p className="mt-0.5 text-[11px] text-slate-400">

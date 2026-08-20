@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import prisma from '@/lib/prisma'; // Menggunakan instance prisma terpusat
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
+// GET: Mengambil data rapor lengkap santri
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -35,18 +30,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'Santri tidak ditemukan' }, { status: 404 });
     }
 
-    // Hitung rekap kehadiran dari tabel Attendance
+    // Hitung rekap kehadiran
     let sakit = 0, izin = 0, alpa = 0;
-    student.attendances.forEach((att: any) => {
+    student.attendances.forEach((att: { status: string }) => {
       if (att.status === 'SAKIT') sakit++;
       else if (att.status === 'IZIN') izin++;
       else if (att.status === 'ALPA') alpa++;
     });
 
-    // Hitung rata-rata nilai angka untuk ringkasan
+    // Hitung rata-rata nilai angka
     let totalScore = 0;
     let countScore = 0;
-    student.scoreRecords.forEach((sc: any) => {
+    student.scoreRecords.forEach((sc: { scoreNumber: number }) => {
       if (sc.scoreNumber > 0) {
         totalScore += sc.scoreNumber;
         countScore++;
@@ -54,7 +49,7 @@ export async function GET(request: Request) {
     });
     const averageScore = countScore > 0 ? Number((totalScore / countScore).toFixed(1)) : 0;
 
-    // Hitung jumlah total santri di kelas yang sama untuk ranking/jumlah siswa
+    // Hitung jumlah total santri di kelas yang sama
     const totalStudentsInClass = await prisma.student.count({
       where: { class_name: student.class_name },
     });
@@ -72,7 +67,7 @@ export async function GET(request: Request) {
       attendance: { sakit, izin, alpa },
       averageScore,
       totalStudents: totalStudentsInClass,
-      rank: 1,
+      rank: 1, // Logika ranking dapat dikembangkan lebih lanjut
     };
 
     return NextResponse.json({ report: reportData }, { status: 200 });

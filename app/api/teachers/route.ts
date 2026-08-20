@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import prisma from '@/lib/prisma'; // Menggunakan instance prisma terpusat
 import * as bcrypt from 'bcrypt';
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
 
 // GET: Ambil semua daftar guru
 export async function GET() {
@@ -47,12 +41,18 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ message: 'Guru berhasil didaftarkan', data: { id: newTeacher.id, fullname: newTeacher.fullname } }, { status: 201 });
+    return NextResponse.json({ 
+      message: 'Guru berhasil didaftarkan', 
+      data: { id: newTeacher.id, fullname: newTeacher.fullname } 
+    }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating teacher:', error);
-    if (error.code === 'P2002') {
+    
+    // Penanganan error duplikasi NIP/NIK (Unique Constraint Violation)
+    if (error?.code === 'P2002') {
       return NextResponse.json({ message: 'NIP/NIK sudah terdaftar di sistem!' }, { status: 400 });
     }
+    
     return NextResponse.json({ message: 'Gagal mendaftarkan guru' }, { status: 500 });
   }
 }

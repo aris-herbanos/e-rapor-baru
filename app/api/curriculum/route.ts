@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import prisma from '@/lib/prisma'; // Menggunakan instance prisma terpusat
 
 // GET: Mengambil daftar CP beserta TP-nya
 export async function GET() {
@@ -30,6 +24,9 @@ export async function POST(request: Request) {
     const { action, subjectId, code, description, cpId } = body;
 
     if (action === 'CREATE_CP') {
+      if (!subjectId || !code || !description) {
+        return NextResponse.json({ message: 'Data CP tidak lengkap' }, { status: 400 });
+      }
       const newCP = await prisma.cP.create({
         data: {
           code,
@@ -41,6 +38,9 @@ export async function POST(request: Request) {
     }
 
     if (action === 'CREATE_TP') {
+      if (!cpId || !code || !description) {
+        return NextResponse.json({ message: 'Data TP tidak lengkap' }, { status: 400 });
+      }
       const newTP = await prisma.tP.create({
         data: {
           code,

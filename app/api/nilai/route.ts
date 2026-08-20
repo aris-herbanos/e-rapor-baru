@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import prisma from '@/lib/prisma'; // Menggunakan instance prisma terpusat
 
 // GET: Ambil nilai berdasarkan kelas, mapel, dan tipe ujian
 export async function GET(request: Request) {
@@ -29,6 +23,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(scores, { status: 200 });
   } catch (error) {
+    console.error('Error fetching scores:', error);
     return NextResponse.json({ message: 'Gagal memuat data nilai' }, { status: 500 });
   }
 }
@@ -39,12 +34,13 @@ export async function POST(request: Request) {
     const { className, subjectId, type, scores } = await request.json();
     // scores berupa array: [{ studentId, scoreNumber, scoreText }]
 
-    if (!className || !subjectId || !type || !scores) {
+    if (!className || !subjectId || !type || !Array.isArray(scores)) {
       return NextResponse.json({ message: 'Data tidak lengkap' }, { status: 400 });
     }
 
-    for (const item of scores) {
-      await prisma.scoreRecord.upsert({
+    // Menggunakan transaction untuk performa dan integritas data massal
+    const transaction = scores.map((item: any) =>
+      prisma.scoreRecord.upsert({
         where: {
           studentId_subjectId_type: {
             studentId: Number(item.studentId),
@@ -64,8 +60,10 @@ export async function POST(request: Request) {
           scoreNumber: Number(item.scoreNumber) || 0,
           scoreText: item.scoreText || '',
         },
-      });
-    }
+      })
+    );
+
+    await prisma.$transaction(transaction);
 
     return NextResponse.json({ message: 'Nilai berhasil disimpan!' }, { status: 200 });
   } catch (error) {

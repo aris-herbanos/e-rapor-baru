@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import prisma from '@/lib/prisma'; // Menggunakan instance prisma terpusat
 
 // GET: Ambil data kepribadian berdasarkan kelas
 export async function GET(request: Request) {
@@ -23,6 +17,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(personalities, { status: 200 });
   } catch (error) {
+    console.error('Error fetching personalities:', error);
     return NextResponse.json({ message: 'Gagal memuat data kepribadian' }, { status: 500 });
   }
 }
@@ -33,12 +28,13 @@ export async function POST(request: Request) {
     const { className, records } = await request.json();
     // records berupa array: [{ studentId, suluk, muwadhotah, nadzofah, indhiplat }]
 
-    if (!className || !records) {
+    if (!className || !Array.isArray(records)) {
       return NextResponse.json({ message: 'Data tidak lengkap' }, { status: 400 });
     }
 
-    for (const item of records) {
-      await prisma.personality.upsert({
+    // Menggunakan transaction untuk performa tinggi pada operasi massal
+    const transaction = records.map((item: any) =>
+      prisma.personality.upsert({
         where: { studentId: Number(item.studentId) },
         update: {
           suluk: item.suluk || '-',
@@ -54,8 +50,10 @@ export async function POST(request: Request) {
           nadzofah: item.nadzofah || '-',
           indhiplat: item.indhiplat || '-',
         },
-      });
-    }
+      })
+    );
+
+    await prisma.$transaction(transaction);
 
     return NextResponse.json({ message: 'Kepribadian santri berhasil disimpan!' }, { status: 200 });
   } catch (error) {

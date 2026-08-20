@@ -1,19 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import prisma from '@/lib/prisma'; // Menggunakan instance prisma terpusat
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-const adapter = new PrismaPg(pool);
-
-const prisma = new PrismaClient({
-  adapter,
-});
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
