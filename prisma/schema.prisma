@@ -8,18 +8,18 @@ datasource db {
 }
 
 model Teacher {
-  id              Int          @id @default(autoincrement())
-  identity_number String       @unique
+  id              Int     @id @default(autoincrement())
+  identity_number String  @unique
   password        String
   fullname        String
   birth_date      String?
   education       String?
   address         String?
-  role            String       @default("TEACHER")
-  status          String       @default("Aktif") // Tambahan status akun (Aktif/Nonaktif)
+  role            String  @default("TEACHER")
+  status          String  @default("Aktif") // Tambahan status akun (Aktif/Nonaktif)
 
-  assignments     Assignment[]
-  subjects        Subject[]
+  assignments Assignment[]
+  subjects    Subject[]
 }
 
 model Subject {
@@ -115,13 +115,19 @@ model Tahfidz {
 model Attendance {
   id        Int      @id @default(autoincrement())
   studentId Int
+  className String
+  day       String
   status    String
   date      DateTime @default(now())
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
+  // Satu santri hanya boleh memiliki satu absensi untuk satu tanggal.
+  @@unique([studentId, date])
   @@index([studentId])
+  @@index([className])
   @@index([date])
+  @@index([day])
 }
 
 model ClassRoom {

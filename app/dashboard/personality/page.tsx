@@ -84,7 +84,7 @@ export default function PersonalityPage() {
   const [message, setMessage] = useState('');
 
   /* ============================================================
-     LOAD KELAS
+     LOAD KELAS (DENGAN FALLBACK CERDAS KE DATA SANTRI)
   ============================================================ */
 
   useEffect(() => {
@@ -99,10 +99,31 @@ export default function PersonalityPage() {
         }
 
         const data = await res.json();
+        let classList = Array.isArray(data) ? data : data?.data || [];
 
-        if (Array.isArray(data)) {
-          setClasses(data);
+        // Jika tabel kelas kosong, ambil kelas unik langsung dari data santri
+        if (classList.length === 0) {
+          const studentRes = await fetch('/api/students', { cache: 'no-store' });
+          const studentData = await studentRes.json();
+          const studentsArr = Array.isArray(studentData) ? studentData : studentData?.students || studentData?.data || [];
+          
+          const uniqueClasses = Array.from(
+            new Set(
+              studentsArr
+                .map((s: any) => String(s.class_name ?? '').trim())
+                .filter(Boolean)
+            )
+          ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+          classList = uniqueClasses.map((className, index) => ({
+            id: index + 1,
+            name: className,
+            level: '-',
+            grade: 1,
+          }));
         }
+
+        setClasses(classList);
       } catch (error) {
         console.error('Error loading classes:', error);
         setMessage('Gagal memuat daftar kelas.');
@@ -147,7 +168,10 @@ export default function PersonalityPage() {
           throw new Error('Gagal memuat data santri.');
         }
 
-        const allStudents = await studentsRes.json();
+        const allStudentsData = await studentsRes.json();
+        const allStudents = Array.isArray(allStudentsData) 
+          ? allStudentsData 
+          : allStudentsData?.students || allStudentsData?.data || [];
 
         const filtered = Array.isArray(allStudents)
           ? allStudents.filter(
@@ -158,7 +182,8 @@ export default function PersonalityPage() {
 
         setStudents(filtered);
 
-        const persList = await personalityRes.json();
+        const persData = await personalityRes.json();
+        const persList = Array.isArray(persData) ? persData : persData?.data || [];
 
         const map: Record<number, PersonalityValue> = {};
 
@@ -332,40 +357,8 @@ export default function PersonalityPage() {
 
         <section className="relative mb-6 overflow-hidden rounded-2xl border border-emerald-900/10 bg-[#063d31] shadow-[0_12px_40px_rgba(6,61,49,0.10)]">
 
-          {/* Decorative elements */}
-
           <div className="pointer-events-none absolute -right-20 -top-28 h-72 w-72 rounded-full bg-emerald-300/[0.06] blur-3xl" />
-
           <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-amber-300/[0.035] blur-3xl" />
-
-          <div className="pointer-events-none absolute right-10 top-8 opacity-[0.035]">
-            <svg
-              width="170"
-              height="170"
-              viewBox="0 0 170 170"
-              fill="none"
-            >
-              <circle
-                cx="85"
-                cy="85"
-                r="65"
-                stroke="currentColor"
-                strokeWidth="1"
-              />
-              <circle
-                cx="85"
-                cy="85"
-                r="48"
-                stroke="currentColor"
-                strokeWidth="1"
-              />
-              <path
-                d="M20 85H150M85 20V150"
-                stroke="currentColor"
-                strokeWidth="1"
-              />
-            </svg>
-          </div>
 
           <div className="relative flex flex-col gap-5 px-5 py-6 sm:px-7 sm:py-7 lg:flex-row lg:items-center lg:justify-between">
 
@@ -403,8 +396,6 @@ export default function PersonalityPage() {
               </div>
             </div>
 
-            {/* School identity */}
-
             <div className="hidden items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.035] px-4 py-3 lg:flex">
 
               <GraduationCap
@@ -425,8 +416,6 @@ export default function PersonalityPage() {
             </div>
 
           </div>
-
-          {/* Islamic line */}
 
           <div className="relative border-t border-white/[0.06] px-5 py-2.5 sm:px-7">
             <div className="flex items-center justify-center gap-3">
@@ -499,8 +488,6 @@ export default function PersonalityPage() {
 
               </div>
             </div>
-
-            {/* Class information */}
 
             {selectedClass && (
               <div className="flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-2.5">
@@ -643,8 +630,6 @@ export default function PersonalityPage() {
             className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.04)]"
           >
 
-            {/* TABLE HEADER */}
-
             <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
 
               <div>
@@ -697,10 +682,6 @@ export default function PersonalityPage() {
               </button>
 
             </div>
-
-            {/* =================================================
-                TABLE
-            ================================================== */}
 
             <div className="overflow-x-auto">
 
@@ -792,8 +773,6 @@ export default function PersonalityPage() {
                             className="group border-b border-slate-100 transition-colors last:border-b-0 hover:bg-emerald-50/[0.28]"
                           >
 
-                            {/* NO */}
-
                             <td className="px-4 py-4 text-center align-middle">
 
                               <span className="text-[10px] font-semibold text-slate-400">
@@ -806,8 +785,6 @@ export default function PersonalityPage() {
                               </span>
 
                             </td>
-
-                            {/* STUDENT */}
 
                             <td className="sticky left-0 z-10 bg-white px-4 py-3 align-middle transition-colors group-hover:bg-[#fbfdfc]">
 
@@ -860,8 +837,6 @@ export default function PersonalityPage() {
                               </div>
 
                             </td>
-
-                            {/* PERSONALITY FIELDS */}
 
                             {personalityFields.map(
                               (field) => {
@@ -945,10 +920,6 @@ export default function PersonalityPage() {
 
             </div>
 
-            {/* =================================================
-                TABLE FOOTER
-            ================================================== */}
-
             {students.length > 0 && (
               <div className="flex flex-col gap-3 border-t border-slate-100 bg-[#fbfcfb] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 
@@ -990,30 +961,6 @@ export default function PersonalityPage() {
             )}
 
           </form>
-        )}
-
-        {/* =====================================================
-            FOOTNOTE
-        ====================================================== */}
-
-        {selectedClass && !loadingData && (
-          <div className="mt-5 flex items-center justify-center gap-2 text-center text-[9px] text-slate-400">
-
-            <div className="h-px w-10 bg-slate-200" />
-
-            <Sparkles
-              size={10}
-              className="text-amber-400/70"
-            />
-
-            <span>
-              Penilaian karakter • Pembinaan akhlak •
-              Pendidikan pesantren
-            </span>
-
-            <div className="h-px w-10 bg-slate-200" />
-
-          </div>
         )}
 
       </div>
