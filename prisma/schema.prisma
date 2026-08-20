@@ -1,9 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 /**
@@ -69,12 +72,12 @@ model CP {
  */
 
 model TP {
-  id           Int           @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
   code         String
   description  String
 
   cpId         Int
-  cp           CP            @relation(fields: [cpId], references: [id], onDelete: Cascade)
+  cp           CP           @relation(fields: [cpId], references: [id], onDelete: Cascade)
 
   assessments  Assessment[]
 
@@ -111,7 +114,7 @@ model Student {
  */
 
 model Assessment {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
 
   studentId   Int
   student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -134,7 +137,7 @@ model Assessment {
  */
 
 model Tahfidz {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
 
   studentId   Int
   student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -156,7 +159,7 @@ model Tahfidz {
  */
 
 model Attendance {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
 
   studentId   Int
   student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -176,7 +179,7 @@ model Attendance {
  */
 
 model ClassRoom {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String    @unique
   level       String
   grade       Int
@@ -219,7 +222,7 @@ model Assignment {
  */
 
 model ScoreRecord {
-  id           Int       @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
 
   studentId    Int
   student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -246,8 +249,8 @@ model ScoreRecord {
  */
 
 model Personality {
-  id           Int       @id @default(autoincrement())
-  studentId    Int       @unique
+  id           Int      @id @default(autoincrement())
+  studentId    Int      @unique
 
   student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
@@ -267,8 +270,8 @@ model Personality {
  */
 
 model HomeroomNote {
-  id           Int       @id @default(autoincrement())
-  studentId    Int       @unique
+  id           Int      @id @default(autoincrement())
+  studentId    Int      @unique
 
   student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
@@ -286,7 +289,7 @@ model HomeroomNote {
  */
 
 model SystemSetting {
-  id             Int       @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   schoolName     String    @default("Pondok Pesantren Terpadu Ulul Albab")
   academicYear   String    @default("2026/2027")
   semester       String    @default("Ganjil")
