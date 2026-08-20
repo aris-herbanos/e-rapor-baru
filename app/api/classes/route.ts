@@ -2,63 +2,17 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 /* ============================================================
-   KONFIGURASI JENJANG
-============================================================ */
-
-const VALID_GRADES = {
-  SMP: [7, 8, 9],
-  SMA: [10, 11, 12],
-} as const;
-
-type Level = keyof typeof VALID_GRADES;
-
-/* ============================================================
-   HELPER VALIDASI JENJANG & TINGKAT
-============================================================ */
-
-function validateLevelAndGrade(
-  level: string,
-  grade: number
-): string | null {
-  if (!['SMP', 'SMA'].includes(level)) {
-    return 'Jenjang hanya boleh SMP atau SMA.';
-  }
-
-  if (!Number.isInteger(grade)) {
-    return 'Tingkat kelas harus berupa angka bulat.';
-  }
-
-  const validGrades = VALID_GRADES[level as Level];
-
-  if (!validGrades.includes(grade as never)) {
-    if (level === 'SMP') {
-      return 'Kelas SMP hanya diperbolehkan untuk tingkat 7, 8, dan 9.';
-    }
-
-    return 'Kelas SMA hanya diperbolehkan untuk tingkat 10, 11, dan 12.';
-  }
-
-  return null;
-}
-
-/* ============================================================
-   GET
-   Ambil seluruh daftar kelas
+   GET /api/classes
+   Ambil seluruh data kelas
 ============================================================ */
 
 export async function GET() {
   try {
     const classes = await prisma.classRoom.findMany({
       orderBy: [
-        {
-          level: 'asc',
-        },
-        {
-          grade: 'asc',
-        },
-        {
-          name: 'asc',
-        },
+        { level: 'asc' },
+        { grade: 'asc' },
+        { name: 'asc' },
       ],
     });
 
@@ -80,17 +34,13 @@ export async function GET() {
 }
 
 /* ============================================================
-   POST
+   POST /api/classes
    Tambah kelas baru
 ============================================================ */
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
-    /* --------------------------------------------------------
-       NORMALISASI DATA
-    -------------------------------------------------------- */
 
     const name = String(body.name ?? '')
       .trim()
@@ -103,7 +53,7 @@ export async function POST(request: Request) {
     const grade = Number(body.grade);
 
     /* --------------------------------------------------------
-       VALIDASI FIELD WAJIB
+       VALIDASI
     -------------------------------------------------------- */
 
     if (!name) {
@@ -117,10 +67,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!level) {
+    if (!['SMP', 'SMA'].includes(level)) {
       return NextResponse.json(
         {
-          message: 'Jenjang kelas wajib dipilih.',
+          message: 'Jenjang hanya boleh SMP atau SMA.',
         },
         {
           status: 400,
@@ -128,10 +78,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!Number.isFinite(grade)) {
+    if (!Number.isInteger(grade)) {
       return NextResponse.json(
         {
-          message: 'Tingkat kelas wajib diisi dengan angka.',
+          message: 'Tingkat kelas tidak valid.',
         },
         {
           status: 400,
@@ -142,19 +92,20 @@ export async function POST(request: Request) {
     /* --------------------------------------------------------
        VALIDASI JENJANG & TINGKAT
        
-       SMP → 7, 8, 9
-       SMA → 10, 11, 12
+       SMP = 7, 8, 9
+       SMA = 10, 11, 12
     -------------------------------------------------------- */
 
-    const validationError = validateLevelAndGrade(
-      level,
-      grade
-    );
-
-    if (validationError) {
+    if (
+      (level === 'SMP' && ![7, 8, 9].includes(grade)) ||
+      (level === 'SMA' && ![10, 11, 12].includes(grade))
+    ) {
       return NextResponse.json(
         {
-          message: validationError,
+          message:
+            level === 'SMP'
+              ? 'Jenjang SMP hanya dapat menggunakan tingkat 7, 8, atau 9.'
+              : 'Jenjang SMA hanya dapat menggunakan tingkat 10, 11, atau 12.',
         },
         {
           status: 400,
@@ -163,36 +114,10 @@ export async function POST(request: Request) {
     }
 
     /* --------------------------------------------------------
-       VALIDASI NAMA KELAS
-       
-       Contoh yang diterima:
-       7A
-       7B
-       8A
-       9B
-       10A
-       11B
-       12A
-       
-       Tidak memaksa pola tertentu agar tetap fleksibel.
+       CEK DUPLIKAT
     -------------------------------------------------------- */
 
-    if (name.length > 50) {
-      return NextResponse.json(
-        {
-          message: 'Nama kelas maksimal 50 karakter.',
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    /* --------------------------------------------------------
-       CEK DUPLIKAT NAMA KELAS
-    -------------------------------------------------------- */
-
-    const existingClass = await prisma.classRoom.findUnique({
+    const existingClass = await prisma.classRoom.findFirst({
       where: {
         name,
       },
@@ -210,7 +135,7 @@ export async function POST(request: Request) {
     }
 
     /* --------------------------------------------------------
-       SIMPAN KELAS
+       CREATE
     -------------------------------------------------------- */
 
     const newClass = await prisma.classRoom.create({
@@ -218,13 +143,8 @@ export async function POST(request: Request) {
         name,
         level,
         grade,
-        status: 'Aktif',
       },
     });
-
-    /* --------------------------------------------------------
-       RESPONSE
-    -------------------------------------------------------- */
 
     return NextResponse.json(
       {
@@ -235,36 +155,89 @@ export async function POST(request: Request) {
         status: 201,
       }
     );
-  } catch (error: unknown) {
+  } catch (error) {
     console.error('POST /api/classes ERROR:', error);
 
-    /* --------------------------------------------------------
-       PRISMA DUPLICATE
-    -------------------------------------------------------- */
+    return NextResponse.json(
+      {
+        message: 'Gagal menyimpan kelas.',
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
 
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      error.code === 'P2002'
-    ) {
+/* ============================================================
+   DELETE /api/classes
+   Hapus seluruh kelas
+============================================================ */
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json().catch(() => null);
+
+    /*
+      Proteksi tambahan.
+      Client harus mengirim:
+      {
+        "confirm": "DELETE_ALL_CLASSES"
+      }
+    */
+
+    if (body?.confirm !== 'DELETE_ALL_CLASSES') {
       return NextResponse.json(
         {
-          message: 'Nama kelas sudah terdaftar.',
+          message:
+            'Penghapusan seluruh kelas membutuhkan konfirmasi.',
         },
         {
-          status: 409,
+          status: 400,
         }
       );
     }
 
     /* --------------------------------------------------------
-       ERROR UMUM
+       CEK JUMLAH DATA
     -------------------------------------------------------- */
+
+    const total = await prisma.classRoom.count();
+
+    if (total === 0) {
+      return NextResponse.json(
+        {
+          message: 'Tidak ada data kelas yang perlu dihapus.',
+          deleted: 0,
+        },
+        {
+          status: 200,
+        }
+      );
+    }
+
+    /* --------------------------------------------------------
+       DELETE ALL
+    -------------------------------------------------------- */
+
+    const result = await prisma.classRoom.deleteMany({});
 
     return NextResponse.json(
       {
-        message: 'Gagal menyimpan kelas.',
+        message: `${result.count} kelas berhasil dihapus.`,
+        deleted: result.count,
+      },
+      {
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error('DELETE /api/classes ERROR:', error);
+
+    return NextResponse.json(
+      {
+        message:
+          'Gagal menghapus seluruh data kelas.',
       },
       {
         status: 500,

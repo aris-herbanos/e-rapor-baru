@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   LayoutDashboard,
@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  ChevronDown,
   ShieldCheck,
   GraduationCap,
   Menu,
@@ -30,17 +31,27 @@ import {
 } from 'lucide-react';
 
 /* ============================================================
+   TYPES
+============================================================ */
+
+type MenuItem = {
+  title: string;
+  href: string;
+  icon: any;
+  category: string;
+};
+
+type Category = {
+  title: string;
+  icon: any;
+  description: string;
+};
+
+/* ============================================================
    MENU
 ============================================================ */
 
-const menus = [
-  {
-    title: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    category: 'Utama',
-  },
-
+const menus: MenuItem[] = [
   /* ==========================================================
      DATA MASTER
   ========================================================== */
@@ -141,11 +152,26 @@ const menus = [
   },
 ];
 
-const categories = [
-  'Utama',
-  'Data Master',
-  'Akademik',
-  'Rapor',
+/* ============================================================
+   CATEGORIES
+============================================================ */
+
+const categories: Category[] = [
+  {
+    title: 'Data Master',
+    icon: School,
+    description: 'Kelola data utama',
+  },
+  {
+    title: 'Akademik',
+    icon: BookOpen,
+    description: 'Kegiatan pembelajaran',
+  },
+  {
+    title: 'Rapor',
+    icon: BarChart3,
+    description: 'Penilaian & rapor',
+  },
 ];
 
 /* ============================================================
@@ -163,36 +189,37 @@ export default function DashboardLayout({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  /*
+   * State dropdown.
+   *
+   * Default semua tertutup.
+   * Nanti grup yang sesuai halaman aktif akan otomatis terbuka.
+   */
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
+
   /* ==========================================================
      ACTIVE MENU
   ========================================================== */
 
   const isActive = (href: string) => {
     /*
-      Dashboard harus benar-benar /dashboard.
-      Supaya /dashboard/students tidak ikut dianggap
-      sebagai Dashboard aktif.
-    */
+     * Dashboard harus benar-benar /dashboard.
+     */
     if (href === '/dashboard') {
       return pathname === '/dashboard';
     }
 
     /*
-      Khusus Riwayat Kenaikan:
-      /dashboard/promotions/history harus aktif pada
-      halaman riwayat, bukan menu Kenaikan Kelas.
-    */
+     * Riwayat Kenaikan harus berdiri sendiri.
+     */
     if (href === '/dashboard/promotions/history') {
       return pathname.startsWith('/dashboard/promotions/history');
     }
 
     /*
-      Menu Kenaikan Kelas hanya aktif untuk:
-      /dashboard/promotions
-
-      dan tidak aktif ketika berada di:
-      /dashboard/promotions/history
-    */
+     * Kenaikan Kelas jangan ikut aktif saat berada
+     * di halaman Riwayat Kenaikan.
+     */
     if (href === '/dashboard/promotions') {
       return (
         pathname === '/dashboard/promotions' ||
@@ -207,6 +234,30 @@ export default function DashboardLayout({
   };
 
   /* ==========================================================
+     ACTIVE CATEGORY
+  ========================================================== */
+
+  const getActiveCategory = () => {
+    const activeMenu = menus.find((menu) =>
+      isActive(menu.href)
+    );
+
+    return activeMenu?.category || null;
+  };
+
+  /* ==========================================================
+     AUTO OPEN ACTIVE CATEGORY
+  ========================================================== */
+
+  useEffect(() => {
+    const activeCategory = getActiveCategory();
+
+    if (activeCategory) {
+      setOpenCategory(activeCategory);
+    }
+  }, [pathname]);
+
+  /* ==========================================================
      CURRENT PAGE
   ========================================================== */
 
@@ -215,6 +266,16 @@ export default function DashboardLayout({
     (pathname.startsWith('/dashboard/settings')
       ? 'Pengaturan'
       : 'Dashboard');
+
+  /* ==========================================================
+     TOGGLE CATEGORY
+  ========================================================== */
+
+  const toggleCategory = (category: string) => {
+    setOpenCategory((current) =>
+      current === category ? null : category
+    );
+  };
 
   /* ==========================================================
      LOGOUT
@@ -383,7 +444,7 @@ export default function DashboardLayout({
                 E-Rapor
               </div>
 
-              <div className="mt-1 text-[8px] font-semibold uppercase tracking-[0.22em] text-emerald-200/45">
+              <div className="mt-1 text-[8px] font-semibold uppercase tracking-[0.22em] text-emerald-200/60">
                 Sistem Akademik
               </div>
 
@@ -399,7 +460,7 @@ export default function DashboardLayout({
 
             <div
               dir="rtl"
-              className="font-serif text-[11px] text-amber-200/65"
+              className="font-serif text-[11px] text-amber-200/75"
             >
               بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
             </div>
@@ -410,7 +471,7 @@ export default function DashboardLayout({
 
           {/* SCHOOL */}
 
-          <div className="mt-3 flex items-center gap-2 text-[9px] text-emerald-100/35">
+          <div className="mt-3 flex items-center gap-2 text-[9px] text-emerald-100/50">
 
             <Sparkles
               size={11}
@@ -429,135 +490,307 @@ export default function DashboardLayout({
             NAVIGATION
         ===================================================== */}
 
-        <nav className="sidebar-scroll relative flex-1 overflow-y-auto px-3 py-5">
+        <nav className="sidebar-scroll relative flex-1 overflow-y-auto px-3 py-4">
 
-          {categories.map((category) => {
+          {/* ==================================================
+              DASHBOARD
+          ================================================== */}
 
-            const categoryMenus = menus.filter(
-              (menu) => menu.category === category
-            );
+          <div className="mb-3">
 
-            if (categoryMenus.length === 0) {
-              return null;
-            }
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileOpen(false)}
+              className={[
+                'group relative flex min-h-[44px] items-center gap-3',
+                'rounded-xl px-2.5',
+                'text-[12.5px]',
+                'transition-all duration-200',
 
-            return (
-              <div
-                key={category}
-                className="mb-6 last:mb-1"
+                isActive('/dashboard')
+                  ? 'bg-white/[0.09] text-white shadow-[0_4px_18px_rgba(0,0,0,0.08)]'
+                  : 'text-white/70 hover:bg-white/[0.045] hover:text-white',
+              ].join(' ')}
+            >
+
+              {isActive('/dashboard') && (
+                <span className="absolute bottom-2.5 left-0 top-2.5 w-[2px] rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" />
+              )}
+
+              <span
+                className={[
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                  'transition-all duration-200',
+
+                  isActive('/dashboard')
+                    ? 'bg-emerald-400/10 text-emerald-300'
+                    : 'bg-white/[0.035] text-emerald-200/65 group-hover:bg-emerald-400/[0.06] group-hover:text-emerald-200',
+                ].join(' ')}
               >
+                <LayoutDashboard
+                  size={16}
+                  strokeWidth={1.7}
+                />
+              </span>
 
-                {/* CATEGORY */}
+              <span
+                className={[
+                  'flex-1',
+                  isActive('/dashboard')
+                    ? 'font-semibold'
+                    : 'font-medium',
+                ].join(' ')}
+              >
+                Dashboard
+              </span>
 
-                <div className="mb-2 flex items-center gap-2 px-2">
+              {isActive('/dashboard') && (
+                <ChevronRight
+                  size={13}
+                  strokeWidth={1.5}
+                  className="mr-0.5 text-emerald-300/70"
+                />
+              )}
 
-                  <span className="text-[8px] font-bold uppercase tracking-[0.22em] text-emerald-200/30">
-                    {category}
-                  </span>
+            </Link>
 
-                  <div className="h-px flex-1 bg-white/[0.035]" />
+          </div>
 
-                </div>
+          {/* ==================================================
+              GROUPED MENUS
+          ================================================== */}
 
-                {/* ITEMS */}
+          <div className="space-y-2">
 
-                <div className="space-y-1">
+            {categories.map((category) => {
 
-                  {categoryMenus.map((menu) => {
+              const categoryMenus = menus.filter(
+                (menu) => menu.category === category.title
+              );
 
-                    const Icon = menu.icon;
-                    const active = isActive(menu.href);
+              if (!categoryMenus.length) {
+                return null;
+              }
 
-                    return (
-                      <Link
-                        key={menu.href}
-                        href={menu.href}
-                        onClick={() => setMobileOpen(false)}
+              const categoryOpen =
+                openCategory === category.title;
+
+              const categoryActive =
+                categoryMenus.some((menu) =>
+                  isActive(menu.href)
+                );
+
+              const CategoryIcon = category.icon;
+
+              return (
+                <div key={category.title}>
+
+                  {/* ========================================
+                      CATEGORY BUTTON
+                  ======================================== */}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleCategory(category.title)
+                    }
+                    className={[
+                      'group relative flex w-full items-center gap-3',
+                      'rounded-xl px-2.5 py-2.5',
+                      'text-left',
+                      'transition-all duration-200',
+
+                      categoryOpen || categoryActive
+                        ? 'bg-white/[0.055]'
+                        : 'hover:bg-white/[0.035]',
+                    ].join(' ')}
+                  >
+
+                    {/* ACTIVE LINE */}
+
+                    {categoryActive && (
+                      <span className="absolute bottom-2.5 left-0 top-2.5 w-[2px] rounded-full bg-emerald-400" />
+                    )}
+
+                    {/* ICON */}
+
+                    <span
+                      className={[
+                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                        'transition-all duration-200',
+
+                        categoryActive || categoryOpen
+                          ? 'bg-emerald-400/10 text-emerald-300'
+                          : 'bg-white/[0.035] text-emerald-200/65 group-hover:bg-white/[0.05] group-hover:text-emerald-200',
+                      ].join(' ')}
+                    >
+                      <CategoryIcon
+                        size={16}
+                        strokeWidth={1.7}
+                      />
+                    </span>
+
+                    {/* TEXT */}
+
+                    <span className="min-w-0 flex-1">
+
+                      <span
                         className={[
-                          'group relative flex min-h-[42px] items-center gap-3',
-                          'rounded-xl px-2.5',
-                          'text-[12.5px]',
-                          'transition-all duration-200',
-
-                          active
-                            ? 'bg-white/[0.075] text-white shadow-[0_4px_18px_rgba(0,0,0,0.08)]'
-                            : 'text-emerald-50/50 hover:bg-white/[0.04] hover:text-emerald-50/80',
+                          'block text-[12px]',
+                          categoryActive || categoryOpen
+                            ? 'font-semibold text-white'
+                            : 'font-semibold text-white/75 group-hover:text-white',
                         ].join(' ')}
                       >
+                        {category.title}
+                      </span>
 
-                        {/* ACTIVE INDICATOR */}
+                      <span className="mt-0.5 block text-[8px] text-white/35">
+                        {category.description}
+                      </span>
 
-                        {active && (
-                          <span className="absolute bottom-2.5 left-0 top-2.5 w-[2px] rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" />
-                        )}
+                    </span>
 
-                        {/* ICON */}
+                    {/* COUNT */}
 
-                        <span
-                          className={[
-                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                            'transition-all duration-200',
+                    <span
+                      className={[
+                        'mr-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5',
+                        'text-[8px] font-bold',
+                        categoryActive || categoryOpen
+                          ? 'bg-emerald-400/10 text-emerald-300/80'
+                          : 'bg-white/[0.045] text-white/35',
+                      ].join(' ')}
+                    >
+                      {categoryMenus.length}
+                    </span>
 
-                            active
-                              ? 'bg-emerald-400/10 text-emerald-300'
-                              : 'bg-white/[0.025] text-emerald-200/40 group-hover:bg-emerald-400/[0.06] group-hover:text-emerald-200/70',
-                          ].join(' ')}
-                        >
+                    {/* CHEVRON */}
 
-                          <Icon
-                            size={16}
-                            strokeWidth={1.65}
-                          />
+                    <ChevronDown
+                      size={14}
+                      strokeWidth={1.7}
+                      className={[
+                        'shrink-0 transition-transform duration-300',
+                        categoryOpen
+                          ? 'rotate-180 text-emerald-300'
+                          : 'text-white/35 group-hover:text-white/60',
+                      ].join(' ')}
+                    />
 
-                        </span>
+                  </button>
 
-                        {/* TITLE */}
+                  {/* ========================================
+                      DROPDOWN CONTENT
+                  ======================================== */}
 
-                        <span
-                          className={[
-                            'flex-1 truncate',
+                  <div
+                    className={[
+                      'grid transition-all duration-300 ease-out',
+                      categoryOpen
+                        ? 'grid-rows-[1fr] opacity-100'
+                        : 'grid-rows-[0fr] opacity-0',
+                    ].join(' ')}
+                  >
 
-                            active
-                              ? 'font-semibold'
-                              : 'font-medium',
-                          ].join(' ')}
-                        >
-                          {menu.title}
-                        </span>
+                    <div className="overflow-hidden">
 
-                        {/* ARROW */}
+                      <div className="relative ml-[18px] border-l border-white/[0.07] py-1 pl-3">
 
-                        {active && (
-                          <ChevronRight
-                            size={13}
-                            strokeWidth={1.5}
-                            className="mr-0.5 text-emerald-300/50"
-                          />
-                        )}
+                        {categoryMenus.map((menu) => {
 
-                      </Link>
-                    );
-                  })}
+                          const Icon = menu.icon;
+                          const active = isActive(menu.href);
+
+                          return (
+                            <Link
+                              key={menu.href}
+                              href={menu.href}
+                              onClick={() =>
+                                setMobileOpen(false)
+                              }
+                              className={[
+                                'group relative flex min-h-[38px] items-center gap-2.5',
+                                'rounded-lg px-2',
+                                'text-[11.5px]',
+                                'transition-all duration-200',
+
+                                active
+                                  ? 'bg-emerald-400/[0.09] text-white'
+                                  : 'text-white/65 hover:bg-white/[0.035] hover:text-white/90',
+                              ].join(' ')}
+                            >
+
+                              {/* ACTIVE DOT */}
+
+                              {active && (
+                                <span className="absolute -left-[17px] h-1.5 w-1.5 rounded-full bg-emerald-400 ring-4 ring-[#052f27]" />
+                              )}
+
+                              {/* ICON */}
+
+                              <span
+                                className={[
+                                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
+                                  active
+                                    ? 'text-emerald-300'
+                                    : 'text-emerald-200/55 group-hover:text-emerald-200',
+                                ].join(' ')}
+                              >
+                                <Icon
+                                  size={14}
+                                  strokeWidth={1.7}
+                                />
+                              </span>
+
+                              {/* TITLE */}
+
+                              <span
+                                className={[
+                                  'min-w-0 flex-1 truncate',
+                                  active
+                                    ? 'font-semibold'
+                                    : 'font-medium',
+                                ].join(' ')}
+                              >
+                                {menu.title}
+                              </span>
+
+                              {active && (
+                                <ChevronRight
+                                  size={12}
+                                  strokeWidth={1.5}
+                                  className="text-emerald-300/60"
+                                />
+                              )}
+
+                            </Link>
+                          );
+                        })}
+
+                      </div>
+
+                    </div>
+
+                  </div>
 
                 </div>
+              );
+            })}
 
-              </div>
-            );
-          })}
+          </div>
 
           {/* ==================================================
               SYSTEM
           =================================================== */}
 
-          <div className="mt-7">
+          <div className="mt-4 border-t border-white/[0.055] pt-4">
 
-            <div className="mb-2 flex items-center gap-2 px-2">
+            <div className="mb-2 px-2">
 
-              <span className="text-[8px] font-bold uppercase tracking-[0.22em] text-emerald-200/30">
+              <span className="text-[8px] font-bold uppercase tracking-[0.22em] text-emerald-200/40">
                 Sistem
               </span>
-
-              <div className="h-px flex-1 bg-white/[0.035]" />
 
             </div>
 
@@ -567,12 +800,12 @@ export default function DashboardLayout({
               className={[
                 'group relative flex min-h-[42px] items-center gap-3',
                 'rounded-xl px-2.5',
-                'text-[12.5px]',
+                'text-[12px]',
                 'transition-all duration-200',
 
                 isActive('/dashboard/settings')
-                  ? 'bg-white/[0.075] text-white'
-                  : 'text-emerald-50/50 hover:bg-white/[0.04] hover:text-emerald-50/80',
+                  ? 'bg-white/[0.08] text-white'
+                  : 'text-white/70 hover:bg-white/[0.04] hover:text-white',
               ].join(' ')}
             >
 
@@ -586,15 +819,13 @@ export default function DashboardLayout({
 
                   isActive('/dashboard/settings')
                     ? 'bg-emerald-400/10 text-emerald-300'
-                    : 'bg-white/[0.025] text-emerald-200/40',
+                    : 'bg-white/[0.035] text-emerald-200/60 group-hover:text-emerald-200',
                 ].join(' ')}
               >
-
                 <Settings
                   size={16}
-                  strokeWidth={1.65}
+                  strokeWidth={1.7}
                 />
-
               </span>
 
               <span
@@ -606,6 +837,14 @@ export default function DashboardLayout({
               >
                 Pengaturan
               </span>
+
+              {isActive('/dashboard/settings') && (
+                <ChevronRight
+                  size={13}
+                  strokeWidth={1.5}
+                  className="ml-auto text-emerald-300/60"
+                />
+              )}
 
             </Link>
 
@@ -621,23 +860,23 @@ export default function DashboardLayout({
 
           {/* STATUS */}
 
-          <div className="mb-2.5 rounded-xl border border-emerald-200/[0.06] bg-white/[0.035] p-3">
+          <div className="mb-2.5 rounded-xl border border-emerald-200/[0.07] bg-white/[0.04] p-3">
 
             <div className="flex items-center gap-2.5">
 
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-400/[0.07]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-400/[0.08]">
 
                 <ShieldCheck
                   size={15}
                   strokeWidth={1.6}
-                  className="text-emerald-300/70"
+                  className="text-emerald-300/80"
                 />
 
               </div>
 
               <div className="min-w-0 flex-1">
 
-                <div className="text-[8px] font-semibold uppercase tracking-[0.15em] text-emerald-100/25">
+                <div className="text-[8px] font-semibold uppercase tracking-[0.15em] text-white/40">
                   Status Sistem
                 </div>
 
@@ -651,7 +890,7 @@ export default function DashboardLayout({
 
                   </span>
 
-                  <span className="text-[10px] font-medium text-emerald-100/65">
+                  <span className="text-[10px] font-medium text-emerald-100/75">
                     Sistem Aktif
                   </span>
 
@@ -673,11 +912,11 @@ export default function DashboardLayout({
 
             <div className="min-w-0 flex-1">
 
-              <div className="truncate text-[11px] font-semibold text-white/85">
+              <div className="truncate text-[11px] font-semibold text-white/90">
                 Administrator
               </div>
 
-              <div className="mt-0.5 truncate text-[8px] text-emerald-100/30">
+              <div className="mt-0.5 truncate text-[8px] text-white/40">
                 Pengelola Sistem
               </div>
 
@@ -690,14 +929,12 @@ export default function DashboardLayout({
               title="Keluar"
               onClick={handleLogout}
               disabled={loggingOut}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-emerald-100/35 transition-all duration-200 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/45 transition-all duration-200 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
-
               <LogOut
                 size={16}
                 strokeWidth={1.65}
               />
-
             </button>
 
           </div>
@@ -791,7 +1028,7 @@ export default function DashboardLayout({
       <style jsx global>{`
         .sidebar-scroll {
           scrollbar-width: thin;
-          scrollbar-color: rgba(167, 243, 208, 0.1) transparent;
+          scrollbar-color: rgba(167, 243, 208, 0.12) transparent;
         }
 
         .sidebar-scroll::-webkit-scrollbar {
@@ -803,12 +1040,12 @@ export default function DashboardLayout({
         }
 
         .sidebar-scroll::-webkit-scrollbar-thumb {
-          background: rgba(167, 243, 208, 0.1);
+          background: rgba(167, 243, 208, 0.12);
           border-radius: 999px;
         }
 
         .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(167, 243, 208, 0.18);
+          background: rgba(167, 243, 208, 0.22);
         }
 
         ::selection {
