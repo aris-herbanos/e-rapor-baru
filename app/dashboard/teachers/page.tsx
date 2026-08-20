@@ -6,37 +6,45 @@ type Teacher = {
   id: number;
   identity_number: string;
   fullname: string;
+  birth_date?: string | null;
+  education?: string | null;
+  address?: string | null;
   role: string;
 };
 
 export default function TeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
+
+  // Form State
   const [identityNumber, setIdentityNumber] = useState('');
   const [fullname, setFullname] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [education, setEducation] = useState('');
+  const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('TEACHER');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [deletingBulk, setDeletingBulk] = useState(false);
 
   const fetchTeachers = async () => {
     try {
-      setLoadingData(true);
-
-      const res = await fetch('/api/teachers', {
-        cache: 'no-store',
-      });
-
+      setLoading(true);
+      const res = await fetch('/api/teachers', { cache: 'no-store' });
       const data = await res.json();
-
       if (res.ok) {
-        setTeachers(Array.isArray(data) ? data : []);
+        setTeachers(Array.isArray(data) ? data : data.data || []);
       }
     } catch (err) {
       console.error(err);
+      setMessage('Gagal memuat data guru.');
     } finally {
-      setLoadingData(false);
+      setLoading(false);
+      setSelectedIds([]);
     }
   };
 
@@ -44,560 +52,326 @@ export default function TeachersPage() {
     fetchTeachers();
   }, []);
 
+  // Submit Form (Tambah / Edit)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setMessage('');
-    setLoading(true);
+    setSubmitting(true);
 
     try {
-      const res = await fetch('/api/teachers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          identity_number: identityNumber,
-          fullname,
-          password,
-          role,
-        }),
+      const url = editingId ? `/api/teachers/${editingId}` : '/api/teachers';
+      const method = editingId ? 'PUT' : 'POST';
+
+      const payload: any = {
+        identity_number: identityNumber,
+        fullname,
+        birth_date: birthDate,
+        education,
+        address,
+      };
+
+      if (!editingId && password) {
+        payload.password = password;
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal menyimpan data guru.');
 
-      if (!res.ok) {
-        throw new Error(
-          data.message || 'Gagal menyimpan data guru.',
-        );
-      }
-
-      setMessage(
-        'Sukses! Guru / Ustadz berhasil didaftarkan.',
-      );
-
-      setIdentityNumber('');
-      setFullname('');
-      setPassword('');
-      setRole('TEACHER');
-
-      await fetchTeachers();
+      setMessage(editingId ? 'Sukses! Data guru diperbarui.' : 'Sukses! Ustadz/Guru ditambahkan.');
+      resetForm();
+      fetchTeachers();
     } catch (err: any) {
-      setMessage(
-        `Error: ${
-          err?.message || 'Terjadi kesalahan.'
-        }`,
-      );
+      setMessage(err?.message || 'Terjadi kesalahan.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const totalTeachers = teachers.length;
+  const resetForm = () => {
+    setIdentityNumber('');
+    setFullname('');
+    setBirthDate('');
+    setEducation('');
+    setAddress('');
+    setPassword('');
+    setEditingId(null);
+  };
 
-  const totalAdmins = teachers.filter(
-    (teacher) => teacher.role === 'ADMIN',
-  ).length;
+  const handleEdit = (teacher: Teacher) => {
+    setEditingId(teacher.id);
+    setIdentityNumber(teacher.identity_number);
+    setFullname(teacher.fullname);
+    setBirthDate(teacher.birth_date || '');
+    setEducation(teacher.education || '');
+    setAddress(teacher.address || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  const totalTeachingStaff = teachers.filter(
-    (teacher) => teacher.role === 'TEACHER',
-  ).length;
+  const handleDelete = async (id: number) => {
+    if (!confirm('Yakin ingin menghapus guru ini?')) return;
+    try {
+      const res = await fetch(`/api/teachers/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Gagal menghapus.');
+      setMessage('Sukses! Data guru dihapus.');
+      fetchTeachers();
+    } catch (err: any) {
+      setMessage(err?.message || 'Gagal menghapus.');
+    }
+  };
+
+  // Bulk Delete
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(teachers.map((t) => t.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Hapus ${selectedIds.length} data guru terpilih?`)) return;
+
+    try {
+      setDeletingBulk(true);
+      const res = await fetch('/api/teachers/bulk', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      if (!res.ok) throw new Error('Gagal hapus massal.');
+      setMessage(`Sukses! ${selectedIds.length} data guru dihapus.`);
+      fetchTeachers();
+    } catch (err: any) {
+      setMessage(err?.message || 'Terjadi kesalahan.');
+    } finally {
+      setDeletingBulk(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#f5f7f5]">
-      {/* =========================================================
-          HEADER
-      ========================================================== */}
-
-      <div className="relative overflow-hidden border-b border-emerald-900/10 bg-gradient-to-br from-[#063b2c] via-[#07553e] to-[#0b6b4e]">
-        {/* Dekorasi */}
-        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full border border-white/10" />
-
-        <div className="pointer-events-none absolute -right-10 -top-14 h-52 w-52 rounded-full border border-[#d6b86a]/20" />
-
-        <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-white/[0.03]" />
-
-        <div className="relative mx-auto max-w-6xl px-5 py-7 lg:px-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 backdrop-blur-sm">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#d6b86a] text-[10px] font-bold text-[#063b2c]">
-                  ✦
-                </span>
-
-                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-50">
-                  Akademik & Pengajar
-                </span>
-              </div>
-
-              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Guru & Ustadz
-              </h1>
-
-              <p className="mt-1.5 max-w-xl text-sm leading-6 text-emerald-100/80">
-                Kelola data pengajar, akun guru, dan
-                administrator Pondok Pesantren Terpadu
-                Ulul Albab.
-              </p>
-            </div>
-
-            <div className="hidden sm:block">
-              <div className="text-right">
-                <div
-                  className="font-serif text-xl text-[#e8d18b]"
-                  dir="rtl"
-                >
-                  العلم نور
-                </div>
-
-                <div className="mt-1 text-[10px] uppercase tracking-widest text-emerald-100/60">
-                  Ilmu adalah cahaya
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================
-          CONTENT
-      ========================================================== */}
-
-      <main className="mx-auto max-w-6xl px-5 py-6 lg:px-8">
-        {/* =======================================================
-            STATISTIC
-        ======================================================== */}
-
-        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatCard
-            label="Total Pengajar"
-            value={totalTeachers}
-            icon="👥"
-          />
-
-          <StatCard
-            label="Guru / Ustadz"
-            value={totalTeachingStaff}
-            icon="📚"
-          />
-
-          <StatCard
-            label="Administrator"
-            value={totalAdmins}
-            icon="🛡"
-          />
-        </div>
-
-        {/* =======================================================
-            MESSAGE
-        ======================================================== */}
-
-        {message && (
-          <div
-            className={`mb-5 flex items-start gap-3 rounded-xl border px-4 py-3.5 text-sm ${
-              message.startsWith('Sukses')
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-red-200 bg-red-50 text-red-700'
-            }`}
-          >
-            <span className="mt-0.5 text-base">
-              {message.startsWith('Sukses')
-                ? '✓'
-                : '!'
-              }
-            </span>
-
-            <span>{message}</span>
-          </div>
-        )}
-
-        {/* =======================================================
-            MAIN GRID
-        ======================================================== */}
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[350px_1fr]">
-          {/* =====================================================
-              FORM
-          ====================================================== */}
-
-          <section className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-            {/* Form header */}
-
-            <div className="border-b border-gray-100 bg-gradient-to-br from-emerald-50 to-white px-5 py-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-lg text-white shadow-sm">
-                  +
-                </div>
-
-                <div>
-                  <h2 className="text-base font-bold text-gray-800">
-                    Tambah Pengajar
-                  </h2>
-
-                  <p className="mt-0.5 text-[11px] text-gray-500">
-                    Daftarkan guru atau ustadz baru
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Form body */}
-
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-4 p-5"
-            >
-              {/* Identity */}
-
-              <InputField
-                label="NIP / NIK / ID Identitas"
-                value={identityNumber}
-                onChange={setIdentityNumber}
-                placeholder="Contoh: 123456789"
-                required
-              />
-
-              {/* Name */}
-
-              <InputField
-                label="Nama Lengkap & Gelar"
-                value={fullname}
-                onChange={setFullname}
-                placeholder="Ustadz Ahmad, S.Pd.I"
-                required
-              />
-
-              {/* Password */}
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-700">
-                  Password Akun
-                </label>
-
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) =>
-                      setPassword(e.target.value)
-                    }
-                    required
-                    placeholder="Masukkan password"
-                    className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                  />
-                </div>
-
-                <p className="mt-1.5 text-[10px] text-gray-400">
-                  Password digunakan untuk login ke sistem.
-                </p>
-              </div>
-
-              {/* Role */}
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-700">
-                  Peran Pengguna
-                </label>
-
-                <select
-                  value={role}
-                  onChange={(e) =>
-                    setRole(e.target.value)
-                  }
-                  className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                >
-                  <option value="TEACHER">
-                    Guru / Pengampu
-                  </option>
-
-                  <option value="ADMIN">
-                    Administrator
-                  </option>
-                </select>
-              </div>
-
-              {/* Submit */}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#07553e] to-[#08704f] text-sm font-semibold text-white shadow-lg shadow-emerald-900/10 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-900/15 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-              >
-                {loading ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Menyimpan...
-                  </>
-                ) : (
-                  <>
-                    <span className="text-base">+</span>
-                    Simpan Pengajar
-                  </>
-                )}
-              </button>
-            </form>
-          </section>
-
-          {/* =====================================================
-              TEACHERS LIST
-          ====================================================== */}
-
-          <section className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-            {/* List header */}
-
-            <div className="flex flex-col gap-3 border-b border-gray-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-base font-bold text-gray-800">
-                  Pengajar Terdaftar
-                </h2>
-
-                <p className="mt-0.5 text-[11px] text-gray-500">
-                  Data guru dan administrator yang memiliki
-                  akses sistem.
-                </p>
-              </div>
-
-              <div className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-
-                <span className="text-[10px] font-semibold text-emerald-700">
-                  {totalTeachers} Pengguna
-                </span>
-              </div>
-            </div>
-
-            {/* List */}
-
-            <div className="p-4">
-              {loadingData ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((item) => (
-                    <div
-                      key={item}
-                      className="animate-pulse rounded-xl border border-gray-100 p-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-11 w-11 rounded-xl bg-gray-100" />
-
-                        <div className="flex-1">
-                          <div className="h-3 w-40 rounded bg-gray-100" />
-
-                          <div className="mt-2 h-2.5 w-28 rounded bg-gray-100" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : teachers.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <div className="space-y-2.5">
-                  {teachers.map((teacher, index) => (
-                    <TeacherCard
-                      key={teacher.id}
-                      teacher={teacher}
-                      index={index}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-/*
-|--------------------------------------------------------------------------
-| STAT CARD
-|--------------------------------------------------------------------------
-*/
-
-function StatCard({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: number;
-  icon: string;
-}) {
-  return (
-    <div className="group rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_5px_20px_rgba(0,0,0,0.035)] transition hover:-translate-y-0.5 hover:shadow-lg">
-      <div className="flex items-center justify-between">
+    <main className="min-h-screen bg-[#f5f8f6] text-slate-800 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      
+      {/* HEADER */}
+      <header className="rounded-2xl bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857] px-6 py-7 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-            {label}
-          </p>
-
-          <p className="mt-1 text-2xl font-bold tracking-tight text-gray-800">
-            {value}
-          </p>
-        </div>
-
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-lg transition group-hover:bg-emerald-100">
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/*
-|--------------------------------------------------------------------------
-| INPUT FIELD
-|--------------------------------------------------------------------------
-*/
-
-function InputField({
-  label,
-  value,
-  onChange,
-  placeholder,
-  required = false,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  required?: boolean;
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-semibold text-gray-700">
-        {label}
-      </label>
-
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        placeholder={placeholder}
-        className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-      />
-    </div>
-  );
-}
-
-/*
-|--------------------------------------------------------------------------
-| TEACHER CARD
-|--------------------------------------------------------------------------
-*/
-
-function TeacherCard({
-  teacher,
-  index,
-}: {
-  teacher: Teacher;
-  index: number;
-}) {
-  const isAdmin = teacher.role === 'ADMIN';
-
-  const initials = teacher.fullname
-    .split(' ')
-    .slice(0, 2)
-    .map((word) => word.charAt(0))
-    .join('')
-    .toUpperCase();
-
-  return (
-    <div className="group flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4 transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 items-center gap-3">
-        {/* Avatar */}
-
-        <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xs font-bold shadow-sm ${
-            isAdmin
-              ? 'bg-gradient-to-br from-[#5b3b8c] to-[#7b52ad] text-white'
-              : 'bg-gradient-to-br from-[#07553e] to-[#0b8060] text-white'
-          }`}
-        >
-          {initials || 'GU'}
-        </div>
-
-        {/* Information */}
-
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-sm font-bold text-gray-800">
-              {teacher.fullname}
-            </h3>
-
-            <span
-              className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                isAdmin
-                  ? 'bg-purple-100 text-purple-700'
-                  : 'bg-emerald-100 text-emerald-700'
-              }`}
-            >
-              {isAdmin
-                ? 'Administrator'
-                : 'Guru / Ustadz'}
-            </span>
-          </div>
-
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-gray-400">
-            <span>
-              ID Sistem:{' '}
-              <strong className="font-semibold text-gray-500">
-                #{teacher.id}
-              </strong>
-            </span>
-
-            <span className="hidden text-gray-300 sm:inline">
-              •
-            </span>
-
-            <span>
-              NIP/NIK:{' '}
-              <strong className="font-semibold text-gray-500">
-                {teacher.identity_number}
-              </strong>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Status */}
-
-      <div className="flex shrink-0 items-center gap-2 sm:pl-4">
-        <div className="flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-white px-2.5 py-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-
-          <span className="text-[9px] font-semibold text-emerald-700">
-            Aktif
+          <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-100">
+            Data Master
           </span>
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl mt-1">Guru & Ustadz</h1>
+          <p className="text-xs text-emerald-50/80 mt-1">Kelola data tenaga pengajar, edit, hapus satuan, dan hapus massal.</p>
         </div>
+      </header>
+
+      {/* MESSAGE */}
+      {message && (
+        <div className={`p-4 rounded-xl text-sm border font-medium ${message.startsWith('Sukses') ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200'}`}>
+          {message}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* FORM TAMBAH / EDIT */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="font-bold text-slate-800 text-sm">
+              {editingId ? 'Edit Data Guru' : 'Tambah Pengajar Baru'}
+            </h2>
+            {editingId && (
+              <button type="button" onClick={resetForm} className="text-xs text-red-600 font-semibold hover:underline">
+                Batal
+              </button>
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">NIK / NIP / ID Identitas</label>
+              <input
+                type="text"
+                value={identityNumber}
+                onChange={(e) => setIdentityNumber(e.target.value)}
+                required
+                placeholder="Contoh: 3301xxxxxxxxxxxx"
+                className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap & Gelar</label>
+              <input
+                type="text"
+                value={fullname}
+                onChange={(e) => setFullname(e.target.value)}
+                required
+                placeholder="Contoh: Ustadz Ahmad, S.Pd.I"
+                className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Tanggal Lahir</label>
+              <input
+                type="text"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                placeholder="Contoh: 15 Agustus 1990"
+                className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Pendidikan Terakhir</label>
+              <input
+                type="text"
+                value={education}
+                onChange={(e) => setEducation(e.target.value)}
+                placeholder="Contoh: S1 Pendidikan Agama Islam"
+                className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Alamat</label>
+              <textarea
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Alamat domisili"
+                rows={2}
+                className="w-full p-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {!editingId && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Password Akun</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"
+                />
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full h-11 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow transition text-sm disabled:opacity-60"
+            >
+              {submitting ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Simpan Pengajar'}
+            </button>
+          </form>
+        </div>
+
+        {/* DAFTAR GURU & HAPUS MASSAL */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <h2 className="font-bold text-slate-800 text-sm">Daftar Pengajar Terdaftar ({teachers.length})</h2>
+
+            {selectedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                disabled={deletingBulk}
+                className="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5 disabled:opacity-60"
+              >
+                <span>🗑️ Hapus Terpilih ({selectedIds.length})</span>
+              </button>
+            )}
+          </div>
+
+          {/* TABEL / DAFTAR */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {loading ? (
+              <div className="p-8 text-center text-sm text-slate-400">Memuat data guru...</div>
+            ) : teachers.length === 0 ? (
+              <div className="p-12 text-center text-sm text-slate-400">Belum ada data guru terdaftar.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                      <th className="p-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.length === teachers.length && teachers.length > 0}
+                          onChange={handleSelectAll}
+                          className="rounded text-emerald-600 cursor-pointer"
+                        />
+                      </th>
+                      <th className="p-3">ID Sistem / NIK</th>
+                      <th className="p-3">Nama & Pendidikan</th>
+                      <th className="p-3">TTL</th>
+                      <th className="p-3">Alamat</th>
+                      <th className="p-3 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {teachers.map((teacher) => {
+                      const isChecked = selectedIds.includes(teacher.id);
+                      return (
+                        <tr key={teacher.id} className={`hover:bg-slate-50/80 ${isChecked ? 'bg-emerald-50/40' : ''}`}>
+                          <td className="p-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleSelectOne(teacher.id)}
+                              className="rounded text-emerald-600 cursor-pointer"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <div className="font-bold text-emerald-700">#{teacher.id}</div>
+                            <div className="text-[11px] text-slate-400">NIK: {teacher.identity_number}</div>
+                          </td>
+                          <td className="p-3">
+                            <div className="font-bold text-slate-800">{teacher.fullname}</div>
+                            <div className="text-[11px] text-emerald-600">{teacher.education || '-'}</div>
+                          </td>
+                          <td className="p-3">{teacher.birth_date || '-'}</td>
+                          <td className="p-3 truncate max-w-xs">{teacher.address || '-'}</td>
+                          <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(teacher)}
+                              className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 font-semibold hover:bg-amber-100 transition"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(teacher.id)}
+                              className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 font-semibold hover:bg-red-100 transition"
+                            >
+                              Hapus
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
-    </div>
-  );
-}
-
-/*
-|--------------------------------------------------------------------------
-| EMPTY STATE
-|--------------------------------------------------------------------------
-*/
-
-function EmptyState() {
-  return (
-    <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-6 text-center">
-      <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">
-        👨‍🏫
-      </div>
-
-      <h3 className="text-sm font-bold text-gray-700">
-        Belum Ada Pengajar
-      </h3>
-
-      <p className="mt-1 max-w-xs text-xs leading-5 text-gray-400">
-        Data guru atau ustadz yang ditambahkan akan
-        muncul di bagian ini.
-      </p>
-    </div>
+    </main>
   );
 }
