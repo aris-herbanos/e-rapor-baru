@@ -23,15 +23,11 @@ export async function GET() {
       status: 200,
     });
   } catch (error) {
-    console.error(
-      'Error fetching attendance:',
-      error
-    );
+    console.error('Error fetching attendance:', error);
 
     return NextResponse.json(
       {
-        message:
-          'Gagal memuat data kehadiran.',
+        message: 'Gagal memuat data kehadiran.',
       },
       {
         status: 500,
@@ -40,146 +36,52 @@ export async function GET() {
   }
 }
 
-
 /*
 |--------------------------------------------------------------------------
 | POST
 |--------------------------------------------------------------------------
-| Menambahkan / memperbarui kehadiran santri berdasarkan tanggal.
-|
-| Jika santri sudah memiliki catatan pada tanggal tersebut,
-| maka status akan diperbarui.
-|
-| Jika belum ada, maka dibuat catatan baru.
+| Menambahkan / memperbarui kehadiran santri.
+| Mendukung penyimpanan tunggal maupun massal (sekaligus satu kelas).
 */
-export async function POST(
-  request: Request
-) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const studentId = Number(
-      body?.studentId
-    );
+    // Cek apakah request berupa penyimpanan massal (array) atau tunggal
+    const items = Array.isArray(body) ? body : [body];
+    const results = [];
 
-    const status = String(
-      body?.status || ''
-    )
-      .trim()
-      .toUpperCase();
+    for (const item of items) {
+      const studentId = Number(item?.studentId);
+      const status = String(item?.status || '').trim().toUpperCase();
+      const rawDate = item?.date ? new Date(item.date) : new Date();
 
-    // Menerima tanggal dari body request frontend, jika kosong fallback ke hari ini
-    const rawDate = body?.date ? new Date(body.date) : new Date();
+      if (!studentId || Number.isNaN(studentId)) {
+        continue; // Lewati jika ID tidak valid
+      }
 
+      const validStatuses = ['HADIR', 'SAKIT', 'IZIN', 'ALPA'];
+      if (!validStatuses.includes(status)) {
+        continue; // Lewati jika status tidak valid
+      }
 
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDASI STUDENT ID
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-      !studentId ||
-      Number.isNaN(studentId)
-    ) {
-      return NextResponse.json(
-        {
-          message:
-            'ID santri wajib diisi.',
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDASI STATUS
-    |--------------------------------------------------------------------------
-    */
-
-    const validStatuses = [
-      'HADIR',
-      'SAKIT',
-      'IZIN',
-      'ALPA',
-    ];
-
-    if (
-      !validStatuses.includes(status)
-    ) {
-      return NextResponse.json(
-        {
-          message:
-            'Status kehadiran tidak valid.',
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CEK SANTRI
-    |--------------------------------------------------------------------------
-    */
-
-    const student =
-      await prisma.student.findUnique({
-        where: {
-          id: studentId,
-        },
+      const student = await prisma.student.findUnique({
+        where: { id: studentId },
       });
 
-    if (!student) {
-      return NextResponse.json(
-        {
-          message:
-            'Data santri tidak ditemukan.',
-        },
-        {
-          status: 404,
-        }
-      );
-    }
+      if (!student) {
+        continue; // Lewati jika santri tidak ditemukan
+      }
 
+      // Rentang waktu tanggal absensi
+      const targetDateStart = new Date(rawDate);
+      targetDateStart.setHours(0, 0, 0, 0);
 
-    /*
-    |--------------------------------------------------------------------------
-    | RENTANG WAKTU TANGGAL YANG DIPILIH
-    |--------------------------------------------------------------------------
-    */
+      const targetDateEnd = new Date(targetDateStart);
+      targetDateEnd.setDate(targetDateEnd.getDate() + 1);
 
-    const targetDateStart =
-      new Date(rawDate);
-
-    targetDateStart.setHours(
-      0,
-      0,
-      0,
-      0
-    );
-
-    const targetDateEnd =
-      new Date(targetDateStart);
-
-    targetDateEnd.setDate(
-      targetDateEnd.getDate() + 1
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CEK ABSENSI PADA TANGGAL TERSEBUT
-    |--------------------------------------------------------------------------
-    */
-
-    const existingAttendance =
-      await prisma.attendance.findFirst({
+      // Cek apakah sudah ada catatan di tanggal tersebut
+      const existingAttendance = await prisma.attendance.findFirst({
         where: {
           studentId,
           date: {
@@ -187,91 +89,53 @@ export async function POST(
             lt: targetDateEnd,
           },
         },
-        orderBy: {
-          date: 'desc',
-        },
       });
 
+      let attendanceRecord;
 
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE JIKA SUDAH ADA
-    |--------------------------------------------------------------------------
-    */
-
-    if (existingAttendance) {
-      const updatedAttendance =
-        await prisma.attendance.update({
-          where: {
-            id: existingAttendance.id,
-          },
-
+      if (existingAttendance) {
+        // Update jika sudah ada
+        attendanceRecord = await prisma.attendance.update({
+          where: { id: existingAttendance.id },
           data: {
             status,
             date: targetDateStart,
+            className: student.class_name || '',
           },
-
-          include: {
-            student: true,
-          },
+          include: { student: true },
         });
+      } else {
+        // Create jika belum ada
+        attendanceRecord = await prisma.attendance.create({
+          data: {
+            studentId,
+            status,
+            date: targetDateStart,
+            className: student.class_name || '',
+            day: '',
+          },
+          include: { student: true },
+        });
+      }
 
-      return NextResponse.json(
-        {
-          message:
-            'Kehadiran pada tanggal tersebut berhasil diperbarui.',
-          data: updatedAttendance,
-        },
-        {
-          status: 200,
-        }
-      );
+      results.push(attendanceRecord);
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE JIKA BELUM ADA
-    |--------------------------------------------------------------------------
-    */
-
-    const newAttendance =
-      await prisma.attendance.create({
-        data: {
-          studentId,
-          status,
-          date: targetDateStart,
-          className: student.class_name || '',
-          day: '',
-        },
-
-        include: {
-          student: true,
-        },
-      });
-
 
     return NextResponse.json(
       {
-        message:
-          'Kehadiran berhasil dicatat.',
-        data: newAttendance,
+        message: 'Kehadiran berhasil disimpan.',
+        data: results,
       },
       {
         status: 201,
       }
     );
-
   } catch (error) {
-    console.error(
-      'Error creating attendance:',
-      error
-    );
+    console.error('Error saving attendance:', error);
 
     return NextResponse.json(
       {
-        message:
-          'Gagal menyimpan kehadiran.',
+        message: 'Gagal menyimpan kehadiran.',
       },
       {
         status: 500,
