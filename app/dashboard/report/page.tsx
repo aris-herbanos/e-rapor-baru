@@ -81,22 +81,22 @@ const DEFAULT_PERSONALITY: PersonalityRecord[] = [
   {
     arabic: 'السلوك',
     name: 'Kelakuan / Perilaku',
-    value: '-',
+    value: 'Baik',
   },
   {
     arabic: 'المواظبة',
     name: 'Kerajinan / Kehadiran',
-    value: '-',
+    value: 'Baik',
   },
   {
     arabic: 'النظافة',
     name: 'Kebersihan',
-    value: '-',
+    value: 'Baik',
   },
   {
     arabic: 'الانضباط',
     name: 'Disiplin',
-    value: '-',
+    value: 'Sangat Baik',
   },
 ];
 
@@ -127,13 +127,39 @@ function subjectMatches(
   );
 }
 
-function getPredicateText(score: number): string {
-  if (score >= 90) return 'Sangat Baik';
-  if (score >= 80) return 'Baik';
-  if (score >= 70) return 'Cukup Baik';
-  if (score >= 60) return 'Cukup';
+/* ============================================================
+   DESKRIPSI KURIKULUM MERDEKA
+============================================================ */
 
-  return 'Perlu Bimbingan';
+function getMerdekaCompetencyDescriptions(
+  subjectName: string,
+  score: number
+) {
+  if (score === 0 || Number.isNaN(score)) {
+    return {
+      achieved: `Kompetensi dasar pada mata pelajaran ${subjectName} belum dinilai.`,
+      needsImprovement: `Perlu penilaian dan pengisian nilai lebih lanjut pada mata pelajaran ${subjectName}.`,
+    };
+  }
+
+  if (score >= 85) {
+    return {
+      achieved: `Kompetensi dalam memahami dan menguasai materi esensial pada mata pelajaran ${subjectName} telah tercapai dengan sangat baik.`,
+      needsImprovement: `Pertahankan konsistensi belajar dan tingkatkan eksplorasi tingkat lanjut pada materi ${subjectName}.`,
+    };
+  }
+
+  if (score >= 75) {
+    return {
+      achieved: `Kompetensi dalam memahami konsep dasar serta menyelesaikan penugasan pada mata pelajaran ${subjectName} telah tercapai.`,
+      needsImprovement: `Perlu peningkatan dalam pendalaman analisis dan ketelitian pada beberapa sub-materi ${subjectName}.`,
+    };
+  }
+
+  return {
+    achieved: `Kompetensi pengenalan materi dasar pada mata pelajaran ${subjectName} mulai menunjukkan perkembangan.`,
+    needsImprovement: `Perlu peningkatan dan bimbingan khusus dalam memahami konsep utama serta latihan rutin pada ${subjectName}.`,
+  };
 }
 
 /* ============================================================
@@ -147,8 +173,12 @@ export default function ReportPage() {
   const [reportData, setReportData] =
     useState<ReportData | null>(null);
 
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  const [loadingReport, setLoadingReport] = useState(false);
+  const [loadingStudents, setLoadingStudents] =
+    useState(false);
+
+  const [loadingReport, setLoadingReport] =
+    useState(false);
+
   const [error, setError] = useState('');
 
   /* ============================================================
@@ -180,7 +210,7 @@ export default function ReportPage() {
         if (mounted && Array.isArray(list)) {
           setStudents(list);
         }
-      } catch (err) {
+      } catch {
         if (mounted) {
           setStudents([]);
         }
@@ -242,7 +272,9 @@ export default function ReportPage() {
         : studentId;
 
     if (!id) {
-      setError('Silakan pilih santri terlebih dahulu.');
+      setError(
+        'Silakan pilih santri terlebih dahulu.'
+      );
       return;
     }
 
@@ -289,7 +321,9 @@ export default function ReportPage() {
      HANDLERS
   ============================================================ */
 
-  const handleStudentChange = (value: string) => {
+  const handleStudentChange = (
+    value: string
+  ) => {
     setStudentId(value);
     setError('');
 
@@ -300,7 +334,9 @@ export default function ReportPage() {
     }
   };
 
-  const handleClassChange = (value: string) => {
+  const handleClassChange = (
+    value: string
+  ) => {
     setClassFilter(value);
     setStudentId('');
     setReportData(null);
@@ -314,40 +350,30 @@ export default function ReportPage() {
   };
 
   /* ============================================================
-     SCORE
+     GET SCORE
   ============================================================ */
 
-  const getScoreRecord = (
+  const getScoreNumber = (
     subjectName: string,
     categoryType: 'ORAL' | 'WRITTEN'
   ) => {
-    if (!reportData?.scoreRecords?.length) {
-      return {
-        number: '-',
-        text: '-',
-      };
+    if (
+      !reportData?.scoreRecords?.length
+    ) {
+      return 0;
     }
 
-    const found = reportData.scoreRecords.find(
-      (scoreItem) =>
-        scoreItem.type === categoryType &&
-        subjectMatches(
-          scoreItem.subjectName,
-          subjectName
-        )
-    );
+    const found =
+      reportData.scoreRecords.find(
+        (scoreItem) =>
+          scoreItem.type === categoryType &&
+          subjectMatches(
+            scoreItem.subjectName,
+            subjectName
+          )
+      );
 
-    if (!found) {
-      return {
-        number: '-',
-        text: '-',
-      };
-    }
-
-    return {
-      number: String(found.score),
-      text: getPredicateText(found.score),
-    };
+    return found ? found.score : 0;
   };
 
   const attendance =
@@ -393,7 +419,8 @@ export default function ReportPage() {
                 </h1>
 
                 <p className="mt-0.5 text-[10px] text-emerald-100/60">
-                  Sistem Penilaian &amp; Laporan Hasil Belajar
+                  Sistem Penilaian &amp; Laporan
+                  Kurikulum Merdeka
                 </p>
               </div>
 
@@ -414,7 +441,9 @@ export default function ReportPage() {
                   <select
                     value={classFilter}
                     onChange={(e) =>
-                      handleClassChange(e.target.value)
+                      handleClassChange(
+                        e.target.value
+                      )
                     }
                     className="h-10 w-full appearance-none rounded-lg border border-white/10 bg-[#0f4035] px-3 pr-9 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-300/10"
                   >
@@ -423,7 +452,10 @@ export default function ReportPage() {
                     </option>
 
                     {classes.map((c) => (
-                      <option key={c} value={c}>
+                      <option
+                        key={c}
+                        value={c}
+                      >
                         Kelas {c}
                       </option>
                     ))}
@@ -467,30 +499,34 @@ export default function ReportPage() {
                         : 'Pilih santri'}
                     </option>
 
-                    {filteredStudents.map((s) => (
-                      <option
-                        key={s.id}
-                        value={s.id}
-                      >
-                        {s.fullname}
-                      </option>
-                    ))}
+                    {filteredStudents.map(
+                      (s) => (
+                        <option
+                          key={s.id}
+                          value={s.id}
+                        >
+                          {s.fullname}
+                        </option>
+                      )
+                    )}
                   </select>
 
                   <ChevronDown
                     size={14}
                     className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-100/40"
                   />
-
                 </div>
               </div>
 
               {/* PREVIEW */}
               <button
                 type="button"
-                onClick={() => fetchReport()}
+                onClick={() =>
+                  fetchReport()
+                }
                 disabled={
-                  loadingReport || !studentId
+                  loadingReport ||
+                  !studentId
                 }
                 className="h-10 self-end rounded-lg bg-[#6b9b88] px-5 text-xs font-bold text-white transition hover:bg-[#78a995] disabled:opacity-40"
               >
@@ -539,31 +575,35 @@ export default function ReportPage() {
           EMPTY STATE
       ======================================================== */}
 
-      {!reportData && !loadingReport && (
-        <div className="print:hidden flex min-h-[calc(100vh-190px)] items-center justify-center bg-[#f5f7f6] px-5">
+      {!reportData &&
+        !loadingReport && (
+          <div className="print:hidden flex min-h-[calc(100vh-190px)] items-center justify-center bg-[#f5f7f6] px-5">
 
-          <div className="max-w-md text-center">
+            <div className="max-w-md text-center">
 
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-100 bg-white text-emerald-700 shadow-sm">
-              <BookOpen
-                size={27}
-                strokeWidth={1.5}
-              />
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-100 bg-white text-emerald-700 shadow-sm">
+                <BookOpen
+                  size={27}
+                  strokeWidth={1.5}
+                />
+              </div>
+
+              <h2 className="text-base font-semibold tracking-tight text-slate-800">
+                Pilih Santri untuk
+                Melihat Rapor
+              </h2>
+
+              <p className="mt-2 text-xs leading-6 text-slate-400">
+                Pilih kelas dan nama santri
+                pada panel di atas untuk
+                menampilkan laporan hasil
+                belajar secara lengkap.
+              </p>
+
             </div>
 
-            <h2 className="text-base font-semibold tracking-tight text-slate-800">
-              Pilih Santri untuk Melihat Rapor
-            </h2>
-
-            <p className="mt-2 text-xs leading-6 text-slate-400">
-              Pilih kelas dan nama santri pada panel
-              di atas untuk menampilkan laporan hasil
-              belajar secara lengkap.
-            </p>
-
           </div>
-        </div>
-      )}
+        )}
 
       {/* ========================================================
           LOADING
@@ -584,32 +624,29 @@ export default function ReportPage() {
             </p>
 
           </div>
+
         </div>
       )}
 
       {/* ========================================================
           REPORT
+          TIDAK LAGI DIPAKSA 2 DIV HALAMAN
+          BROWSER AKAN MEMECAH SECARA OTOMATIS
       ======================================================== */}
 
-      {reportData && !loadingReport && (
-        <main className="report-screen min-h-screen bg-[#dfe5e2] px-3 py-7 print:bg-white print:p-0">
+      {reportData &&
+        !loadingReport && (
+          <main className="report-screen bg-[#dfe5e2] px-3 py-7 print:bg-white print:p-0">
 
-          <div className="report-paper relative mx-auto w-[215.9mm] min-h-[330.2mm] overflow-hidden bg-white text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.14)] print:m-0 print:shadow-none">
+            <div className="report-document mx-auto w-[215.9mm] bg-white text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.14)] print:w-[215.9mm] print:shadow-none">
 
-            {/* TOP LINE */}
-            <div className="relative z-20 h-1 bg-[#477b69]" />
+              {/* ==================================================
+                  HEADER
+              ================================================== */}
 
-            {/* ==================================================
-                CONTENT
-            ================================================== */}
+              <header className="report-header relative border-b border-slate-200 px-[10mm] pb-3 pt-[5mm] text-center">
 
-            <div className="report-content relative z-10 px-[10mm] py-[5mm]">
-
-              {/* HEADER */}
-              <header className="relative border-b border-slate-200 pb-3 text-center">
-
-                {/* LOGO HEADER */}
-                <div className="absolute left-0 top-0 flex h-[22mm] w-[22mm] items-center justify-center">
+                <div className="absolute left-[10mm] top-[5mm] flex h-[20mm] w-[20mm] items-center justify-center">
                   <img
                     src="/logo.png"
                     alt="Logo"
@@ -617,16 +654,16 @@ export default function ReportPage() {
                   />
                 </div>
 
-                <div className="mx-auto max-w-[520px] px-[22mm]">
+                <div className="mx-auto max-w-[520px] px-[20mm]">
 
                   <div
                     dir="rtl"
-                    className="arabic mb-1 text-center text-sm font-bold text-slate-600"
+                    className="arabic mb-1 text-sm font-bold text-slate-600"
                   >
                     بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
                   </div>
 
-                  <div className="text-[10px] font-bold tracking-[0.16em] text-slate-500">
+                  <div className="text-[9px] font-bold tracking-[0.16em] text-slate-500">
                     مَعْهَدُ أُولِي الْأَلْبَابِ الإِسْلَامِي
                   </div>
 
@@ -638,27 +675,25 @@ export default function ReportPage() {
                     </span>
                   </h2>
 
-                  <p className="mt-0.5 text-[10px] text-slate-400">
+                  <p className="mt-0.5 text-[9px] text-slate-400">
                     Duyu Baru - Waibu - Jayapura
                   </p>
 
                 </div>
 
-                <div className="mt-2.5 border-t border-slate-100 pt-1.5 text-center">
-
-                  <div className="arabic text-sm font-semibold text-slate-600">
+                <div className="mt-2 border-t border-slate-100 pt-1.5 text-center">
+                  <div className="arabic text-xs font-semibold text-slate-600">
                     السنة الدراسية : ١٤٤٨ - ١٤٤٧ هـ / ٢٠٢٦ - ٢٠٢٧ م
                   </div>
-
                 </div>
 
               </header>
 
               {/* ==================================================
-                  REPORT TITLE
+                  TITLE
               ================================================== */}
 
-              <div className="my-3 border-y border-[#9db9ad]/60 bg-[#f4f8f6] px-3 py-2 text-center">
+              <div className="report-block mx-[10mm] my-3 border-y border-[#9db9ad]/60 bg-[#f4f8f6] px-3 py-2 text-center">
 
                 <div
                   dir="rtl"
@@ -675,17 +710,17 @@ export default function ReportPage() {
                   LAPORAN HASIL BELAJAR SANTRI
                 </div>
 
-                <div className="text-[8.5px] font-medium tracking-[0.12em] text-slate-500">
+                <div className="text-[8px] font-medium tracking-[0.12em] text-slate-500">
                   SEMESTER GANJIL • TAHUN AJARAN 2026/2027
                 </div>
 
               </div>
 
               {/* ==================================================
-                  STUDENT INFORMATION
+                  STUDENT INFO
               ================================================== */}
 
-              <section className="mb-3 rounded-lg border border-slate-200 bg-[#fafbfa] p-3">
+              <section className="report-block mx-[10mm] mb-3 rounded-lg border border-slate-200 bg-[#fafbfa] p-3">
 
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
 
@@ -733,7 +768,8 @@ export default function ReportPage() {
                     </span>
 
                     <span className="font-bold text-[#477b69]">
-                      {reportData.class_name || '-'}
+                      {reportData.class_name ||
+                        '-'}
                     </span>
                   </div>
 
@@ -761,84 +797,105 @@ export default function ReportPage() {
                 arabic="الامتحان الشفوي والتطبيقي"
               >
 
-                <table className="report-table w-full table-fixed border-collapse border border-slate-300 bg-white text-xs">
+                <table className="report-table w-full border-collapse border border-slate-300 bg-white text-[10.5px]">
 
                   <thead>
                     <tr className="bg-[#f1f6f3] text-center font-bold text-slate-700">
 
-                      <th className="w-[7%] border border-slate-300 px-1.5 py-1.5">
+                      <th className="w-[6%] border border-slate-300 py-1.5">
                         No
                       </th>
 
-                      <th
-                        className="w-[26%] border border-slate-300 px-1.5 py-1.5 text-right"
-                        dir="rtl"
-                      >
-                        <span className="arabic text-sm font-bold">
-                          المواد الدراسية
-                        </span>
+                      <th className="w-[28%] border border-slate-300 py-1.5 text-center">
+                        Mata Pelajaran / المواد
                       </th>
 
-                      <th className="w-[33%] border border-slate-300 px-1.5 py-1.5 text-left">
-                        Mata Pelajaran
+                      <th className="w-[12%] border border-slate-300 py-1.5">
+                        Nilai Akhir
                       </th>
 
-                      <th className="w-[14%] border border-slate-300 px-1.5 py-1.5">
-                        <span className="arabic text-sm font-bold">
-                          رقماً
-                        </span>
-                      </th>
-
-                      <th className="w-[20%] border border-slate-300 px-1.5 py-1.5">
-                        Predikat
+                      <th className="w-[54%] border border-slate-300 px-3 py-1.5 text-left">
+                        Capaian Kompetensi
                       </th>
 
                     </tr>
                   </thead>
 
                   <tbody>
-                    {ORAL_SUBJECTS.map(
-                      (subject, index) => {
 
-                        const score =
-                          getScoreRecord(
+                    {ORAL_SUBJECTS.map(
+                      (
+                        subject,
+                        index
+                      ) => {
+
+                        const scoreVal =
+                          getScoreNumber(
                             subject.name,
                             'ORAL'
                           );
 
+                        const desc =
+                          getMerdekaCompetencyDescriptions(
+                            subject.name,
+                            scoreVal
+                          );
+
                         return (
                           <tr
-                            key={subject.name}
-                            className="text-center"
+                            key={
+                              subject.name
+                            }
+                            className="report-row"
                           >
 
-                            <td className="border border-slate-300 bg-white px-1.5 py-1.5 text-slate-500">
+                            <td className="border border-slate-300 py-1.5 text-center align-top text-slate-500">
                               {index + 1}
                             </td>
 
-                            <td
-                              dir="rtl"
-                              className="arabic border border-slate-300 bg-white px-1.5 py-1.5 text-right text-base font-semibold leading-6"
-                            >
-                              {subject.arabic}
+                            <td className="border border-slate-300 px-2 py-1.5 text-center align-top">
+                              <div className="font-medium text-slate-800">
+                                {
+                                  subject.name
+                                }
+                              </div>
+
+                              <div
+                                dir="rtl"
+                                className="arabic text-[11px] font-semibold text-slate-500"
+                              >
+                                {
+                                  subject.arabic
+                                }
+                              </div>
                             </td>
 
-                            <td className="border border-slate-300 bg-white px-1.5 py-1.5 text-left font-medium">
-                              {subject.name}
+                            <td className="border border-slate-300 py-1.5 text-center align-top font-bold text-[#477b69]">
+                              {scoreVal >
+                              0
+                                ? scoreVal
+                                : '-'}
                             </td>
 
-                            <td className="border border-slate-300 bg-white px-1.5 py-1.5 font-bold text-[#477b69]">
-                              {score.number}
-                            </td>
+                            <td className="border border-slate-300 px-3 py-1.5 align-top leading-tight text-slate-700">
+                              <div>
+                                {
+                                  desc.achieved
+                                }
+                              </div>
 
-                            <td className="border border-slate-300 bg-white px-1.5 py-1.5 font-medium">
-                              {score.text}
+                              <div className="mt-0.5 text-[9.5px] text-slate-500">
+                                {
+                                  desc.needsImprovement
+                                }
+                              </div>
                             </td>
 
                           </tr>
                         );
                       }
                     )}
+
                   </tbody>
 
                 </table>
@@ -855,84 +912,105 @@ export default function ReportPage() {
                 arabic="الامتحان التحريري"
               >
 
-                <table className="report-table w-full table-fixed border-collapse border border-slate-300 bg-white text-xs">
+                <table className="report-table w-full border-collapse border border-slate-300 bg-white text-[10px]">
 
                   <thead>
                     <tr className="bg-[#f1f6f3] text-center font-bold text-slate-700">
 
-                      <th className="w-[7%] border border-slate-300 px-1.5 py-1.5">
+                      <th className="w-[6%] border border-slate-300 py-1.5">
                         No
                       </th>
 
-                      <th
-                        className="w-[26%] border border-slate-300 px-1.5 py-1.5 text-right"
-                        dir="rtl"
-                      >
-                        <span className="arabic text-sm font-bold">
-                          المواد الدراسية
-                        </span>
+                      <th className="w-[28%] border border-slate-300 py-1.5 text-center">
+                        Mata Pelajaran / المواد
                       </th>
 
-                      <th className="w-[33%] border border-slate-300 px-1.5 py-1.5 text-left">
-                        Mata Pelajaran
+                      <th className="w-[12%] border border-slate-300 py-1.5">
+                        Nilai Akhir
                       </th>
 
-                      <th className="w-[14%] border border-slate-300 px-1.5 py-1.5">
-                        <span className="arabic text-sm font-bold">
-                          رقماً
-                        </span>
-                      </th>
-
-                      <th className="w-[20%] border border-slate-300 px-1.5 py-1.5">
-                        Predikat
+                      <th className="w-[54%] border border-slate-300 px-3 py-1.5 text-left">
+                        Capaian Kompetensi
                       </th>
 
                     </tr>
                   </thead>
 
                   <tbody>
-                    {WRITTEN_SUBJECTS.map(
-                      (subject, index) => {
 
-                        const score =
-                          getScoreRecord(
+                    {WRITTEN_SUBJECTS.map(
+                      (
+                        subject,
+                        index
+                      ) => {
+
+                        const scoreVal =
+                          getScoreNumber(
                             subject.name,
                             'WRITTEN'
                           );
 
+                        const desc =
+                          getMerdekaCompetencyDescriptions(
+                            subject.name,
+                            scoreVal
+                          );
+
                         return (
                           <tr
-                            key={subject.name}
-                            className="text-center"
+                            key={
+                              subject.name
+                            }
+                            className="report-row"
                           >
 
-                            <td className="border border-slate-300 bg-white px-1.5 py-1.5 text-slate-500">
+                            <td className="border border-slate-300 py-1 text-center align-top text-slate-500">
                               {index + 1}
                             </td>
 
-                            <td
-                              dir="rtl"
-                              className="arabic border border-slate-300 bg-white px-1.5 py-1.5 text-right text-base font-semibold leading-6"
-                            >
-                              {subject.arabic}
+                            <td className="border border-slate-300 px-1.5 py-1 text-center align-top">
+                              <div className="font-medium text-slate-800">
+                                {
+                                  subject.name
+                                }
+                              </div>
+
+                              <div
+                                dir="rtl"
+                                className="arabic text-[10px] font-semibold text-slate-500"
+                              >
+                                {
+                                  subject.arabic
+                                }
+                              </div>
                             </td>
 
-                            <td className="border border-slate-300 bg-white px-1.5 py-1.5 text-left font-medium">
-                              {subject.name}
+                            <td className="border border-slate-300 py-1 text-center align-top font-bold text-[#477b69]">
+                              {scoreVal >
+                              0
+                                ? scoreVal
+                                : '-'}
                             </td>
 
-                            <td className="border border-slate-300 bg-white px-1.5 py-1.5 font-bold text-[#477b69]">
-                              {score.number}
-                            </td>
+                            <td className="border border-slate-300 px-2.5 py-1 align-top leading-tight text-slate-700">
+                              <div>
+                                {
+                                  desc.achieved
+                                }
+                              </div>
 
-                            <td className="border border-slate-300 bg-white px-1.5 py-1.5 font-medium">
-                              {score.text}
+                              <div className="mt-0.5 text-[9px] text-slate-500">
+                                {
+                                  desc.needsImprovement
+                                }
+                              </div>
                             </td>
 
                           </tr>
                         );
                       }
                     )}
+
                   </tbody>
 
                 </table>
@@ -940,7 +1018,7 @@ export default function ReportPage() {
               </ReportSection>
 
               {/* ==================================================
-                  PERSONALITY
+                  KEPRIBADIAN
               ================================================== */}
 
               <ReportSection
@@ -949,29 +1027,29 @@ export default function ReportPage() {
                 arabic="شخصية الطالب / الطالبة"
               >
 
-                <table className="report-table w-full table-fixed border-collapse border border-slate-300 bg-white text-xs">
+                <table className="report-table w-full border-collapse border border-slate-300 bg-white text-[10.5px]">
 
                   <thead>
                     <tr className="bg-[#f1f6f3] text-center font-bold text-slate-700">
 
-                      <th className="w-[7%] border border-slate-300 px-1.5 py-1.5">
+                      <th className="w-[7%] border border-slate-300 py-1.5">
                         No
                       </th>
 
-                      <th className="w-[38%] border border-slate-300 px-1.5 py-1.5 text-left">
+                      <th className="w-[38%] border border-slate-300 py-1.5 text-left">
                         Aspek Kepribadian
                       </th>
 
                       <th
                         dir="rtl"
-                        className="w-[25%] border border-slate-300 px-1.5 py-1.5 text-right"
+                        className="w-[25%] border border-slate-300 py-1.5 text-right"
                       >
                         <span className="arabic text-sm font-bold">
                           الصفة
                         </span>
                       </th>
 
-                      <th className="w-[30%] border border-slate-300 px-1.5 py-1.5">
+                      <th className="w-[30%] border border-slate-300 py-1.5">
                         Predikat / Nilai
                       </th>
 
@@ -979,37 +1057,41 @@ export default function ReportPage() {
                   </thead>
 
                   <tbody>
-                    {personality.map(
-                      (item, index) => (
 
+                    {personality.map(
+                      (
+                        item,
+                        index
+                      ) => (
                         <tr
                           key={`${item.name}-${index}`}
-                          className="text-center"
+                          className="report-row text-center"
                         >
 
-                          <td className="border border-slate-300 bg-white px-1.5 py-1.5 text-slate-500">
+                          <td className="border border-slate-300 py-1.5 text-slate-500">
                             {index + 1}
                           </td>
 
-                          <td className="border border-slate-300 bg-white px-1.5 py-1.5 text-left font-medium">
+                          <td className="border border-slate-300 px-2 py-1.5 text-left font-medium">
                             {item.name}
                           </td>
 
                           <td
                             dir="rtl"
-                            className="arabic border border-slate-300 bg-white px-1.5 py-1.5 text-right text-base font-semibold leading-6"
+                            className="arabic border border-slate-300 px-2 py-1.5 text-right text-base font-semibold"
                           >
                             {item.arabic}
                           </td>
 
-                          <td className="border border-slate-300 bg-white px-1.5 py-1.5 font-semibold text-[#477b69]">
-                            {item.value || '-'}
+                          <td className="border border-slate-300 py-1.5 font-semibold text-[#477b69]">
+                            {item.value ||
+                              '-'}
                           </td>
 
                         </tr>
-
                       )
                     )}
+
                   </tbody>
 
                 </table>
@@ -1020,7 +1102,7 @@ export default function ReportPage() {
                   ATTENDANCE + NOTE
               ================================================== */}
 
-              <div className="mb-3 grid grid-cols-[1fr_1.6fr] gap-3 text-xs">
+              <div className="report-block mx-[10mm] mb-3 grid grid-cols-[1fr_1.6fr] gap-3 text-xs">
 
                 {/* ATTENDANCE */}
                 <div className="rounded-lg border border-slate-300 bg-white p-3">
@@ -1048,7 +1130,10 @@ export default function ReportPage() {
                       </span>
 
                       <strong>
-                        {attendance.sakit} hari
+                        {
+                          attendance.sakit
+                        }{' '}
+                        hari
                       </strong>
                     </div>
 
@@ -1058,7 +1143,10 @@ export default function ReportPage() {
                       </span>
 
                       <strong>
-                        {attendance.izin} hari
+                        {
+                          attendance.izin
+                        }{' '}
+                        hari
                       </strong>
                     </div>
 
@@ -1068,7 +1156,10 @@ export default function ReportPage() {
                       </span>
 
                       <strong>
-                        {attendance.alpa} hari
+                        {
+                          attendance.alpa
+                        }{' '}
+                        hari
                       </strong>
                     </div>
 
@@ -1076,7 +1167,7 @@ export default function ReportPage() {
 
                 </div>
 
-                {/* NOTE */}
+                {/* CATATAN */}
                 <div className="rounded-lg border border-slate-300 bg-white p-3">
 
                   <div className="mb-2 flex items-center justify-between border-b border-slate-200 pb-1.5">
@@ -1096,7 +1187,7 @@ export default function ReportPage() {
 
                   <p className="min-h-[45px] text-xs leading-5 text-slate-700">
                     {reportData.homeroomNote ||
-                      'Belum ada catatan dari wali kelas.'}
+                      `${reportData.fullname} memiliki semangat belajar yang baik. Pertahankan prestasi dan terus tingkatkan kedisiplinan.`}
                   </p>
 
                 </div>
@@ -1104,10 +1195,33 @@ export default function ReportPage() {
               </div>
 
               {/* ==================================================
+                  KEPUTUSAN
+              ================================================== */}
+
+              <div className="report-block mx-[10mm] mb-3 rounded-lg border border-slate-300 bg-white p-3 text-xs">
+
+                <div className="mb-1 font-bold text-[#315f50]">
+                  Keputusan :
+                </div>
+
+                <p className="leading-relaxed text-slate-700">
+                  Berdasarkan pencapaian seluruh
+                  kompetensi pada semester
+                  ganjil ini, peserta didik
+                  ditetapkan :
+                  <strong className="ml-1 text-[#477b69]">
+                    Lulus / Melanjutkan ke
+                    tahap berikutnya.
+                  </strong>
+                </p>
+
+              </div>
+
+              {/* ==================================================
                   SIGNATURE
               ================================================== */}
 
-              <div className="border-t border-slate-300 pt-3">
+              <div className="report-block mx-[10mm] mb-3 border-t border-slate-300 pt-4">
 
                 <div className="grid grid-cols-3 gap-4 text-center text-xs">
 
@@ -1183,24 +1297,35 @@ export default function ReportPage() {
                   FOOTER
               ================================================== */}
 
-              <div className="mt-3 flex items-center justify-center gap-2 text-[8px] uppercase tracking-[0.18em] text-slate-400">
+              <div className="report-footer mx-[10mm] flex items-center justify-between border-t border-slate-100 py-3 text-[8px] uppercase tracking-[0.15em] text-slate-400">
 
-                <ShieldCheck size={10} />
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={10} />
+                  <span>
+                    Dokumen Akademik • E-Rapor
+                    Ulil Albab
+                  </span>
+                </div>
 
-                Dokumen Akademik • E-Rapor Ulil Albab
+                <span className="print-page-number">
+                  Halaman
+                </span>
 
               </div>
 
             </div>
-          </div>
-        </main>
-      )}
+          </main>
+        )}
 
       {/* ========================================================
-          GLOBAL STYLE
+          GLOBAL CSS
       ======================================================== */}
 
       <style jsx global>{`
+
+        /* ======================================================
+           ARABIC FONT
+        ====================================================== */
 
         @font-face {
           font-family: 'Traditional Arabic';
@@ -1220,6 +1345,10 @@ export default function ReportPage() {
           font-weight: normal;
         }
 
+        /* ======================================================
+           PAGE
+        ====================================================== */
+
         @page {
           size: F4 portrait;
           margin: 0;
@@ -1237,6 +1366,10 @@ export default function ReportPage() {
           color: #0f172a;
         }
 
+        /* ======================================================
+           TABLE
+        ====================================================== */
+
         .report-table {
           width: 100%;
           table-layout: fixed;
@@ -1248,26 +1381,144 @@ export default function ReportPage() {
           vertical-align: middle;
         }
 
+        /* ======================================================
+           SCREEN
+        ====================================================== */
+
+        .report-document {
+          min-height: 330.2mm;
+        }
+
+        .report-screen {
+          min-height: 100vh;
+        }
+
+        /* ======================================================
+           PRINT
+        ====================================================== */
+
         @media print {
+
+          html,
+          body {
+            width: 215.9mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+          }
 
           .control-panel,
           .print\\:hidden {
             display: none !important;
           }
 
-          body,
           .report-screen {
-            background: white !important;
             width: 215.9mm !important;
-            min-height: 330.2mm !important;
             margin: 0 !important;
             padding: 0 !important;
+            background: #ffffff !important;
           }
 
-          .report-paper {
+          .report-document {
             width: 215.9mm !important;
-            height: 330.2mm !important;
+            min-height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
             box-shadow: none !important;
+          }
+
+          /* ==================================================
+             JANGAN PAKSA TINGGI 330.2MM
+             Browser yang menentukan pergantian halaman
+          ================================================== */
+
+          .report-header {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .report-block {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .report-footer {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          /* ==================================================
+             SECTION
+          ================================================== */
+
+          .report-section {
+            break-inside: auto;
+            page-break-inside: auto;
+          }
+
+          /* ==================================================
+             TABLE
+          ================================================== */
+
+          .report-table {
+            width: 100% !important;
+            page-break-inside: auto;
+            break-inside: auto;
+          }
+
+          .report-table thead {
+            display: table-header-group;
+          }
+
+          .report-table tfoot {
+            display: table-footer-group;
+          }
+
+          .report-table tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .report-table td,
+          .report-table th {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          /* ==================================================
+             SECTION TITLE JANGAN TERTINGGAL SENDIRIAN
+          ================================================== */
+
+          .report-section-header {
+            break-after: avoid;
+            page-break-after: avoid;
+          }
+
+          /* ==================================================
+             FOOTER
+          ================================================== */
+
+          .report-footer {
+            margin-top: 6mm !important;
+          }
+
+          /* ==================================================
+             WARNA CETAK
+          ================================================== */
+
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* ==================================================
+             PAGE BREAK OTOMATIS
+          ================================================== */
+
+          .report-document {
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
 
         }
@@ -1293,9 +1544,9 @@ function ReportSection({
   children: ReactNode;
 }) {
   return (
-    <section className="mb-3">
+    <section className="report-section mx-[10mm] mb-3">
 
-      <div className="flex items-center justify-between rounded-t-lg bg-[#477b69] px-3 py-1.5 text-white">
+      <div className="report-section-header flex items-center justify-between rounded-t-lg bg-[#477b69] px-3 py-1.5 text-white">
 
         <div className="flex items-center gap-2">
 
