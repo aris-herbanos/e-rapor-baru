@@ -41,10 +41,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const studentId = Number(body?.studentId);
-    // Jika ada tpId (untuk TP), ubah jadi angka. Jika tidak ada (untuk STS/SAS), jadikan null / undefined
     const tpId = body?.tpId ? Number(body?.tpId) : null;
     const score = Number(body?.score);
-    const type = String(body?.type || '').trim(); // Contoh: 'ORAL', 'WRITTEN', 'STS', 'SAS', 'STS_WRITTEN', dll.
+    const type = String(body?.type || '').trim(); // Contoh: 'ORAL', 'WRITTEN', 'STS_ORAL', 'STS_WRITTEN', 'SAS_ORAL', 'SAS_WRITTEN'
 
     if (!studentId || Number.isNaN(score) || !type) {
       return NextResponse.json(
@@ -75,7 +74,7 @@ export async function POST(request: Request) {
         },
       });
     } else {
-      // Jika belum ada, buat baru (menggunakan properti conditional agar tpId aman jika null)
+      // Jika belum ada, buat baru
       const createData: any = {
         studentId,
         score,

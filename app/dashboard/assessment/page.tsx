@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from 'react';
 type ClassRoom = { id: number; name: string };
 type Subject = { id: number; name: string };
 type TP = { id: number; code: string; description: string };
-type CP = { id: number; code: string; description: string; subjectId: number; tps: TP[] };
+type CP = { id: number; code: string; description: string; subjectId: number; subject?: { name: string }; tps: TP[] };
 type Student = { id: number; fullname: string; class_name: string };
 type Assessment = { studentId: number; tpId?: number; score: number; type: string };
 
@@ -59,17 +59,38 @@ export default function AssessmentPage() {
     loadData();
   }, []);
 
+  const uniqueSubjects = useMemo(() => {
+    const map = new Map<string, Subject>();
+    subjects.forEach((subj) => {
+      const cleanName = String(subj.name || '').trim().toLowerCase();
+      if (cleanName && !map.has(cleanName)) {
+        map.set(cleanName, subj);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [subjects]);
+
   const filteredCPs = useMemo(() => {
     if (!selectedSubjectId) return [];
-    return cps.filter((cp) => cp.subjectId === Number(selectedSubjectId));
-  }, [cps, selectedSubjectId]);
+    const selectedSubj = subjects.find((s) => String(s.id) === String(selectedSubjectId));
+    if (!selectedSubj) return [];
+
+    const targetName = String(selectedSubj.name || '').trim().toLowerCase();
+
+    return cps.filter((cp) => {
+      if (String(cp.subjectId) === String(selectedSubjectId)) return true;
+      if (cp.subject?.name) {
+        return String(cp.subject.name).trim().toLowerCase() === targetName;
+      }
+      return false;
+    });
+  }, [cps, subjects, selectedSubjectId]);
 
   const filteredStudents = useMemo(() => {
     if (!selectedClass) return [];
     return students.filter((s) => s.class_name === selectedClass);
   }, [students, selectedClass]);
 
-  // Fungsi untuk menghitung persentase siswa yang sudah dinilai (0 - 100%)
   const getGradingPercentage = (targetType: 'TP' | 'STS' | 'SAS', tpId?: number) => {
     if (filteredStudents.length === 0) return 0;
     
@@ -213,7 +234,7 @@ export default function AssessmentPage() {
             className="w-full h-11 px-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:border-emerald-500 font-medium"
           >
             <option value="">-- Pilih Mata Pelajaran --</option>
-            {subjects.map((subj) => (
+            {uniqueSubjects.map((subj) => (
               <option key={subj.id} value={subj.id}>{subj.name}</option>
             ))}
           </select>
@@ -347,14 +368,14 @@ export default function AssessmentPage() {
           <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
-            <div className="bg-[#064e3b] text-white p-5 flex justify-between items-start">
+            <div className="bg-[#064e3b] text-white p-5 flex justify-between items-center gap-4">
               <div>
                 <span className="text-[10px] uppercase tracking-widest text-emerald-200 font-bold">Input Nilai Kelas {selectedClass} (Lisan & Tertulis)</span>
-                <h3 className="text-sm font-bold mt-1">{activeTarget.title}</h3>
+                <h3 className="text-sm font-bold mt-0.5">{activeTarget.title}</h3>
               </div>
               <button 
                 onClick={() => setActiveTarget(null)}
-                className="text-white/80 hover:text-white text-sm font-bold bg-white/10 px-2.5 py-1 rounded-lg"
+                className="text-white/80 hover:text-white text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition shrink-0"
               >
                 ✕ Tutup
               </button>
