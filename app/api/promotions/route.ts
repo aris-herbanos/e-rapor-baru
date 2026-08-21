@@ -24,10 +24,6 @@ type JwtPayload = {
 ============================================================ */
 
 function verifyAdmin(request: Request) {
-  /* ----------------------------------------------------------
-     Pastikan JWT_SECRET tersedia
-  ---------------------------------------------------------- */
-
   if (!JWT_SECRET) {
     console.error(
       'JWT_SECRET belum tersedia di environment.'
@@ -48,10 +44,6 @@ function verifyAdmin(request: Request) {
     };
   }
 
-  /* ----------------------------------------------------------
-     Ambil cookie token
-  ---------------------------------------------------------- */
-
   const cookieHeader =
     request.headers.get('cookie') || '';
 
@@ -62,10 +54,6 @@ function verifyAdmin(request: Request) {
   const token = tokenMatch
     ? decodeURIComponent(tokenMatch[1])
     : null;
-
-  /* ----------------------------------------------------------
-     Tidak ada token
-  ---------------------------------------------------------- */
 
   if (!token) {
     return {
@@ -83,20 +71,12 @@ function verifyAdmin(request: Request) {
     };
   }
 
-  /* ----------------------------------------------------------
-     Verifikasi JWT
-  ---------------------------------------------------------- */
-
   try {
     const decoded =
       jwt.verify(
         token,
         JWT_SECRET
       ) as JwtPayload;
-
-    /* --------------------------------------------------------
-       Pastikan role ADMIN
-    -------------------------------------------------------- */
 
     if (
       !decoded ||
@@ -147,20 +127,11 @@ function verifyAdmin(request: Request) {
 /* ============================================================
    GET /api/promotions
    Menampilkan daftar siswa berdasarkan kelas.
-
-   Contoh:
-   /api/promotions?className=7A
-
-   HANYA ADMIN
 ============================================================ */
 
 export async function GET(
   request: Request
 ) {
-  /* ----------------------------------------------------------
-     CEK ADMIN
-  ---------------------------------------------------------- */
-
   const auth = verifyAdmin(request);
 
   if (!auth.success) {
@@ -168,10 +139,6 @@ export async function GET(
   }
 
   try {
-    /* --------------------------------------------------------
-       AMBIL PARAMETER
-    -------------------------------------------------------- */
-
     const { searchParams } =
       new URL(request.url);
 
@@ -179,10 +146,6 @@ export async function GET(
       searchParams
         .get('className')
         ?.trim() || '';
-
-    /* --------------------------------------------------------
-       VALIDASI CLASS
-    -------------------------------------------------------- */
 
     if (!className) {
       return NextResponse.json(
@@ -196,10 +159,6 @@ export async function GET(
         }
       );
     }
-
-    /* --------------------------------------------------------
-       AMBIL SISWA
-    -------------------------------------------------------- */
 
     const students =
       await prisma.student.findMany({
@@ -250,18 +209,12 @@ export async function GET(
 
 /* ============================================================
    POST /api/promotions
-   Memproses kenaikan kelas secara massal.
-
-   HANYA ADMIN
+   Memproses kenaikan, tinggal kelas, atau kelulusan secara massal.
 ============================================================ */
 
 export async function POST(
   request: Request
 ) {
-  /* ----------------------------------------------------------
-     CEK ADMIN
-  ---------------------------------------------------------- */
-
   const auth = verifyAdmin(request);
 
   if (!auth.success) {
@@ -269,16 +222,7 @@ export async function POST(
   }
 
   try {
-    /* --------------------------------------------------------
-       AMBIL BODY
-    -------------------------------------------------------- */
-
-    const body =
-      await request.json();
-
-    /* --------------------------------------------------------
-       STUDENT IDS
-    -------------------------------------------------------- */
+    const body = await request.json();
 
     const studentIds =
       Array.isArray(body.studentIds)
@@ -292,20 +236,12 @@ export async function POST(
             )
         : [];
 
-    /* --------------------------------------------------------
-       KELAS TUJUAN
-    -------------------------------------------------------- */
-
     const toClass =
       typeof body.toClass === 'string'
         ? body.toClass
             .trim()
             .toUpperCase()
         : '';
-
-    /* --------------------------------------------------------
-       STATUS
-    -------------------------------------------------------- */
 
     const status =
       typeof body.status === 'string'
@@ -314,31 +250,17 @@ export async function POST(
             .toUpperCase()
         : 'NAIK';
 
-    /* --------------------------------------------------------
-       TAHUN AJARAN
-    -------------------------------------------------------- */
-
     const academicYear =
       typeof body.academicYear === 'string'
         ? body.academicYear.trim()
         : '2026/2027';
-
-    /* --------------------------------------------------------
-       CATATAN
-    -------------------------------------------------------- */
 
     const note =
       typeof body.note === 'string'
         ? body.note.trim()
         : '';
 
-    /* --------------------------------------------------------
-       VALIDASI STUDENT
-    -------------------------------------------------------- */
-
-    if (
-      studentIds.length === 0
-    ) {
+    if (studentIds.length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -351,11 +273,8 @@ export async function POST(
       );
     }
 
-    /* --------------------------------------------------------
-       VALIDASI KELAS TUJUAN
-    -------------------------------------------------------- */
-
-    if (!toClass) {
+    // Jika status NAIK atau LULUS dan memilih lanjut ke kelas baru, toClass wajib diisi
+    if ((status === 'NAIK' || status === 'LULUS') && !toClass) {
       return NextResponse.json(
         {
           success: false,
@@ -368,12 +287,8 @@ export async function POST(
       );
     }
 
-    /* --------------------------------------------------------
-       VALIDASI STATUS
-    -------------------------------------------------------- */
-
     if (
-      !['NAIK', 'TINGGAL'].includes(
+      !['NAIK', 'TINGGAL', 'LULUS'].includes(
         status
       )
     ) {
@@ -381,17 +296,13 @@ export async function POST(
         {
           success: false,
           message:
-            'Status kenaikan kelas tidak valid.',
+            'Status keputusan tidak valid.',
         },
         {
           status: 400,
         }
       );
     }
-
-    /* --------------------------------------------------------
-       VALIDASI TAHUN AJARAN
-    -------------------------------------------------------- */
 
     if (!academicYear) {
       return NextResponse.json(
@@ -406,14 +317,8 @@ export async function POST(
       );
     }
 
-    /* --------------------------------------------------------
-       CEK KELAS TUJUAN
-
-       Untuk NAIK, pastikan kelas memang ada
-       di tabel classRoom.
-    -------------------------------------------------------- */
-
-    if (status === 'NAIK') {
+    // Cek keberadaan kelas tujuan jika NAIK atau LULUS ke kelas baru
+    if ((status === 'NAIK' || status === 'LULUS') && toClass) {
       const targetClass =
         await prisma.classRoom.findFirst({
           where: {
@@ -435,10 +340,6 @@ export async function POST(
       }
     }
 
-    /* --------------------------------------------------------
-       AMBIL SISWA
-    -------------------------------------------------------- */
-
     const students =
       await prisma.student.findMany({
         where: {
@@ -454,13 +355,7 @@ export async function POST(
         },
       });
 
-    /* --------------------------------------------------------
-       CEK SISWA
-    -------------------------------------------------------- */
-
-    if (
-      students.length === 0
-    ) {
+    if (students.length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -472,10 +367,6 @@ export async function POST(
         }
       );
     }
-
-    /* --------------------------------------------------------
-       CEK APAKAH SEMUA ID DITEMUKAN
-    -------------------------------------------------------- */
 
     if (
       students.length !==
@@ -508,14 +399,19 @@ export async function POST(
             const fromClass =
               student.class_name;
 
-            /* ------------------------------------------------
-               JIKA NAIK
+            // Tentukan kelas akhir berdasarkan status
+            let finalToClass = fromClass;
+            if (status === 'NAIK') {
+              finalToClass = toClass;
+            } else if (status === 'LULUS') {
+              // Jika lulus dan memilih kelas tujuan (misal lanjut ke SMA), update kelasnya
+              finalToClass = toClass || 'LULUS';
+            }
 
-               Pindahkan siswa ke kelas tujuan.
-            ------------------------------------------------ */
-
+            // Update data kelas siswa jika NAIK atau LULUS ke kelas baru
             if (
-              status === 'NAIK'
+              status === 'NAIK' ||
+              (status === 'LULUS' && toClass)
             ) {
               await tx.student.update({
                 where: {
@@ -523,29 +419,10 @@ export async function POST(
                 },
 
                 data: {
-                  class_name:
-                    toClass,
+                  class_name: finalToClass,
                 },
               });
             }
-
-            /* ------------------------------------------------
-               JIKA TINGGAL
-
-               Siswa tetap di kelas asal.
-            ------------------------------------------------ */
-
-            const finalToClass =
-              status === 'NAIK'
-                ? toClass
-                : fromClass;
-
-            /* ------------------------------------------------
-               SIMPAN RIWAYAT
-
-               Satu siswa hanya boleh memiliki
-               satu riwayat untuk satu tahun ajaran.
-            ------------------------------------------------ */
 
             const promotion =
               await tx.studentPromotion.upsert(
@@ -603,10 +480,6 @@ export async function POST(
         }
       );
 
-    /* ========================================================
-       RESPONSE
-    ======================================================== */
-
     return NextResponse.json(
       {
         success: true,
@@ -614,6 +487,8 @@ export async function POST(
         message:
           status === 'NAIK'
             ? `${result.length} siswa berhasil dinaikkan ke kelas ${toClass}.`
+            : status === 'LULUS'
+            ? `${result.length} siswa berhasil diluluskan${toClass ? ` dan dipindahkan ke kelas ${toClass}` : ''}.`
             : `${result.length} siswa ditetapkan tetap di kelas masing-masing.`,
 
         data: result,
@@ -628,10 +503,6 @@ export async function POST(
       error
     );
 
-    /* --------------------------------------------------------
-       ERROR PRISMA
-    -------------------------------------------------------- */
-
     if (
       error?.code === 'P2025'
     ) {
@@ -639,7 +510,7 @@ export async function POST(
         {
           success: false,
           message:
-            'Data siswa atau data kenaikan kelas tidak ditemukan.',
+            'Data siswa atau data kelulusan tidak ditemukan.',
         },
         {
           status: 404,
@@ -651,7 +522,7 @@ export async function POST(
       {
         success: false,
         message:
-          'Gagal memproses kenaikan kelas.',
+          'Gagal memproses data.',
       },
       {
         status: 500,

@@ -5,35 +5,33 @@ import { useEffect, useMemo, useState } from 'react';
 type Subject = {
   id: number;
   name: string;
+  level?: string;
 };
 
-// Daftar referensi mapel standar pesantren untuk SMP
-const DEFAULT_SUBJECTS_SMP = [
+// Daftar referensi lengkap seluruh mata pelajaran pesantren (gabungan standar)
+const ALL_DEFAULT_SUBJECTS = [
   'Bahasa Arab (اللغة العربية)',
-  'Hadist (الحديث)',
+  'Balaghoh & Adab (البلاغة والأدب)',
+  'Fiqih (الفقه)',
+  'Fiqih Muqoron (الفقه المقارن)',
+  'Hadis (الحديث)',
   'Imla dan Khot (الإملاء والخط)',
   'Mahfudzot (المحفوظات)',
+  'Mustholah Hadis (مصطلح الحديث)',
+  'Muhadatsah (محادثة)',
   "Muroja'ah (المراجعة)",
+  'Muroja’ah Lanjutan (المراجعة المتقدمة)',
   'Nahwu / Sorof (النحو و الصرف)',
+  'Nahwu & Sorof Lanjutan (النحو والصرف المتقدم)',
   'Pendidikan Agama Islam',
   'Pidato (الخطابة)',
+  'Pidato & Debat (الخطابة والمناظرة)',
   'Siroh Nabawiyah (السيرة النبوية)',
   'Tahfidz / Tahsin (تحفيظ القرآن)',
   'Tajwid (تجويد)',
-  'Tsaqofah Islamiyah (الثقافة الإسلامية)',
-];
-
-// Daftar referensi mapel standar pesantren untuk SMA
-const DEFAULT_SUBJECTS_SMA = [
-  'Balaghoh & Adab (البلاغة والأدب)',
-  'Mustholah Hadis (مصطلح الحديث)',
-  'Muhadatsah (محادثة)',
-  'Muroja’ah Lanjutan (المراجعة المتقدمة)',
-  'Nahwu & Sorof Lanjutan (النحو والصرف المتقدم)',
-  'Pidato & Debat (الخطابة والمناظرة)',
-  'Fiqih Muqoron (الفقه المقارن)',
   'Tarikh Islam (التاريخ الإسلامي)',
   'Tauhid & Aqidah (التوحيد والعقيدة)',
+  'Tsaqofah Islamiyah (الثقافة الإسلامية)',
   'Ulumul Quran (علوم القرآن)',
   'Ushul Fiqih (أصول الفقه)',
 ];
@@ -59,7 +57,7 @@ export default function SubjectsPage() {
     try {
       setLoadingSubjects(true);
 
-      const res = await fetch('/api/subjects', {
+      const res = await fetch(`/api/subjects?level=${activeTabLevel}`, {
         cache: 'no-store',
       });
 
@@ -83,29 +81,7 @@ export default function SubjectsPage() {
 
   useEffect(() => {
     fetchSubjects();
-  }, []);
-
-  // Filter daftar mapel di tabel berdasarkan jenjang tab aktif (SMP / SMA)
-  const filteredSubjectsByLevel = useMemo(() => {
-    return subjects.filter((subj) => {
-      const name = subj.name.toLowerCase();
-      const isSMASubj =
-        name.includes('lanjutan') ||
-        name.includes('muqoron') ||
-        name.includes('ulumul') ||
-        name.includes('mustholah') ||
-        name.includes('ushul') ||
-        name.includes('tarikh') ||
-        name.includes('balaghoh') ||
-        name.includes('tauhid') ||
-        name.includes('muhadatsah') ||
-        name.includes('debat');
-
-      return activeTabLevel === 'SMA' ? isSMASubj : !isSMASubj;
-    });
-  }, [subjects, activeTabLevel]);
-
-  const activeDefaultList = activeTabLevel === 'SMA' ? DEFAULT_SUBJECTS_SMA : DEFAULT_SUBJECTS_SMP;
+  }, [activeTabLevel]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +110,7 @@ export default function SubjectsPage() {
         },
         body: JSON.stringify({
           name: finalName,
+          level: activeTabLevel,
         }),
       });
 
@@ -169,8 +146,7 @@ export default function SubjectsPage() {
   const handleEdit = (subject: Subject) => {
     setEditingId(subject.id);
     
-    const allDefaults = [...DEFAULT_SUBJECTS_SMP, ...DEFAULT_SUBJECTS_SMA];
-    if (allDefaults.includes(subject.name)) {
+    if (ALL_DEFAULT_SUBJECTS.includes(subject.name)) {
       setSelectedSubjectOption(subject.name);
       setIsCustomMode(false);
       setCustomSubjectName('');
@@ -234,7 +210,7 @@ export default function SubjectsPage() {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (e.target.checked) {
-      setSelectedIds(filteredSubjectsByLevel.map((s) => s.id));
+      setSelectedIds(subjects.map((s) => s.id));
     } else {
       setSelectedIds([]);
     }
@@ -302,10 +278,10 @@ export default function SubjectsPage() {
     }
   };
 
-  const totalSubjects = filteredSubjectsByLevel.length;
+  const totalSubjects = subjects.length;
   const allSelected =
-    filteredSubjectsByLevel.length > 0 &&
-    selectedIds.length === filteredSubjectsByLevel.length;
+    subjects.length > 0 &&
+    selectedIds.length === subjects.length;
 
   return (
     <main className="min-h-screen bg-[#f7f9f8] text-slate-800">
@@ -468,7 +444,7 @@ export default function SubjectsPage() {
                       className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
                     >
                       <option value="">-- Pilih Mata Pelajaran --</option>
-                      {activeDefaultList.map((subj) => (
+                      {ALL_DEFAULT_SUBJECTS.map((subj) => (
                         <option key={subj} value={subj}>
                           {subj}
                         </option>
@@ -570,7 +546,7 @@ export default function SubjectsPage() {
             </div>
 
             {/* SELECT ALL */}
-            {filteredSubjectsByLevel.length > 0 && (
+            {subjects.length > 0 && (
               <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-2.5">
 
                 <input
@@ -587,7 +563,7 @@ export default function SubjectsPage() {
                       setSelectedIds([]);
                     } else {
                       setSelectedIds(
-                        filteredSubjectsByLevel.map((s) => s.id)
+                        subjects.map((s) => s.id)
                       );
                     }
                   }}
@@ -595,7 +571,7 @@ export default function SubjectsPage() {
                 >
                   {allSelected
                     ? 'Batalkan Semua'
-                    : `Pilih Semua (${filteredSubjectsByLevel.length})`}
+                    : `Pilih Semua (${subjects.length})`}
                 </button>
 
                 {selectedIds.length > 0 && (
@@ -611,7 +587,7 @@ export default function SubjectsPage() {
 
               {loadingSubjects ? (
                 <LoadingState />
-              ) : filteredSubjectsByLevel.length === 0 ? (
+              ) : subjects.length === 0 ? (
                 <EmptyState />
               ) : (
                 <div className="overflow-hidden rounded-lg border border-slate-200">
@@ -627,7 +603,7 @@ export default function SubjectsPage() {
 
                   {/* ROWS */}
                   <div className="divide-y divide-slate-100">
-                    {filteredSubjectsByLevel.map((subject, index) => {
+                    {subjects.map((subject, index) => {
                       const isChecked =
                         selectedIds.includes(
                           subject.id
@@ -919,6 +895,11 @@ function EditIcon() {
       strokeWidth="1.8"
       className="h-4 w-4"
     >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 20h9"
+      />
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

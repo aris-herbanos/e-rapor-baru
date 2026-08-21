@@ -3451,16 +3451,19 @@ export namespace Prisma {
   export type SubjectMinAggregateOutputType = {
     id: number | null
     name: string | null
+    level: string | null
   }
 
   export type SubjectMaxAggregateOutputType = {
     id: number | null
     name: string | null
+    level: string | null
   }
 
   export type SubjectCountAggregateOutputType = {
     id: number
     name: number
+    level: number
     _all: number
   }
 
@@ -3476,16 +3479,19 @@ export namespace Prisma {
   export type SubjectMinAggregateInputType = {
     id?: true
     name?: true
+    level?: true
   }
 
   export type SubjectMaxAggregateInputType = {
     id?: true
     name?: true
+    level?: true
   }
 
   export type SubjectCountAggregateInputType = {
     id?: true
     name?: true
+    level?: true
     _all?: true
   }
 
@@ -3578,6 +3584,7 @@ export namespace Prisma {
   export type SubjectGroupByOutputType = {
     id: number
     name: string
+    level: string
     _count: SubjectCountAggregateOutputType | null
     _avg: SubjectAvgAggregateOutputType | null
     _sum: SubjectSumAggregateOutputType | null
@@ -3602,6 +3609,7 @@ export namespace Prisma {
   export type SubjectSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    level?: boolean
     assignments?: boolean | Subject$assignmentsArgs<ExtArgs>
     cps?: boolean | Subject$cpsArgs<ExtArgs>
     _count?: boolean | SubjectCountOutputTypeDefaultArgs<ExtArgs>
@@ -3610,19 +3618,22 @@ export namespace Prisma {
   export type SubjectSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    level?: boolean
   }, ExtArgs["result"]["subject"]>
 
   export type SubjectSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    level?: boolean
   }, ExtArgs["result"]["subject"]>
 
   export type SubjectSelectScalar = {
     id?: boolean
     name?: boolean
+    level?: boolean
   }
 
-  export type SubjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name", ExtArgs["result"]["subject"]>
+  export type SubjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "level", ExtArgs["result"]["subject"]>
   export type SubjectInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     assignments?: boolean | Subject$assignmentsArgs<ExtArgs>
     cps?: boolean | Subject$cpsArgs<ExtArgs>
@@ -3640,6 +3651,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: number
       name: string
+      level: string
     }, ExtArgs["result"]["subject"]>
     composites: {}
   }
@@ -4067,6 +4079,7 @@ export namespace Prisma {
   interface SubjectFieldRefs {
     readonly id: FieldRef<"Subject", 'Int'>
     readonly name: FieldRef<"Subject", 'String'>
+    readonly level: FieldRef<"Subject", 'String'>
   }
     
 
@@ -18018,7 +18031,8 @@ export namespace Prisma {
 
   export const SubjectScalarFieldEnum: {
     id: 'id',
-    name: 'name'
+    name: 'name',
+    level: 'level'
   };
 
   export type SubjectScalarFieldEnum = (typeof SubjectScalarFieldEnum)[keyof typeof SubjectScalarFieldEnum]
@@ -18337,6 +18351,7 @@ export namespace Prisma {
     NOT?: SubjectWhereInput | SubjectWhereInput[]
     id?: IntFilter<"Subject"> | number
     name?: StringFilter<"Subject"> | string
+    level?: StringFilter<"Subject"> | string
     assignments?: AssignmentListRelationFilter
     cps?: CPListRelationFilter
   }
@@ -18344,23 +18359,27 @@ export namespace Prisma {
   export type SubjectOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
+    level?: SortOrder
     assignments?: AssignmentOrderByRelationAggregateInput
     cps?: CPOrderByRelationAggregateInput
   }
 
   export type SubjectWhereUniqueInput = Prisma.AtLeast<{
     id?: number
+    name_level?: SubjectNameLevelCompoundUniqueInput
     AND?: SubjectWhereInput | SubjectWhereInput[]
     OR?: SubjectWhereInput[]
     NOT?: SubjectWhereInput | SubjectWhereInput[]
     name?: StringFilter<"Subject"> | string
+    level?: StringFilter<"Subject"> | string
     assignments?: AssignmentListRelationFilter
     cps?: CPListRelationFilter
-  }, "id">
+  }, "id" | "name_level">
 
   export type SubjectOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
+    level?: SortOrder
     _count?: SubjectCountOrderByAggregateInput
     _avg?: SubjectAvgOrderByAggregateInput
     _max?: SubjectMaxOrderByAggregateInput
@@ -18374,6 +18393,7 @@ export namespace Prisma {
     NOT?: SubjectScalarWhereWithAggregatesInput | SubjectScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Subject"> | number
     name?: StringWithAggregatesFilter<"Subject"> | string
+    level?: StringWithAggregatesFilter<"Subject"> | string
   }
 
   export type CPWhereInput = {
@@ -19222,6 +19242,7 @@ export namespace Prisma {
 
   export type SubjectCreateInput = {
     name: string
+    level?: string
     assignments?: AssignmentCreateNestedManyWithoutSubjectInput
     cps?: CPCreateNestedManyWithoutSubjectInput
   }
@@ -19229,12 +19250,14 @@ export namespace Prisma {
   export type SubjectUncheckedCreateInput = {
     id?: number
     name: string
+    level?: string
     assignments?: AssignmentUncheckedCreateNestedManyWithoutSubjectInput
     cps?: CPUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUpdateInput = {
     name?: StringFieldUpdateOperationsInput | string
+    level?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUpdateManyWithoutSubjectNestedInput
     cps?: CPUpdateManyWithoutSubjectNestedInput
   }
@@ -19242,6 +19265,7 @@ export namespace Prisma {
   export type SubjectUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    level?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUncheckedUpdateManyWithoutSubjectNestedInput
     cps?: CPUncheckedUpdateManyWithoutSubjectNestedInput
   }
@@ -19249,15 +19273,18 @@ export namespace Prisma {
   export type SubjectCreateManyInput = {
     id?: number
     name: string
+    level?: string
   }
 
   export type SubjectUpdateManyMutationInput = {
     name?: StringFieldUpdateOperationsInput | string
+    level?: StringFieldUpdateOperationsInput | string
   }
 
   export type SubjectUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    level?: StringFieldUpdateOperationsInput | string
   }
 
   export type CPCreateInput = {
@@ -20149,9 +20176,15 @@ export namespace Prisma {
     _count?: SortOrder
   }
 
+  export type SubjectNameLevelCompoundUniqueInput = {
+    name: string
+    level: string
+  }
+
   export type SubjectCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    level?: SortOrder
   }
 
   export type SubjectAvgOrderByAggregateInput = {
@@ -20161,11 +20194,13 @@ export namespace Prisma {
   export type SubjectMaxOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    level?: SortOrder
   }
 
   export type SubjectMinOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    level?: SortOrder
   }
 
   export type SubjectSumOrderByAggregateInput = {
@@ -21703,12 +21738,14 @@ export namespace Prisma {
 
   export type SubjectCreateWithoutCpsInput = {
     name: string
+    level?: string
     assignments?: AssignmentCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateWithoutCpsInput = {
     id?: number
     name: string
+    level?: string
     assignments?: AssignmentUncheckedCreateNestedManyWithoutSubjectInput
   }
 
@@ -21753,12 +21790,14 @@ export namespace Prisma {
 
   export type SubjectUpdateWithoutCpsInput = {
     name?: StringFieldUpdateOperationsInput | string
+    level?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateWithoutCpsInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    level?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
@@ -22485,12 +22524,14 @@ export namespace Prisma {
 
   export type SubjectCreateWithoutAssignmentsInput = {
     name: string
+    level?: string
     cps?: CPCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateWithoutAssignmentsInput = {
     id?: number
     name: string
+    level?: string
     cps?: CPUncheckedCreateNestedManyWithoutSubjectInput
   }
 
@@ -22546,12 +22587,14 @@ export namespace Prisma {
 
   export type SubjectUpdateWithoutAssignmentsInput = {
     name?: StringFieldUpdateOperationsInput | string
+    level?: StringFieldUpdateOperationsInput | string
     cps?: CPUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateWithoutAssignmentsInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    level?: StringFieldUpdateOperationsInput | string
     cps?: CPUncheckedUpdateManyWithoutSubjectNestedInput
   }
 

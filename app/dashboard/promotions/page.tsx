@@ -26,7 +26,7 @@ export default function PromotionsPage() {
   const [toClass, setToClass] = useState('');
 
   const [academicYear, setAcademicYear] = useState('2026/2027');
-  const [status, setStatus] = useState<'NAIK' | 'TINGGAL'>('NAIK');
+  const [status, setStatus] = useState<'NAIK' | 'TINGGAL' | 'LULUS'>('NAIK');
   const [note, setNote] = useState('');
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -181,7 +181,7 @@ export default function PromotionsPage() {
 
   /*
    * ============================
-   * PROSES KENAIKAN
+   * PROSES KELULUSAN / KENAIKAN
    * ============================
    */
   const handlePromotion = async () => {
@@ -195,7 +195,7 @@ export default function PromotionsPage() {
       return;
     }
 
-    if (status === 'NAIK' && !toClass) {
+    if ((status === 'NAIK' || status === 'LULUS') && !toClass) {
       setError(
         'Pilih kelas tujuan terlebih dahulu.'
       );
@@ -224,10 +224,12 @@ export default function PromotionsPage() {
         ? ` dan ${selectedStudents.length - 3} lainnya`
         : '';
 
-    const destination =
-      status === 'NAIK'
-        ? `ke kelas ${toClass}`
-        : 'tetap di kelas masing-masing';
+    let destination = 'ke kelas berikutnya';
+    if (status === 'TINGGAL') {
+      destination = 'tetap di kelas masing-masing';
+    } else if (status === 'LULUS') {
+      destination = toClass ? `lulus dan lanjut ke kelas ${toClass}` : 'dinyatakan lulus';
+    }
 
     const confirmed = window.confirm(
       `Yakin memproses ${selectedIds.length} siswa ${destination}?\n\n${names}${more}`
@@ -247,7 +249,7 @@ export default function PromotionsPage() {
           },
           body: JSON.stringify({
             studentIds: selectedIds,
-            toClass,
+            toClass: toClass,
             status,
             academicYear,
             note,
@@ -260,36 +262,27 @@ export default function PromotionsPage() {
       if (!response.ok) {
         throw new Error(
           result.message ||
-            'Gagal memproses kenaikan kelas.'
+            'Gagal memproses data kenaikan/kelulusan.'
         );
       }
 
       setMessage(
         result.message ||
-          'Kenaikan kelas berhasil diproses.'
+          'Proses berhasil diselesaikan.'
       );
 
-      /*
-       * Refresh daftar siswa.
-       */
       await fetchStudents(fromClass);
-
       setSelectedIds([]);
     } catch (err: any) {
       setError(
         err?.message ||
-          'Gagal memproses kenaikan kelas.'
+          'Gagal memproses data.'
       );
     } finally {
       setProcessing(false);
     }
   };
 
-  /*
-   * ============================
-   * FILTER KELAS TUJUAN
-   * ============================
-   */
   const availableTargetClasses = useMemo(() => {
     return classrooms.filter(
       (classroom) =>
@@ -302,21 +295,18 @@ export default function PromotionsPage() {
 
       {/* HEADER */}
       <header className="rounded-2xl bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857] px-6 py-7 text-white shadow-lg">
-
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-
           <div>
             <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-100">
               Akademik
             </span>
 
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mt-2">
-              Kenaikan Kelas
+              Kenaikan Kelas & Kelulusan
             </h1>
 
             <p className="text-sm text-emerald-50/80 mt-1">
-              Kelola kenaikan siswa dari kelas lama
-              ke kelas berikutnya secara massal.
+              Kelola kenaikan atau kelulusan siswa secara massal.
             </p>
           </div>
 
@@ -329,7 +319,6 @@ export default function PromotionsPage() {
               {academicYear}
             </div>
           </div>
-
         </div>
       </header>
 
@@ -348,7 +337,6 @@ export default function PromotionsPage() {
 
       {/* FILTER */}
       <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
           {/* TAHUN */}
@@ -400,7 +388,7 @@ export default function PromotionsPage() {
           {/* KELAS TUJUAN */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Kelas Tujuan
+              Kelas Tujuan {status === 'LULUS' && '(Lanjut ke SMA/Lainnya)'}
             </label>
 
             <select
@@ -435,7 +423,7 @@ export default function PromotionsPage() {
           {/* STATUS */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Status
+              Status Keputusan
             </label>
 
             <select
@@ -445,17 +433,14 @@ export default function PromotionsPage() {
                   e.target.value as
                     | 'NAIK'
                     | 'TINGGAL'
+                    | 'LULUS'
                 )
               }
               className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
             >
-              <option value="NAIK">
-                Naik Kelas
-              </option>
-
-              <option value="TINGGAL">
-                Tinggal Kelas
-              </option>
+              <option value="NAIK">Naik Kelas</option>
+              <option value="TINGGAL">Tinggal Kelas</option>
+              <option value="LULUS">Lulus</option>
             </select>
           </div>
 
@@ -477,7 +462,7 @@ export default function PromotionsPage() {
               setNote(e.target.value)
             }
             rows={2}
-            placeholder="Contoh: Dinyatakan naik berdasarkan hasil rapat kenaikan kelas."
+            placeholder="Contoh: Dinyatakan lulus dan melanjutkan ke tingkat SMA."
             className="w-full p-3 rounded-xl border border-slate-200 text-sm outline-none resize-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           />
         </div>
@@ -486,10 +471,7 @@ export default function PromotionsPage() {
 
       {/* DAFTAR SISWA */}
       <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-
-        {/* TOOLBAR */}
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 justify-between sm:items-center">
-
           <div>
             <h2 className="font-bold text-slate-800">
               Daftar Siswa
@@ -503,7 +485,6 @@ export default function PromotionsPage() {
           </div>
 
           <div className="flex items-center gap-2">
-
             {selectedIds.length > 0 && (
               <span className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
                 {selectedIds.length} siswa dipilih
@@ -519,65 +500,39 @@ export default function PromotionsPage() {
                 Batal Pilih
               </button>
             )}
-
           </div>
         </div>
 
-        {/* CONTENT */}
         {!fromClass ? (
-
           <div className="p-14 text-center">
-
-            <div className="text-4xl mb-3">
-              🎓
-            </div>
-
+            <div className="text-4xl mb-3">🎓</div>
             <p className="font-semibold text-slate-600">
               Pilih kelas asal
             </p>
-
             <p className="text-xs text-slate-400 mt-1">
-              Daftar siswa akan muncul setelah
-              kelas dipilih.
+              Daftar siswa akan muncul setelah kelas dipilih.
             </p>
-
           </div>
-
         ) : loadingStudents ? (
-
           <div className="p-14 text-center text-sm text-slate-400">
             Memuat data siswa...
           </div>
-
         ) : students.length === 0 ? (
-
           <div className="p-14 text-center">
-
-            <div className="text-4xl mb-3">
-              📚
-            </div>
-
+            <div className="text-4xl mb-3">📚</div>
             <p className="font-semibold text-slate-600">
               Belum ada siswa
             </p>
-
             <p className="text-xs text-slate-400 mt-1">
               Tidak ditemukan siswa pada kelas ini.
             </p>
-
           </div>
-
         ) : (
-
           <div className="overflow-x-auto">
-
             <table className="w-full text-sm">
-
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-600">
-
                   <th className="p-3 w-12 text-center">
-
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -588,37 +543,18 @@ export default function PromotionsPage() {
                       }
                       className="rounded text-emerald-600"
                     />
-
                   </th>
-
-                  <th className="p-3 text-left">
-                    No.
-                  </th>
-
-                  <th className="p-3 text-left">
-                    NISN
-                  </th>
-
-                  <th className="p-3 text-left">
-                    Nama Lengkap
-                  </th>
-
-                  <th className="p-3 text-left">
-                    L/P
-                  </th>
-
-                  <th className="p-3 text-left">
-                    Kelas
-                  </th>
-
+                  <th className="p-3 text-left">No.</th>
+                  <th className="p-3 text-left">NISN</th>
+                  <th className="p-3 text-left">Nama Lengkap</th>
+                  <th className="p-3 text-left">L/P</th>
+                  <th className="p-3 text-left">Kelas</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-
                 {students.map(
                   (student, index) => {
-
                     const checked =
                       selectedIds.includes(
                         student.id
@@ -633,9 +569,7 @@ export default function PromotionsPage() {
                             : 'hover:bg-slate-50'
                         }`}
                       >
-
                         <td className="p-3 text-center">
-
                           <input
                             type="checkbox"
                             checked={checked}
@@ -646,7 +580,6 @@ export default function PromotionsPage() {
                             }
                             className="rounded text-emerald-600"
                           />
-
                         </td>
 
                         <td className="p-3 text-slate-400">
@@ -658,11 +591,9 @@ export default function PromotionsPage() {
                         </td>
 
                         <td className="p-3">
-
                           <div className="font-semibold text-slate-800">
                             {student.fullname}
                           </div>
-
                         </td>
 
                         <td className="p-3">
@@ -670,37 +601,26 @@ export default function PromotionsPage() {
                         </td>
 
                         <td className="p-3">
-
                           <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
                             {student.class_name}
                           </span>
-
                         </td>
-
                       </tr>
                     );
                   }
                 )}
-
               </tbody>
-
             </table>
-
           </div>
         )}
-
       </section>
 
       {/* ACTION */}
       {students.length > 0 && (
         <section className="sticky bottom-4">
-
           <div className="rounded-2xl bg-white border border-slate-200 shadow-xl p-4">
-
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-
               <div>
-
                 <div className="text-xs text-slate-400">
                   Siswa yang akan diproses
                 </div>
@@ -711,11 +631,9 @@ export default function PromotionsPage() {
                     siswa
                   </span>
                 </div>
-
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2">
-
                 <button
                   type="button"
                   onClick={handlePromotion}
@@ -726,26 +644,22 @@ export default function PromotionsPage() {
                   className={`h-11 px-6 rounded-xl text-sm font-bold text-white shadow transition disabled:opacity-50 ${
                     status === 'NAIK'
                       ? 'bg-emerald-700 hover:bg-emerald-800'
-                      : 'bg-amber-600 hover:bg-amber-700'
+                      : status === 'TINGGAL'
+                      ? 'bg-amber-600 hover:bg-amber-700'
+                      : 'bg-indigo-600 hover:bg-indigo-700'
                   }`}
                 >
                   {processing
                     ? 'Memproses...'
                     : status === 'NAIK'
-                    ? `Naikkan ${
-                        selectedIds.length
-                      } Siswa`
-                    : `Tetapkan ${
-                        selectedIds.length
-                      } Siswa`}
+                    ? `Naikkan ${selectedIds.length} Siswa`
+                    : status === 'TINGGAL'
+                    ? `Tetapkan ${selectedIds.length} Siswa Tinggal Kelas`
+                    : `Luluskan & Pindahkan ${selectedIds.length} Siswa`}
                 </button>
-
               </div>
-
             </div>
-
           </div>
-
         </section>
       )}
 

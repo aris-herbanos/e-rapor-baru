@@ -75,7 +75,14 @@ export async function GET(request: Request) {
   if (!auth.success) return auth.response;
 
   try {
+    const url = new URL(request.url);
+    const level = url.searchParams.get('level');
+
+    // Jika ada filter level (SMP/SMA), ambil berdasarkan level tersebut
+    const whereCondition = level ? { level: level.toUpperCase() } : {};
+
     const subjects = await prisma.subject.findMany({
+      where: whereCondition,
       orderBy: { name: 'asc' },
     });
 
@@ -87,7 +94,7 @@ export async function GET(request: Request) {
 }
 
 /* ============================================================
-   POST /api/subjects (HANYA NAMA MAPEL, TANPA TEACHER ID)
+   POST /api/subjects
 ============================================================ */
 
 export async function POST(request: Request) {
@@ -104,6 +111,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const name = String(body.name ?? '').trim();
+    const level = String(body.level ?? 'SMP').trim().toUpperCase();
 
     if (!name) {
       return NextResponse.json(
@@ -112,21 +120,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cek duplikat mapel
+    // Cek duplikat mapel berdasarkan nama DAN level jenjangnya
     const existingSubject = await prisma.subject.findFirst({
-      where: { name },
+      where: { name, level },
     });
 
     if (existingSubject) {
       return NextResponse.json(
-        { success: false, message: `Mata pelajaran "${name}" sudah terdaftar.` },
+        { success: false, message: `Mata pelajaran "${name}" untuk jenjang ${level} sudah terdaftar.` },
         { status: 409 }
       );
     }
 
-    // Simpan tanpa memerlukan teacherId
+    // Simpan mapel dengan menyertakan level jenjang
     const newSubject = await prisma.subject.create({
-      data: { name },
+      data: { name, level },
     });
 
     return NextResponse.json(

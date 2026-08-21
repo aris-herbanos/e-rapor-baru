@@ -134,7 +134,8 @@ exports.Prisma.TeacherScalarFieldEnum = {
 
 exports.Prisma.SubjectScalarFieldEnum = {
   id: 'id',
-  name: 'name'
+  name: 'name',
+  level: 'level'
 };
 
 exports.Prisma.CPScalarFieldEnum = {

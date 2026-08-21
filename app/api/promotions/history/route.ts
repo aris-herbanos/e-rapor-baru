@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
@@ -21,7 +21,10 @@ export async function GET() {
     });
 
     return NextResponse.json({
+      success: true,
       data: promotions,
+    }, {
+      status: 200,
     });
   } catch (error) {
     console.error(
@@ -31,8 +34,9 @@ export async function GET() {
 
     return NextResponse.json(
       {
+        success: false,
         message:
-          'Gagal mengambil riwayat kenaikan kelas.',
+          'Gagal mengambil riwayat kenaikan kelas dan kelulusan.',
       },
       {
         status: 500,

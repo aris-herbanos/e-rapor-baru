@@ -22,11 +22,14 @@ model Teacher {
 }
 
 model Subject {
-  id   Int    @id @default(autoincrement())
-  name String // Tanda @unique dihapus agar db push tidak gagal jika ada nama mapel serupa
+  id    Int    @id @default(autoincrement())
+  name  String
+  level String @default("SMP") // Ditambahkan untuk membedakan jenjang SMP dan SMA
 
   assignments Assignment[]
   cps         CP[]
+
+  @@unique([name, level]) // Memastikan nama mapel unik per jenjang (bisa ada "Bahasa Arab" di SMP dan "Bahasa Arab" di SMA)
 }
 
 model CP {

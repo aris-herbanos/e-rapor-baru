@@ -37,9 +37,8 @@ type StudentPromotion = {
 const STATUS_OPTIONS = [
   'SEMUA',
   'NAIK',
-  'TINGGAL KELAS',
+  'TINGGAL',
   'LULUS',
-  'PINDAH',
 ];
 
 const statusConfig: Record<
@@ -54,7 +53,7 @@ const statusConfig: Record<
     className:
       'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/15',
   },
-  'TINGGAL KELAS': {
+  TINGGAL: {
     label: 'Tinggal Kelas',
     className:
       'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/15',
@@ -63,11 +62,6 @@ const statusConfig: Record<
     label: 'Lulus',
     className:
       'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/15',
-  },
-  PINDAH: {
-    label: 'Pindah',
-    className:
-      'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/15',
   },
 };
 
@@ -119,16 +113,6 @@ export default function PromotionHistoryPage() {
       try {
         setLoading(true);
         setError('');
-
-        /*
-         * API history diharapkan mengembalikan:
-         *
-         * {
-         *   data: StudentPromotion[]
-         * }
-         *
-         * atau langsung array.
-         */
 
         const response = await fetch(
           '/api/promotions/history',
@@ -257,13 +241,10 @@ export default function PromotionHistoryPage() {
         (item) => item.status === 'NAIK'
       ).length,
       tinggal: filteredData.filter(
-        (item) => item.status === 'TINGGAL KELAS'
+        (item) => item.status === 'TINGGAL'
       ).length,
       lulus: filteredData.filter(
         (item) => item.status === 'LULUS'
-      ).length,
-      pindah: filteredData.filter(
-        (item) => item.status === 'PINDAH'
       ).length,
     };
   }, [filteredData]);
@@ -291,18 +272,11 @@ export default function PromotionHistoryPage() {
   return (
     <div className="min-h-screen bg-[#f7f9f7]">
 
-      {/* ========================================================
-          HEADER
-      ======================================================== */}
-
+      {/* HEADER */}
       <div className="border-b border-slate-200/70 bg-white">
-
         <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
-
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
             <div className="flex items-start gap-4">
-
               <Link
                 href="/dashboard/promotions"
                 className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
@@ -315,9 +289,7 @@ export default function PromotionHistoryPage() {
               </Link>
 
               <div>
-
                 <div className="flex items-center gap-2">
-
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
                     <History
                       size={18}
@@ -328,20 +300,16 @@ export default function PromotionHistoryPage() {
                   <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700/60">
                     Akademik
                   </span>
-
                 </div>
 
                 <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-800">
-                  Riwayat Kenaikan Kelas
+                  Riwayat Kenaikan & Kelulusan
                 </h1>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Riwayat status dan perpindahan kelas santri
-                  setiap tahun pelajaran.
+                  Riwayat status kenaikan kelas dan kelulusan santri setiap tahun pelajaran.
                 </p>
-
               </div>
-
             </div>
 
             <Link
@@ -354,25 +322,15 @@ export default function PromotionHistoryPage() {
               />
               Kelola Kenaikan Kelas
             </Link>
-
           </div>
-
         </div>
-
       </div>
 
-      {/* ========================================================
-          CONTENT
-      ======================================================== */}
-
+      {/* CONTENT */}
       <main className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
 
-        {/* ======================================================
-            SUMMARY
-        ======================================================= */}
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-
+        {/* SUMMARY */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <SummaryCard
             icon={Users}
             label="Total Riwayat"
@@ -399,28 +357,12 @@ export default function PromotionHistoryPage() {
             value={summary.tinggal}
             tone="amber"
           />
-
-          <SummaryCard
-            icon={ArrowUpRight}
-            label="Pindah"
-            value={summary.pindah}
-            tone="rose"
-          />
-
         </div>
 
-        {/* ======================================================
-            FILTER
-        ======================================================= */}
-
+        {/* FILTER */}
         <div className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.035)]">
-
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-
-            {/* SEARCH */}
-
             <div className="relative flex-1">
-
               <Search
                 size={16}
                 strokeWidth={1.8}
@@ -446,10 +388,7 @@ export default function PromotionHistoryPage() {
                   <X size={14} />
                 </button>
               )}
-
             </div>
-
-            {/* YEAR */}
 
             <select
               value={academicYear}
@@ -468,8 +407,6 @@ export default function PromotionHistoryPage() {
                 </option>
               ))}
             </select>
-
-            {/* STATUS */}
 
             <select
               value={status}
@@ -496,21 +433,13 @@ export default function PromotionHistoryPage() {
                 Reset
               </button>
             )}
-
           </div>
-
         </div>
 
-        {/* ======================================================
-            TABLE
-        ======================================================= */}
-
+        {/* TABLE */}
         <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.035)]">
-
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-
             <div>
-
               <h2 className="text-sm font-bold text-slate-800">
                 Data Riwayat
               </h2>
@@ -518,81 +447,40 @@ export default function PromotionHistoryPage() {
               <p className="mt-0.5 text-[11px] text-slate-400">
                 Menampilkan {filteredData.length} riwayat
               </p>
-
             </div>
-
-            <div className="hidden items-center gap-2 sm:flex">
-
-              <CalendarDays
-                size={15}
-                className="text-slate-400"
-                strokeWidth={1.7}
-              />
-
-              <span className="text-[11px] text-slate-400">
-                Histori akademik santri
-              </span>
-
-            </div>
-
           </div>
-
-          {/* LOADING */}
 
           {loading && (
             <div className="flex min-h-[300px] items-center justify-center">
-
               <div className="flex flex-col items-center">
-
                 <Loader2
                   size={25}
                   className="animate-spin text-emerald-600"
                 />
-
                 <p className="mt-3 text-xs text-slate-400">
-                  Memuat riwayat kenaikan kelas...
+                  Memuat riwayat...
                 </p>
-
               </div>
-
             </div>
           )}
-
-          {/* ERROR */}
 
           {!loading && error && (
             <div className="p-6">
-
               <div className="rounded-xl border border-red-100 bg-red-50 p-4">
-
                 <p className="text-xs font-semibold text-red-700">
                   Gagal memuat data
                 </p>
-
                 <p className="mt-1 text-xs text-red-600/80">
                   {error}
                 </p>
-
-                <p className="mt-3 text-[11px] text-red-500/70">
-                  Pastikan endpoint{' '}
-                  <code className="rounded bg-red-100 px-1">
-                    /api/promotions/history
-                  </code>{' '}
-                  sudah tersedia.
-                </p>
-
               </div>
-
             </div>
           )}
-
-          {/* EMPTY */}
 
           {!loading &&
             !error &&
             paginatedData.length === 0 && (
               <div className="flex min-h-[300px] flex-col items-center justify-center px-5 text-center">
-
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
                   <History
                     size={26}
@@ -605,9 +493,7 @@ export default function PromotionHistoryPage() {
                 </h3>
 
                 <p className="mt-1 max-w-sm text-xs leading-5 text-slate-400">
-                  Belum terdapat data kenaikan kelas,
-                  kelulusan, tinggal kelas, atau perpindahan
-                  santri yang sesuai dengan filter.
+                  Belum terdapat data riwayat kenaikan kelas atau kelulusan yang sesuai dengan filter.
                 </p>
 
                 {hasFilter && (
@@ -619,61 +505,45 @@ export default function PromotionHistoryPage() {
                     Hapus filter
                   </button>
                 )}
-
               </div>
             )}
-
-          {/* DESKTOP TABLE */}
 
           {!loading &&
             !error &&
             paginatedData.length > 0 && (
               <>
                 <div className="hidden overflow-x-auto md:block">
-
                   <table className="w-full min-w-[850px]">
-
                     <thead>
                       <tr className="border-b border-slate-100 bg-slate-50/60">
-
                         <th className="w-12 px-5 py-3 text-center text-[9px] font-bold uppercase tracking-wider text-slate-400">
                           #
                         </th>
-
                         <th className="px-3 py-3 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">
                           Santri
                         </th>
-
                         <th className="px-3 py-3 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">
                           Tahun Pelajaran
                         </th>
-
                         <th className="px-3 py-3 text-center text-[9px] font-bold uppercase tracking-wider text-slate-400">
                           Kelas Asal
                         </th>
-
                         <th className="px-3 py-3 text-center text-[9px] font-bold uppercase tracking-wider text-slate-400">
                           Kelas Tujuan
                         </th>
-
                         <th className="px-3 py-3 text-center text-[9px] font-bold uppercase tracking-wider text-slate-400">
                           Status
                         </th>
-
                         <th className="px-3 py-3 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">
                           Tanggal
                         </th>
-
                         <th className="w-16 px-4 py-3" />
-
                       </tr>
                     </thead>
 
                     <tbody className="divide-y divide-slate-100">
-
                       {paginatedData.map(
                         (item, index) => {
-
                           const config =
                             getStatusConfig(
                               item.status
@@ -687,7 +557,6 @@ export default function PromotionHistoryPage() {
                               key={item.id}
                               className="group transition hover:bg-emerald-50/[0.35]"
                             >
-
                               <td className="px-5 py-3.5 text-center text-[10px] text-slate-400">
                                 {(currentPage - 1) *
                                   pageSize +
@@ -696,9 +565,7 @@ export default function PromotionHistoryPage() {
                               </td>
 
                               <td className="px-3 py-3.5">
-
                                 <div className="flex items-center gap-3">
-
                                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[10px] font-bold text-emerald-700">
                                     {student?.fullname
                                       ?.charAt(0)
@@ -707,7 +574,6 @@ export default function PromotionHistoryPage() {
                                   </div>
 
                                   <div className="min-w-0">
-
                                     <div className="truncate text-xs font-semibold text-slate-700">
                                       {student?.fullname ||
                                         '-'}
@@ -718,70 +584,53 @@ export default function PromotionHistoryPage() {
                                       {student?.nisn ||
                                         '-'}
                                     </div>
-
                                   </div>
-
                                 </div>
-
                               </td>
 
                               <td className="px-3 py-3.5">
-
                                 <div className="flex items-center gap-2">
-
                                   <CalendarDays
                                     size={14}
                                     className="text-slate-300"
                                   />
-
                                   <span className="text-xs font-medium text-slate-600">
                                     {item.academicYear}
                                   </span>
-
                                 </div>
-
                               </td>
 
                               <td className="px-3 py-3.5 text-center">
-
                                 <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
                                   {item.fromClass ||
                                     '-'}
                                 </span>
-
                               </td>
 
                               <td className="px-3 py-3.5 text-center">
-
                                 <span className="text-xs font-semibold text-slate-600">
                                   {item.toClass ||
                                     '-'}
                                 </span>
-
                               </td>
 
                               <td className="px-3 py-3.5 text-center">
-
                                 <span
                                   className={`inline-flex rounded-full px-2.5 py-1 text-[9px] font-bold ${config.className}`}
                                 >
                                   {config.label}
                                 </span>
-
                               </td>
 
                               <td className="px-3 py-3.5">
-
                                 <span className="text-[10px] text-slate-400">
                                   {formatDate(
                                     item.promotedAt
                                   )}
                                 </span>
-
                               </td>
 
                               <td className="px-4 py-3.5 text-right">
-
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -794,122 +643,19 @@ export default function PromotionHistoryPage() {
                                     size={16}
                                   />
                                 </button>
-
                               </td>
-
                             </tr>
                           );
                         }
                       )}
-
                     </tbody>
-
                   </table>
-
-                </div>
-
-                {/* MOBILE CARDS */}
-
-                <div className="divide-y divide-slate-100 md:hidden">
-
-                  {paginatedData.map((item) => {
-
-                    const config =
-                      getStatusConfig(
-                        item.status
-                      );
-
-                    const student =
-                      item.student;
-
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() =>
-                          setSelected(item)
-                        }
-                        className="block w-full px-4 py-4 text-left transition hover:bg-slate-50"
-                      >
-
-                        <div className="flex items-start gap-3">
-
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-xs font-bold text-emerald-700">
-                            {student?.fullname
-                              ?.charAt(0)
-                              ?.toUpperCase() ||
-                              '?'}
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-
-                            <div className="flex items-start justify-between gap-3">
-
-                              <div>
-
-                                <div className="text-xs font-bold text-slate-700">
-                                  {student?.fullname ||
-                                    '-'}
-                                </div>
-
-                                <div className="mt-0.5 text-[10px] text-slate-400">
-                                  {student?.nisn ||
-                                    '-'}
-                                </div>
-
-                              </div>
-
-                              <span
-                                className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-bold ${config.className}`}
-                              >
-                                {config.label}
-                              </span>
-
-                            </div>
-
-                            <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-400">
-
-                              <span>
-                                {item.academicYear}
-                              </span>
-
-                              <span>•</span>
-
-                              <span>
-                                {item.fromClass ||
-                                  '-'}
-                              </span>
-
-                              <ArrowUpRight
-                                size={11}
-                                className="text-slate-300"
-                              />
-
-                              <span>
-                                {item.toClass ||
-                                  '-'}
-                              </span>
-
-                            </div>
-
-                          </div>
-
-                        </div>
-
-                      </button>
-                    );
-                  })}
-
                 </div>
 
                 {/* PAGINATION */}
-
                 <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 sm:px-5">
-
                   <p className="text-[10px] text-slate-400">
-
                     Menampilkan{' '}
-
                     <span className="font-semibold text-slate-600">
                       {filteredData.length === 0
                         ? 0
@@ -917,9 +663,7 @@ export default function PromotionHistoryPage() {
                             pageSize +
                           1}
                     </span>
-
                     {' - '}
-
                     <span className="font-semibold text-slate-600">
                       {Math.min(
                         currentPage *
@@ -927,17 +671,13 @@ export default function PromotionHistoryPage() {
                         filteredData.length
                       )}
                     </span>
-
                     {' dari '}
-
                     <span className="font-semibold text-slate-600">
                       {filteredData.length}
                     </span>
-
                   </p>
 
                   <div className="flex items-center gap-1">
-
                     <button
                       type="button"
                       disabled={currentPage <= 1}
@@ -972,22 +712,14 @@ export default function PromotionHistoryPage() {
                     >
                       <ChevronRight size={15} />
                     </button>
-
                   </div>
-
                 </div>
-
               </>
             )}
-
         </div>
-
       </main>
 
-      {/* ========================================================
-          DETAIL MODAL
-      ======================================================== */}
-
+      {/* DETAIL MODAL */}
       {selected && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
@@ -997,21 +729,15 @@ export default function PromotionHistoryPage() {
             }
           }}
         >
-
           <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-
               <div>
-
                 <div className="text-sm font-bold text-slate-800">
                   Detail Riwayat
                 </div>
-
                 <div className="mt-0.5 text-[10px] text-slate-400">
                   Data perubahan status akademik
                 </div>
-
               </div>
 
               <button
@@ -1021,13 +747,10 @@ export default function PromotionHistoryPage() {
               >
                 <X size={16} />
               </button>
-
             </div>
 
             <div className="space-y-4 p-5">
-
               <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-sm font-bold text-emerald-700">
                   {selected.student?.fullname
                     ?.charAt(0)
@@ -1035,18 +758,14 @@ export default function PromotionHistoryPage() {
                 </div>
 
                 <div className="min-w-0">
-
                   <div className="truncate text-sm font-bold text-slate-700">
                     {selected.student?.fullname ||
                       '-'}
                   </div>
-
                   <div className="mt-0.5 text-[10px] text-slate-400">
                     NISN: {selected.student?.nisn || '-'}
                   </div>
-
                 </div>
-
               </div>
 
               <DetailRow
@@ -1065,11 +784,9 @@ export default function PromotionHistoryPage() {
               />
 
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-
                 <span className="text-[11px] text-slate-400">
                   Status
                 </span>
-
                 <span
                   className={`rounded-full px-2.5 py-1 text-[9px] font-bold ${
                     getStatusConfig(
@@ -1083,7 +800,6 @@ export default function PromotionHistoryPage() {
                     ).label
                   }
                 </span>
-
               </div>
 
               <DetailRow
@@ -1094,21 +810,16 @@ export default function PromotionHistoryPage() {
               />
 
               <div>
-
                 <div className="mb-1.5 text-[11px] text-slate-400">
                   Catatan
                 </div>
-
                 <div className="min-h-[60px] rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
                   {selected.note || 'Tidak ada catatan.'}
                 </div>
-
               </div>
-
             </div>
 
             <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-3 text-right">
-
               <button
                 type="button"
                 onClick={() => setSelected(null)}
@@ -1116,21 +827,13 @@ export default function PromotionHistoryPage() {
               >
                 Tutup
               </button>
-
             </div>
-
           </div>
-
         </div>
       )}
-
     </div>
   );
 }
-
-/* ==============================================================
-   SUMMARY CARD
-============================================================== */
 
 function SummaryCard({
   icon: Icon,
@@ -1141,44 +844,33 @@ function SummaryCard({
   icon: React.ElementType;
   label: string;
   value: number;
-  tone?: 'slate' | 'emerald' | 'blue' | 'amber' | 'rose';
+  tone?: 'slate' | 'emerald' | 'blue' | 'amber';
 }) {
   const tones = {
     slate: 'bg-slate-50 text-slate-500',
     emerald: 'bg-emerald-50 text-emerald-600',
     blue: 'bg-blue-50 text-blue-600',
     amber: 'bg-amber-50 text-amber-600',
-    rose: 'bg-rose-50 text-rose-600',
   };
 
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.025)]">
-
       <div className="flex items-center justify-between">
-
         <div
           className={`flex h-8 w-8 items-center justify-center rounded-lg ${tones[tone]}`}
         >
           <Icon size={15} strokeWidth={1.7} />
         </div>
-
         <span className="text-lg font-bold tracking-tight text-slate-700">
           {value}
         </span>
-
       </div>
-
       <div className="mt-3 text-[10px] font-medium text-slate-400">
         {label}
       </div>
-
     </div>
   );
 }
-
-/* ==============================================================
-   DETAIL ROW
-============================================================== */
 
 function DetailRow({
   label,
@@ -1189,15 +881,12 @@ function DetailRow({
 }) {
   return (
     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-
       <span className="text-[11px] text-slate-400">
         {label}
       </span>
-
       <span className="text-xs font-semibold text-slate-600">
         {value}
       </span>
-
     </div>
   );
 }
