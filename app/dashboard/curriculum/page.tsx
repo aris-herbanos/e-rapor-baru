@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2, Save, BookOpen, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Save, BookOpen, ArrowLeft, Layers } from 'lucide-react';
 
 type TP = {
   id: number;
@@ -20,9 +20,43 @@ type CP = {
   tps: TP[];
 };
 
-type Subject = { id: number; name: string };
+type Subject = { id: number; name: string; level?: 'SMP' | 'SMA' };
+
+// Daftar Mata Pelajaran Terpisah Berdasarkan Jenjang
+const SUBJECTS_SMP: Subject[] = [
+  { id: 1, name: 'Tajwid', level: 'SMP' },
+  { id: 2, name: 'Tahfidz / Tahsin', level: 'SMP' },
+  { id: 3, name: "Muroja'ah", level: 'SMP' },
+  { id: 4, name: 'Fiqih', level: 'SMP' },
+  { id: 5, name: 'Bahasa Arab', level: 'SMP' },
+  { id: 6, name: 'Pidato', level: 'SMP' },
+  { id: 7, name: 'Hadis', level: 'SMP' },
+  { id: 8, name: 'Pendidikan Agama Islam', level: 'SMP' },
+  { id: 9, name: 'Tsaqofah Islamiyah', level: 'SMP' },
+  { id: 10, name: 'Nahwu / Sorof', level: 'SMP' },
+  { id: 11, name: 'Mahfudzot', level: 'SMP' },
+  { id: 12, name: 'Siroh Nabawiyah', level: 'SMP' },
+  { id: 13, name: 'Imla dan Khot', level: 'SMP' },
+];
+
+const SUBJECTS_SMA: Subject[] = [
+  { id: 101, name: 'Tajwid', level: 'SMA' },
+  { id: 102, name: 'Tahfidz / Tahsin', level: 'SMA' },
+  { id: 103, name: 'Muroja’ah Lanjutan', level: 'SMA' },
+  { id: 104, name: 'Fiqih Muqoron', level: 'SMA' },
+  { id: 105, name: 'Muhadatsah', level: 'SMA' },
+  { id: 106, name: 'Pidato & Debat', level: 'SMA' },
+  { id: 107, name: 'Ulumul Quran', level: 'SMA' },
+  { id: 108, name: 'Mustholah Hadis', level: 'SMA' },
+  { id: 109, name: 'Ushul Fiqih', level: 'SMA' },
+  { id: 110, name: 'Tarikh Islam', level: 'SMA' },
+  { id: 111, name: 'Balaghoh & Adab', level: 'SMA' },
+  { id: 112, name: 'Nahwu & Sorof Lanjutan', level: 'SMA' },
+  { id: 113, name: 'Tauhid & Aqidah', level: 'SMA' },
+];
 
 export default function CurriculumPage() {
+  const [activeTabLevel, setActiveTabLevel] = useState<'SMP' | 'SMA'>('SMP');
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [cps, setCps] = useState<CP[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
@@ -50,12 +84,19 @@ export default function CurriculumPage() {
       const subjData = await subjRes.json();
 
       if (currRes.ok) setCps(Array.isArray(currData) ? currData : currData.data || []);
+      
       if (subjRes.ok) {
         const list = Array.isArray(subjData) ? subjData : subjData?.data || subjData?.subjects || [];
-        if (Array.isArray(list)) setSubjects(list);
+        if (Array.isArray(list) && list.length > 0) {
+          // Gabungkan atau gunakan dari database jika sudah ada, atau fallback ke data statis jenjang
+          setSubjects(list);
+        } else {
+          setSubjects([...SUBJECTS_SMP, ...SUBJECTS_SMA]);
+        }
       }
     } catch (err) {
       console.error('Gagal memuat data:', err);
+      setSubjects([...SUBJECTS_SMP, ...SUBJECTS_SMA]);
     } finally {
       setLoadingData(false);
     }
@@ -65,11 +106,26 @@ export default function CurriculumPage() {
     fetchData();
   }, []);
 
+  // Filter Mata Pelajaran berdasarkan tab jenjang yang aktif (SMP / SMA)
+  const filteredSubjectsByLevel = useMemo(() => {
+    return subjects.filter((subj) => {
+      if (activeTabLevel === 'SMA') {
+        return subj.name.includes('Lanjutan') || subj.name.includes('Muqoron') || subj.name.includes('Ulumul') || subj.name.includes('Mustholah') || subj.name.includes('Ushul') || subj.name.includes('Tarikh') || subj.name.includes('Balaghoh') || subj.name.includes('Tauhid') || subj.level === 'SMA';
+      } else {
+        return !subj.name.includes('Lanjutan') && !subj.name.includes('Muqoron') && !subj.name.includes('Ulumul') && !subj.name.includes('Mustholah') && !subj.name.includes('Ushul') && !subj.name.includes('Tarikh') && !subj.name.includes('Balaghoh') && !subj.name.includes('Tauhid');
+      }
+    });
+  }, [subjects, activeTabLevel]);
+
   // Filter CP berdasarkan mapel yang sedang diklik guru
   const currentSubjectCPs = useMemo(() => {
     if (!selectedSubject) return [];
-    return cps.filter((cp) => cp.subjectId === selectedSubject.id);
+    return cps.filter((cp) => cp.subjectId === selectedSubject.id || normalizeText(cp.subject?.name) === normalizeText(selectedSubject.name));
   }, [cps, selectedSubject]);
+
+  function normalizeText(val: any) {
+    return String(val || '').trim().toLowerCase();
+  }
 
   // Simpan CP Baru
   const handleSaveCP = async (e: React.FormEvent) => {
@@ -164,7 +220,7 @@ export default function CurriculumPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Kurikulum (CP & TP)</h1>
-          <p className="text-sm text-slate-500">Kelola Capaian Pembelajaran dan Tujuan Pembelajaran per Mata Pelajaran.</p>
+          <p className="text-sm text-slate-500">Kelola Capaian Pembelajaran dan Tujuan Pembelajaran berdasarkan Jenjang (SMP & SMA).</p>
         </div>
         {selectedSubject && (
           <button
@@ -192,37 +248,58 @@ export default function CurriculumPage() {
         </div>
       )}
 
-      {/* TAHAP 1: PILIH MATA PELAJARAN (JIKA BELUM DIPILIH) */}
+      {/* TAHAP 1: PILIH JENJANG & MATA PELAJARAN */}
       {!selectedSubject ? (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <BookOpen size={16} className="text-emerald-700" /> Pilih Mata Pelajaran Terlebih Dahulu
-          </h2>
-          {loadingData ? (
-            <div className="text-center py-10 text-xs text-slate-400">Memuat mata pelajaran...</div>
-          ) : subjects.length === 0 ? (
-            <div className="text-center py-10 text-xs text-slate-400">Belum ada mata pelajaran yang terdaftar.</div>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-              {subjects.map((subj) => (
-                <button
-                  key={subj.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedSubject(subj);
-                    setMessage('');
-                  }}
-                  className="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition text-left group shadow-sm"
-                >
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 group-hover:text-emerald-900">{subj.name}</div>
-                    <span className="text-[10px] text-slate-400">Kelola CP & TP</span>
-                  </div>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">Pilih →</span>
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="space-y-4">
+          
+          {/* TAB PILIHAN JENJANG (SMP / SMA) */}
+          <div className="flex rounded-2xl bg-slate-200/70 p-1.5 max-w-xs shadow-inner">
+            <button
+              type="button"
+              onClick={() => setActiveTabLevel('SMP')}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition ${activeTabLevel === 'SMP' ? 'bg-[#064e3b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              🎓 Jenjang SMP
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTabLevel('SMA')}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition ${activeTabLevel === 'SMA' ? 'bg-[#064e3b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              🎓 Jenjang SMA
+            </button>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <BookOpen size={16} className="text-emerald-700" /> Pilih Mata Pelajaran ({activeTabLevel})
+            </h2>
+            {loadingData ? (
+              <div className="text-center py-10 text-xs text-slate-400">Memuat mata pelajaran...</div>
+            ) : filteredSubjectsByLevel.length === 0 ? (
+              <div className="text-center py-10 text-xs text-slate-400">Belum ada mata pelajaran untuk jenjang ini.</div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                {filteredSubjectsByLevel.map((subj) => (
+                  <button
+                    key={subj.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSubject(subj);
+                      setMessage('');
+                    }}
+                    className="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition text-left group shadow-sm"
+                  >
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 group-hover:text-emerald-900">{subj.name}</div>
+                      <span className="text-[10px] text-slate-400">Kelola CP & TP ({activeTabLevel})</span>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">Pilih →</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         /* TAHAP 2: KELOLA CP & TP UNTUK MAPEL YANG DIPILIH */
@@ -231,7 +308,7 @@ export default function CurriculumPage() {
           {/* INFO MAPEL AKTIF */}
           <div className="bg-[#064e3b] text-white p-5 rounded-2xl shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[10px] uppercase tracking-widest text-emerald-200 font-semibold">Mata Pelajaran Aktif</span>
+              <span className="text-[10px] uppercase tracking-widest text-emerald-200 font-semibold">Mata Pelajaran Aktif ({selectedSubject.name.includes('Lanjutan') || selectedSubject.id > 100 ? 'SMA' : 'SMP'})</span>
               <h2 className="text-lg font-bold">{selectedSubject.name}</h2>
             </div>
             <div className="text-right">

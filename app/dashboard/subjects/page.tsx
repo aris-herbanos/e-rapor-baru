@@ -7,8 +7,8 @@ type Subject = {
   name: string;
 };
 
-// Daftar referensi mapel standar pesantren
-const DEFAULT_SUBJECTS = [
+// Daftar referensi mapel standar pesantren untuk SMP
+const DEFAULT_SUBJECTS_SMP = [
   'Bahasa Arab (اللغة العربية)',
   'Hadist (الحديث)',
   'Imla dan Khot (الإملاء والخط)',
@@ -23,7 +23,23 @@ const DEFAULT_SUBJECTS = [
   'Tsaqofah Islamiyah (الثقافة الإسلامية)',
 ];
 
+// Daftar referensi mapel standar pesantren untuk SMA
+const DEFAULT_SUBJECTS_SMA = [
+  'Balaghoh & Adab (البلاغة والأدب)',
+  'Mustholah Hadis (مصطلح الحديث)',
+  'Muhadatsah (محادثة)',
+  'Muroja’ah Lanjutan (المراجعة المتقدمة)',
+  'Nahwu & Sorof Lanjutan (النحو والصرف المتقدم)',
+  'Pidato & Debat (الخطابة والمناظرة)',
+  'Fiqih Muqoron (الفقه المقارن)',
+  'Tarikh Islam (التاريخ الإسلامي)',
+  'Tauhid & Aqidah (التوحيد والعقيدة)',
+  'Ulumul Quran (علوم القرآن)',
+  'Ushul Fiqih (أصول الفقه)',
+];
+
 export default function SubjectsPage() {
+  const [activeTabLevel, setActiveTabLevel] = useState<'SMP' | 'SMA'>('SMP');
   const [subjects, setSubjects] = useState<Subject[]>([]);
   
   // State form mapel dengan opsi dropdown & custom
@@ -68,6 +84,28 @@ export default function SubjectsPage() {
   useEffect(() => {
     fetchSubjects();
   }, []);
+
+  // Filter daftar mapel di tabel berdasarkan jenjang tab aktif (SMP / SMA)
+  const filteredSubjectsByLevel = useMemo(() => {
+    return subjects.filter((subj) => {
+      const name = subj.name.toLowerCase();
+      const isSMASubj =
+        name.includes('lanjutan') ||
+        name.includes('muqoron') ||
+        name.includes('ulumul') ||
+        name.includes('mustholah') ||
+        name.includes('ushul') ||
+        name.includes('tarikh') ||
+        name.includes('balaghoh') ||
+        name.includes('tauhid') ||
+        name.includes('muhadatsah') ||
+        name.includes('debat');
+
+      return activeTabLevel === 'SMA' ? isSMASubj : !isSMASubj;
+    });
+  }, [subjects, activeTabLevel]);
+
+  const activeDefaultList = activeTabLevel === 'SMA' ? DEFAULT_SUBJECTS_SMA : DEFAULT_SUBJECTS_SMP;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +169,8 @@ export default function SubjectsPage() {
   const handleEdit = (subject: Subject) => {
     setEditingId(subject.id);
     
-    if (DEFAULT_SUBJECTS.includes(subject.name)) {
+    const allDefaults = [...DEFAULT_SUBJECTS_SMP, ...DEFAULT_SUBJECTS_SMA];
+    if (allDefaults.includes(subject.name)) {
       setSelectedSubjectOption(subject.name);
       setIsCustomMode(false);
       setCustomSubjectName('');
@@ -195,7 +234,7 @@ export default function SubjectsPage() {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (e.target.checked) {
-      setSelectedIds(subjects.map((s) => s.id));
+      setSelectedIds(filteredSubjectsByLevel.map((s) => s.id));
     } else {
       setSelectedIds([]);
     }
@@ -263,10 +302,10 @@ export default function SubjectsPage() {
     }
   };
 
-  const totalSubjects = subjects.length;
+  const totalSubjects = filteredSubjectsByLevel.length;
   const allSelected =
-    subjects.length > 0 &&
-    selectedIds.length === subjects.length;
+    filteredSubjectsByLevel.length > 0 &&
+    selectedIds.length === filteredSubjectsByLevel.length;
 
   return (
     <main className="min-h-screen bg-[#f7f9f8] text-slate-800">
@@ -282,7 +321,7 @@ export default function SubjectsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-                  Mata Pelajaran
+                  Mata Pelajaran ({activeTabLevel})
                 </h1>
 
                 <span className="hidden rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700 sm:inline-flex">
@@ -291,7 +330,7 @@ export default function SubjectsPage() {
               </div>
 
               <p className="mt-0.5 text-[11px] text-slate-500">
-                Kelola daftar master mata pelajaran pesantren.
+                Kelola daftar master mata pelajaran pesantren berdasarkan jenjang.
               </p>
             </div>
           </div>
@@ -306,10 +345,34 @@ export default function SubjectsPage() {
           </div>
         </header>
 
+        {/* ================= TAB JENJANG (SMP / SMA) ================= */}
+        <div className="mb-5 flex rounded-2xl bg-slate-200/70 p-1.5 max-w-xs shadow-inner">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTabLevel('SMP');
+              setSelectedIds([]);
+            }}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${activeTabLevel === 'SMP' ? 'bg-[#064e3b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            🎓 Jenjang SMP
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTabLevel('SMA');
+              setSelectedIds([]);
+            }}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${activeTabLevel === 'SMA' ? 'bg-[#064e3b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            🎓 Jenjang SMA
+          </button>
+        </div>
+
         {/* ================= SUMMARY ================= */}
         <div className="mb-5 flex flex-wrap items-center divide-x divide-slate-200 rounded-xl border border-slate-200/80 bg-white shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
           <MiniStat
-            label="Total Mata Pelajaran"
+            label={`Total Mapel (${activeTabLevel})`}
             value={totalSubjects}
             icon={<BookIcon />}
           />
@@ -364,7 +427,7 @@ export default function SubjectsPage() {
                 <h2 className="text-xs font-bold text-slate-800">
                   {editingId
                     ? 'Edit Mata Pelajaran'
-                    : 'Tambah Mata Pelajaran'}
+                    : `Tambah Mapel (${activeTabLevel})`}
                 </h2>
 
                 <p className="mt-0.5 text-[10px] text-slate-400">
@@ -391,7 +454,7 @@ export default function SubjectsPage() {
             >
               <div>
                 <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                  Nama Mata Pelajaran
+                  Nama Mata Pelajaran ({activeTabLevel})
                 </label>
 
                 {!isCustomMode ? (
@@ -405,7 +468,7 @@ export default function SubjectsPage() {
                       className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
                     >
                       <option value="">-- Pilih Mata Pelajaran --</option>
-                      {DEFAULT_SUBJECTS.map((subj) => (
+                      {activeDefaultList.map((subj) => (
                         <option key={subj} value={subj}>
                           {subj}
                         </option>
@@ -477,7 +540,7 @@ export default function SubjectsPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xs font-bold text-slate-800">
-                    Daftar Mata Pelajaran
+                    Daftar Mata Pelajaran ({activeTabLevel})
                   </h2>
 
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-500">
@@ -486,7 +549,7 @@ export default function SubjectsPage() {
                 </div>
 
                 <p className="mt-0.5 text-[10px] text-slate-400">
-                  Data mata pelajaran yang tersedia.
+                  Data mata pelajaran tersedia untuk jenjang {activeTabLevel}.
                 </p>
               </div>
 
@@ -507,7 +570,7 @@ export default function SubjectsPage() {
             </div>
 
             {/* SELECT ALL */}
-            {subjects.length > 0 && (
+            {filteredSubjectsByLevel.length > 0 && (
               <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-2.5">
 
                 <input
@@ -524,7 +587,7 @@ export default function SubjectsPage() {
                       setSelectedIds([]);
                     } else {
                       setSelectedIds(
-                        subjects.map((s) => s.id)
+                        filteredSubjectsByLevel.map((s) => s.id)
                       );
                     }
                   }}
@@ -532,7 +595,7 @@ export default function SubjectsPage() {
                 >
                   {allSelected
                     ? 'Batalkan Semua'
-                    : `Pilih Semua (${subjects.length})`}
+                    : `Pilih Semua (${filteredSubjectsByLevel.length})`}
                 </button>
 
                 {selectedIds.length > 0 && (
@@ -548,7 +611,7 @@ export default function SubjectsPage() {
 
               {loadingSubjects ? (
                 <LoadingState />
-              ) : subjects.length === 0 ? (
+              ) : filteredSubjectsByLevel.length === 0 ? (
                 <EmptyState />
               ) : (
                 <div className="overflow-hidden rounded-lg border border-slate-200">
@@ -564,7 +627,7 @@ export default function SubjectsPage() {
 
                   {/* ROWS */}
                   <div className="divide-y divide-slate-100">
-                    {subjects.map((subject, index) => {
+                    {filteredSubjectsByLevel.map((subject, index) => {
                       const isChecked =
                         selectedIds.includes(
                           subject.id
@@ -861,7 +924,6 @@ function EditIcon() {
         strokeLinejoin="round"
         d="M12 20h9"
       />
-
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -886,7 +948,6 @@ function SpinnerIcon() {
         strokeOpacity="0.3"
         strokeWidth="3"
       />
-
       <path
         d="M21 12a9 9 0 0 0-9-9"
         stroke="currentColor"
