@@ -134,8 +134,7 @@ exports.Prisma.TeacherScalarFieldEnum = {
 
 exports.Prisma.SubjectScalarFieldEnum = {
   id: 'id',
-  name: 'name',
-  teacherId: 'teacherId'
+  name: 'name'
 };
 
 exports.Prisma.CPScalarFieldEnum = {
@@ -184,6 +183,8 @@ exports.Prisma.TahfidzScalarFieldEnum = {
 exports.Prisma.AttendanceScalarFieldEnum = {
   id: 'id',
   studentId: 'studentId',
+  className: 'className',
+  day: 'day',
   status: 'status',
   date: 'date'
 };
@@ -202,16 +203,6 @@ exports.Prisma.AssignmentScalarFieldEnum = {
   subjectId: 'subjectId',
   className: 'className',
   academicYear: 'academicYear'
-};
-
-exports.Prisma.ScoreRecordScalarFieldEnum = {
-  id: 'id',
-  studentId: 'studentId',
-  subjectId: 'subjectId',
-  className: 'className',
-  type: 'type',
-  scoreNumber: 'scoreNumber',
-  scoreText: 'scoreText'
 };
 
 exports.Prisma.PersonalityScalarFieldEnum = {
@@ -279,7 +270,6 @@ exports.Prisma.ModelName = {
   Attendance: 'Attendance',
   ClassRoom: 'ClassRoom',
   Assignment: 'Assignment',
-  ScoreRecord: 'ScoreRecord',
   Personality: 'Personality',
   HomeroomNote: 'HomeroomNote',
   SystemSetting: 'SystemSetting',

@@ -16,23 +16,17 @@ model Teacher {
   education       String?
   address         String?
   role            String  @default("TEACHER")
-  status          String  @default("Aktif") // Tambahan status akun (Aktif/Nonaktif)
+  status          String  @default("Aktif")
 
   assignments Assignment[]
-  subjects    Subject[]
 }
 
 model Subject {
-  id        Int    @id @default(autoincrement())
-  name      String
-  teacherId Int
+  id   Int    @id @default(autoincrement())
+  name String // Tanda @unique dihapus agar db push tidak gagal jika ada nama mapel serupa
 
-  teacher      Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  assignments  Assignment[]
-  cps          CP[]
-  scoreRecords ScoreRecord[]
-
-  @@index([teacherId])
+  assignments Assignment[]
+  cps         CP[]
 }
 
 model CP {
@@ -67,16 +61,12 @@ model Student {
   gender     String
   class_name String
   address    String?
-
-  // Status siswa:
-  // Aktif / Lulus / Tinggal Kelas / Pindah
-  status String @default("Aktif")
+  status     String  @default("Aktif")
 
   assessments  Assessment[]
   attendances  Attendance[]
   homeroomNote HomeroomNote?
   personality  Personality?
-  scoreRecords ScoreRecord[]
   tahfidzs     Tahfidz[]
   promotions   StudentPromotion[]
 
@@ -87,13 +77,14 @@ model Student {
 model Assessment {
   id        Int    @id @default(autoincrement())
   studentId Int
-  tpId      Int
+  tpId      Int?
   score     Int
   type      String
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  tp      TP      @relation(fields: [tpId], references: [id], onDelete: Cascade)
+  tp      TP?     @relation(fields: [tpId], references: [id], onDelete: Cascade)
 
+  @@unique([studentId, tpId, type])
   @@index([studentId])
   @@index([tpId])
 }
@@ -115,13 +106,18 @@ model Tahfidz {
 model Attendance {
   id        Int      @id @default(autoincrement())
   studentId Int
+  className String
+  day       String
   status    String
   date      DateTime @default(now())
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
+  @@unique([studentId, date])
   @@index([studentId])
+  @@index([className])
   @@index([date])
+  @@index([day])
 }
 
 model ClassRoom {
@@ -147,24 +143,6 @@ model Assignment {
 
   @@unique([teacherId, subjectId, className, academicYear])
   @@index([teacherId])
-  @@index([subjectId])
-  @@index([className])
-}
-
-model ScoreRecord {
-  id          Int    @id @default(autoincrement())
-  studentId   Int
-  subjectId   Int
-  className   String
-  type        String
-  scoreNumber Int    @default(0)
-  scoreText   String @default("")
-
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-
-  @@unique([studentId, subjectId, type])
-  @@index([studentId])
   @@index([subjectId])
   @@index([className])
 }

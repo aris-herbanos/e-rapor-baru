@@ -1,1352 +1,209 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { BookOpen, Users, Award, RefreshCw, CheckCircle2 } from 'lucide-react';
 
-import {
-  Award,
-  CheckCircle2,
-  ChevronDown,
-  ClipboardList,
-  GraduationCap,
-  Loader2,
-  Save,
-  School,
-  Users,
-  AlertCircle,
-} from 'lucide-react';
-
-/* ============================================================
-   TYPES
-============================================================ */
+type AssessmentItem = {
+  id: number;
+  studentId: number;
+  tpId: number;
+  score: number;
+  type: string;
+  student?: {
+    id: number;
+    fullname: string;
+    class_name?: string;
+  };
+};
 
 type ClassRoom = {
   id: number;
   name: string;
-  level: string;
-  grade: number;
 };
 
 type Subject = {
   id: number;
   name: string;
-  teacherId?: number | null;
-  teacher?: {
-    id: number;
-    fullname?: string;
-  } | null;
 };
-
-type Student = {
-  id: number;
-  fullname: string;
-  class_name?: string | null;
-};
-
-type ScoreInput = {
-  number: string;
-  text: string;
-};
-
-/* ============================================================
-   HELPER
-   API bisa mengembalikan:
-   1. [...]
-   2. { success: true, data: [...] }
-============================================================ */
-
-function extractArray<T>(responseData: unknown): T[] {
-  if (Array.isArray(responseData)) {
-    return responseData as T[];
-  }
-
-  if (
-    responseData &&
-    typeof responseData === 'object' &&
-    'data' in responseData &&
-    Array.isArray(
-      (responseData as { data?: unknown }).data
-    )
-  ) {
-    return (responseData as { data: T[] }).data;
-  }
-
-  return [];
-}
-
-/* ============================================================
-   ERROR MESSAGE HELPER
-============================================================ */
-
-function getApiMessage(
-  data: unknown,
-  fallback: string
-): string {
-  if (
-    data &&
-    typeof data === 'object' &&
-    'message' in data
-  ) {
-    const message = (data as { message?: unknown }).message;
-
-    if (typeof message === 'string' && message.trim()) {
-      return message;
-    }
-  }
-
-  return fallback;
-}
-
-/* ============================================================
-   COMPONENT
-============================================================ */
 
 export default function NilaiPage() {
+  const [assessments, setAssessments] = useState<AssessmentItem[]>([]);
   const [classes, setClasses] = useState<ClassRoom[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
 
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [selectedType, setSelectedType] = useState('Lisan');
-
-  const [scoreInputs, setScoreInputs] = useState<
-    Record<number, ScoreInput>
-  >({});
-
-  const [loadingClasses, setLoadingClasses] =
-    useState(true);
-
-  const [loadingSubjects, setLoadingSubjects] =
-    useState(true);
-
-  const [loadingStudents, setLoadingStudents] =
-    useState(false);
-
-  const [loadingScores, setLoadingScores] =
-    useState(false);
-
-  const [saving, setSaving] = useState(false);
-
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  /* ==========================================================
-     LOAD KELAS
-  ========================================================== */
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadClasses = async () => {
-      try {
-        setLoadingClasses(true);
-        setError('');
-
-        const response = await fetch('/api/classes', {
-          method: 'GET',
-          cache: 'no-store',
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            getApiMessage(
-              data,
-              'Gagal memuat data kelas.'
-            )
-          );
-        }
-
-        const classData =
-          extractArray<ClassRoom>(data);
-
-        if (
-          data &&
-          typeof data === 'object' &&
-          !Array.isArray(data) &&
-          'success' in data &&
-          (data as { success?: boolean }).success === false
-        ) {
-          throw new Error(
-            getApiMessage(
-              data,
-              'Gagal memuat data kelas.'
-            )
-          );
-        }
-
-        if (mounted) {
-          setClasses(classData);
-        }
-      } catch (err: unknown) {
-        console.error(
-          'Load classes error:',
-          err
-        );
-
-        if (mounted) {
-          setClasses([]);
-
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Tidak dapat memuat daftar kelas.'
-          );
-        }
-      } finally {
-        if (mounted) {
-          setLoadingClasses(false);
-        }
-      }
-    };
-
-    loadClasses();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  /* ==========================================================
-     LOAD MATA PELAJARAN
-  ========================================================== */
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadSubjects = async () => {
-      try {
-        setLoadingSubjects(true);
-
-        const response = await fetch('/api/subjects', {
-          method: 'GET',
-          cache: 'no-store',
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            getApiMessage(
-              data,
-              'Gagal memuat mata pelajaran.'
-            )
-          );
-        }
-
-        const subjectData =
-          extractArray<Subject>(data);
-
-        if (
-          data &&
-          typeof data === 'object' &&
-          !Array.isArray(data) &&
-          'success' in data &&
-          (data as { success?: boolean }).success === false
-        ) {
-          throw new Error(
-            getApiMessage(
-              data,
-              'Gagal memuat mata pelajaran.'
-            )
-          );
-        }
-
-        if (mounted) {
-          setSubjects(subjectData);
-        }
-      } catch (err: unknown) {
-        console.error(
-          'Load subjects error:',
-          err
-        );
-
-        if (mounted) {
-          setSubjects([]);
-
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Gagal memuat mata pelajaran.'
-          );
-        }
-      } finally {
-        if (mounted) {
-          setLoadingSubjects(false);
-        }
-      }
-    };
-
-    loadSubjects();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  /* ==========================================================
-     KELAS TERPILIH
-  ========================================================== */
-
-  const selectedClassData = useMemo(() => {
-    return classes.find(
-      (item) =>
-        String(item.id) === selectedClass
-    );
-  }, [classes, selectedClass]);
-
-  const selectedClassName =
-    selectedClassData?.name || '';
-
-  /* ==========================================================
-     LOAD SANTRI
-  ========================================================== */
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadStudents = async () => {
-      if (!selectedClassData) {
-        setStudents([]);
-        setScoreInputs({});
-        return;
-      }
-
-      try {
-        setLoadingStudents(true);
-        setMessage('');
-
-        const response = await fetch(
-          '/api/students',
-          {
-            method: 'GET',
-            cache: 'no-store',
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            getApiMessage(
-              data,
-              'Gagal memuat data santri.'
-            )
-          );
-        }
-
-        const studentData =
-          extractArray<Student>(data);
-
-        if (
-          data &&
-          typeof data === 'object' &&
-          !Array.isArray(data) &&
-          'success' in data &&
-          (data as { success?: boolean }).success === false
-        ) {
-          throw new Error(
-            getApiMessage(
-              data,
-              'Gagal memuat data santri.'
-            )
-          );
-        }
-
-        /*
-         * Filter berdasarkan class_name.
-         */
-        const selectedName =
-          String(
-            selectedClassData.name
-          ).trim();
-
-        const filtered =
-          studentData.filter(
-            (student) =>
-              String(
-                student.class_name ?? ''
-              ).trim() === selectedName
-          );
-
-        if (mounted) {
-          setStudents(filtered);
-          setScoreInputs({});
-        }
-      } catch (err: unknown) {
-        console.error(
-          'Load students error:',
-          err
-        );
-
-        if (mounted) {
-          setStudents([]);
-
-          setMessage(
-            err instanceof Error
-              ? err.message
-              : 'Gagal memuat data santri.'
-          );
-        }
-      } finally {
-        if (mounted) {
-          setLoadingStudents(false);
-        }
-      }
-    };
-
-    loadStudents();
-
-    return () => {
-      mounted = false;
-    };
-  }, [selectedClassData]);
-
-  /* ==========================================================
-     LOAD NILAI YANG SUDAH ADA
-  ========================================================== */
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadScores = async () => {
-      if (
-        !selectedClassName ||
-        !selectedSubject ||
-        !selectedType
-      ) {
-        return;
-      }
-
-      try {
-        setLoadingScores(true);
-
-        const params = new URLSearchParams({
-          className: selectedClassName,
-          subjectId: selectedSubject,
-          type: selectedType,
-        });
-
-        const response = await fetch(
-          `/api/nilai?${params.toString()}`,
-          {
-            method: 'GET',
-            cache: 'no-store',
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            getApiMessage(
-              data,
-              'Gagal memuat nilai.'
-            )
-          );
-        }
-
-        const scores =
-          extractArray<any>(data);
-
-        const map: Record<
-          number,
-          ScoreInput
-        > = {};
-
-        scores.forEach((score: any) => {
-          if (
-            score?.studentId === undefined ||
-            score?.studentId === null
-          ) {
-            return;
-          }
-
-          map[Number(score.studentId)] = {
-            number:
-              score.scoreNumber !== null &&
-              score.scoreNumber !== undefined
-                ? String(score.scoreNumber)
-                : '',
-
-            text:
-              score.scoreText !== null &&
-              score.scoreText !== undefined
-                ? String(score.scoreText)
-                : '',
-          };
-        });
-
-        if (mounted) {
-          setScoreInputs(map);
-        }
-      } catch (err: unknown) {
-        console.error(
-          'Load scores error:',
-          err
-        );
-
-        if (mounted) {
-          setScoreInputs({});
-        }
-      } finally {
-        if (mounted) {
-          setLoadingScores(false);
-        }
-      }
-    };
-
-    loadScores();
-
-    return () => {
-      mounted = false;
-    };
-  }, [
-    selectedClassName,
-    selectedSubject,
-    selectedType,
-  ]);
-
-  /* ==========================================================
-     CHANGE NILAI
-  ========================================================== */
-
-  const handleInputChange = (
-    studentId: number,
-    field: 'number' | 'text',
-    value: string
-  ) => {
-    setScoreInputs((prev) => ({
-      ...prev,
-
-      [studentId]: {
-        number:
-          field === 'number'
-            ? value
-            : prev[studentId]?.number || '',
-
-        text:
-          field === 'text'
-            ? value
-            : prev[studentId]?.text || '',
-      },
-    }));
-  };
-
-  /* ==========================================================
-     SIMPAN NILAI
-  ========================================================== */
-
-  const handleSave = async (
-    event: React.FormEvent
-  ) => {
-    event.preventDefault();
-
-    setMessage('');
-
-    if (!selectedClassData) {
-      setMessage(
-        'Silakan pilih kelas terlebih dahulu.'
-      );
-      return;
-    }
-
-    if (!selectedSubject) {
-      setMessage(
-        'Silakan pilih mata pelajaran terlebih dahulu.'
-      );
-      return;
-    }
-
-    if (students.length === 0) {
-      setMessage(
-        'Tidak terdapat santri pada kelas yang dipilih.'
-      );
-      return;
-    }
-
+  // Ambil data referensi kelas, mapel, dan asesmen
+  const fetchData = useCallback(async () => {
     try {
-      setSaving(true);
+      setLoading(true);
+      const [classRes, subjectRes, assessRes] = await Promise.all([
+        fetch('/api/classes', { cache: 'no-store' }),
+        fetch('/api/subjects', { cache: 'no-store' }),
+        fetch('/api/assessment', { cache: 'no-store' }),
+      ]);
 
-      const scoresArray =
-        students.map((student) => {
-          const rawNumber =
-            scoreInputs[student.id]?.number ?? '';
+      const classData = await classRes.json();
+      const subjectData = await subjectRes.json();
+      const assessData = await assessRes.json();
 
-          const numericScore =
-            rawNumber === ''
-              ? 0
-              : Number(rawNumber);
-
-          return {
-            studentId: student.id,
-            scoreNumber:
-              Number.isFinite(numericScore)
-                ? numericScore
-                : 0,
-
-            scoreText:
-              scoreInputs[student.id]?.text
-                ?.trim() || '',
-          };
-        });
-
-      const response = await fetch(
-        '/api/nilai',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-
-          body: JSON.stringify({
-            className:
-              selectedClassData.name,
-
-            subjectId:
-              Number(selectedSubject),
-
-            type: selectedType,
-
-            scores: scoresArray,
-          }),
-        }
-      );
-
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          getApiMessage(
-            data,
-            'Gagal menyimpan nilai.'
-          )
-        );
-      }
-
-      setMessage(
-        'Nilai seluruh santri berhasil disimpan.'
-      );
-    } catch (err: unknown) {
-      console.error(
-        'Save scores error:',
-        err
-      );
-
-      setMessage(
-        err instanceof Error
-          ? err.message
-          : 'Terjadi kesalahan saat menyimpan nilai.'
-      );
+      if (classRes.ok) setClasses(Array.isArray(classData) ? classData : classData?.data || []);
+      if (subjectRes.ok) setSubjects(Array.isArray(subjectData) ? subjectData : subjectData?.data || []);
+      if (assessRes.ok) setAssessments(Array.isArray(assessData) ? assessData : assessData?.data || []);
+    } catch (err) {
+      console.error('Gagal memuat rekap nilai:', err);
+      setMessage('Gagal memuat rekapitulasi nilai asesmen.');
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
-  };
+  }, []);
 
-  /* ==========================================================
-     CHANGE KELAS
-  ========================================================== */
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  const handleClassChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const value =
-      event.target.value;
-
-    setSelectedClass(value);
-    setMessage('');
-    setError('');
-    setScoreInputs({});
-  };
-
-  /* ==========================================================
-     CHANGE MAPEL
-  ========================================================== */
-
-  const handleSubjectChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const value =
-      event.target.value;
-
-    setSelectedSubject(value);
-    setMessage('');
-    setError('');
-    setScoreInputs({});
-  };
-
-  /* ==========================================================
-     UI
-  ========================================================== */
+  // Filter asesmen berdasarkan kelas yang dipilih
+  const filteredAssessments = assessments.filter((item) => {
+    if (!selectedClass) return true;
+    return item.student?.class_name === selectedClass;
+  });
 
   return (
-    <div className="min-h-screen bg-[#f5f8f6]">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-
-        {/* ====================================================
-            HEADER
-        ===================================================== */}
-
-        <div className="mb-7">
-          <div className="mb-3 flex items-center gap-2 text-xs font-medium text-emerald-700">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50">
-              <Award
-                size={15}
-                strokeWidth={1.8}
-              />
-            </span>
-
-            Akademik
-
-            <span className="text-slate-300">
-              /
-            </span>
-
-            Nilai Santri
-          </div>
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">
-                Nilai Santri
-              </h1>
-
-              <p className="mt-1.5 text-sm text-slate-500">
-                Kelola dan input nilai akademik
-                santri berdasarkan kelas dan
-                mata pelajaran.
-              </p>
-            </div>
-
-            <div className="hidden items-center gap-2 rounded-xl border border-emerald-100 bg-white px-4 py-2.5 shadow-sm sm:flex">
-              <GraduationCap
-                size={18}
-                className="text-emerald-700"
-                strokeWidth={1.7}
-              />
-
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400">
-                  Sistem Akademik
-                </div>
-
-                <div className="text-xs font-semibold text-slate-700">
-                  E-Rapor Ulul Albab
-                </div>
-              </div>
-            </div>
-          </div>
+    <main className="min-h-screen bg-[#f5f7f5] p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {/* HEADER */}
+      <header className="rounded-2xl bg-[#064e3b] px-6 py-7 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-100">
+            Akademik • Rekapitulasi
+          </span>
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl mt-1">
+            Rekapitulasi Nilai Asesmen Santri
+          </h1>
+          <p className="text-xs text-emerald-100/80 mt-1">
+            Nilai santri di bawah ini bersumber secara otomatis dari hasil input asesmen guru.
+          </p>
         </div>
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-xs font-semibold transition"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Perbarui Data
+        </button>
+      </header>
 
-        {/* ====================================================
-            ERROR
-        ===================================================== */}
-
-        {error && (
-          <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <AlertCircle
-              size={18}
-              className="mt-0.5 shrink-0"
-            />
-
-            <div>
-              <div className="font-semibold">
-                Gagal memuat data
-              </div>
-
-              <div className="mt-0.5 text-xs text-red-600">
-                {error}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ====================================================
-            FILTER
-        ===================================================== */}
-
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.04)]">
-
-          <div className="border-b border-slate-100 bg-gradient-to-r from-[#063c30] to-[#07543f] px-5 py-4 sm:px-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-emerald-100">
-                <ClipboardList
-                  size={18}
-                  strokeWidth={1.7}
-                />
-              </div>
-
-              <div>
-                <div className="text-sm font-semibold text-white">
-                  Parameter Penilaian
-                </div>
-
-                <div className="text-[11px] text-emerald-100/60">
-                  Tentukan kelas, mata pelajaran,
-                  dan tipe ujian
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-3 md:p-6">
-
-            {/* KELAS */}
-
-            <div>
-              <label
-                htmlFor="class"
-                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500"
-              >
-                Kelas
-              </label>
-
-              <div className="relative">
-                <select
-                  id="class"
-                  value={selectedClass}
-                  onChange={
-                    handleClassChange
-                  }
-                  disabled={
-                    loadingClasses
-                  }
-                  className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-10 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 disabled:cursor-wait disabled:bg-slate-50"
-                >
-                  <option value="">
-                    {loadingClasses
-                      ? 'Memuat kelas...'
-                      : classes.length === 0
-                        ? 'Tidak ada data kelas'
-                        : 'Pilih Kelas'}
-                  </option>
-
-                  {classes.map(
-                    (cls) => (
-                      <option
-                        key={cls.id}
-                        value={String(
-                          cls.id
-                        )}
-                      >
-                        Kelas {cls.name}
-                        {cls.level
-                          ? ` — ${cls.level}`
-                          : ''}
-                      </option>
-                    )
-                  )}
-                </select>
-
-                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  {loadingClasses ? (
-                    <Loader2
-                      size={16}
-                      className="animate-spin"
-                    />
-                  ) : (
-                    <ChevronDown
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-1.5 text-[10px] text-slate-400">
-                {classes.length > 0
-                  ? `${classes.length} kelas tersedia`
-                  : 'Belum ada data kelas'}
-              </div>
-            </div>
-
-            {/* MAPEL */}
-
-            <div>
-              <label
-                htmlFor="subject"
-                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500"
-              >
-                Mata Pelajaran
-              </label>
-
-              <div className="relative">
-                <select
-                  id="subject"
-                  value={
-                    selectedSubject
-                  }
-                  onChange={
-                    handleSubjectChange
-                  }
-                  disabled={
-                    loadingSubjects
-                  }
-                  className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-10 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 disabled:cursor-wait disabled:bg-slate-50"
-                >
-                  <option value="">
-                    {loadingSubjects
-                      ? 'Memuat mata pelajaran...'
-                      : subjects.length ===
-                          0
-                        ? 'Tidak ada mata pelajaran'
-                        : 'Pilih Mata Pelajaran'}
-                  </option>
-
-                  {subjects.map(
-                    (subject) => (
-                      <option
-                        key={
-                          subject.id
-                        }
-                        value={String(
-                          subject.id
-                        )}
-                      >
-                        {subject.name}
-                      </option>
-                    )
-                  )}
-                </select>
-
-                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  {loadingSubjects ? (
-                    <Loader2
-                      size={16}
-                      className="animate-spin"
-                    />
-                  ) : (
-                    <ChevronDown
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-1.5 text-[10px] text-slate-400">
-                {subjects.length > 0
-                  ? `${subjects.length} mata pelajaran tersedia`
-                  : 'Belum ada data mata pelajaran'}
-              </div>
-            </div>
-
-            {/* TIPE */}
-
-            <div>
-              <label
-                htmlFor="type"
-                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500"
-              >
-                Tipe Ujian
-              </label>
-
-              <div className="relative">
-                <select
-                  id="type"
-                  value={
-                    selectedType
-                  }
-                  onChange={(event) =>
-                    setSelectedType(
-                      event.target.value
-                    )
-                  }
-                  className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 pr-10 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                >
-                  <option value="Lisan">
-                    Lisan & Praktik —
-                    الامتحان الشفوي والتطبيقي
-                  </option>
-
-                  <option value="Tertulis">
-                    Ujian Tertulis —
-                    الامتحان التحريري
-                  </option>
-                </select>
-
-                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <ChevronDown
-                    size={17}
-                    strokeWidth={1.8}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+      {message && (
+        <div className="p-4 rounded-xl text-sm bg-red-50 text-red-800 border border-red-200">
+          {message}
         </div>
+      )}
 
-        {/* ====================================================
-            MESSAGE
-        ===================================================== */}
-
-        {message && (
-          <div
-            className={[
-              'mt-5 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm',
-              message
-                .toLowerCase()
-                .includes('berhasil') ||
-              message
-                .toLowerCase()
-                .includes('sukses')
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-red-200 bg-red-50 text-red-700',
-            ].join(' ')}
+      {/* FILTER PARAMETER */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            Filter Kelas
+          </label>
+          <select
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value)}
+            className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 bg-white"
           >
-            {message
-              .toLowerCase()
-              .includes('berhasil') ||
-            message
-              .toLowerCase()
-              .includes('sukses') ? (
-              <CheckCircle2 size={18} />
-            ) : (
-              <AlertCircle size={18} />
-            )}
+            <option value="">-- Semua Kelas --</option>
+            {classes.map((cls) => (
+              <option key={cls.id} value={cls.name}>
+                Kelas {cls.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            {message}
-          </div>
-        )}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            Filter Mata Pelajaran
+          </label>
+          <select
+            value={selectedSubject}
+            onChange={(e) => setSelectedSubject(e.target.value)}
+            className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 bg-white"
+          >
+            <option value="">-- Semua Mata Pelajaran --</option>
+            {subjects.map((subj) => (
+              <option key={subj.id} value={subj.name}>
+                {subj.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
-        {/* ====================================================
-            EMPTY
-        ===================================================== */}
+      {/* TABEL REKAPITULASI ASESMEN */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-4 border-b border-slate-200 bg-slate-50 font-bold text-sm text-slate-800 flex items-center justify-between">
+          <span>Daftar Nilai Berdasarkan Asesmen</span>
+          <span className="text-xs font-normal text-slate-500">
+            Total Rekap: {filteredAssessments.length} catatan
+          </span>
+        </div>
 
-        {!selectedClass ||
-        !selectedSubject ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-              <Award
-                size={26}
-                strokeWidth={1.5}
-              />
-            </div>
-
-            <h2 className="mt-4 text-sm font-semibold text-slate-700">
-              Siap Menginput Nilai
-            </h2>
-
-            <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-slate-400">
-              Silakan pilih kelas dan
-              mata pelajaran terlebih
-              dahulu. Daftar santri akan
-              muncul secara otomatis.
-            </p>
+        {loading ? (
+          <div className="p-12 text-center text-sm text-slate-400">Memuat rekapitulasi nilai...</div>
+        ) : filteredAssessments.length === 0 ? (
+          <div className="p-12 text-center text-sm text-slate-400">
+            Belum ada data asesmen yang dimasukkan untuk filter ini. Silakan input melalui menu <strong>Input Asesmen</strong>.
           </div>
         ) : (
-          /* ==================================================
-             TABLE
-          =================================================== */
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-400 uppercase font-bold text-[10px]">
+                  <th className="p-4">No</th>
+                  <th className="p-4">Nama Santri</th>
+                  <th className="p-4">Kelas</th>
+                  <th className="p-4">ID TP</th>
+                  <th className="p-4">Jenis Asesmen</th>
+                  <th className="p-4 text-center">Nilai Angka</th>
+                  <th className="p-4">Predikat / Keterangan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredAssessments.map((item, index) => {
+                  const score = item.score;
+                  let predicate = 'Perlu Bimbingan';
+                  if (score >= 90) predicate = 'Sangat Baik (Mumtaz)';
+                  else if (score >= 80) predicate = 'Baik (Jeid Jiddan)';
+                  else if (score >= 70) predicate = 'Cukup Baik (Jeid)';
+                  else if (score >= 60) predicate = 'Cukup (Maqbul)';
 
-          <form
-            onSubmit={handleSave}
-            className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_24px_rgba(15,23,42,0.04)]"
-          >
-
-            {/* HEADER */}
-
-            <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                  <Users
-                    size={19}
-                    strokeWidth={1.7}
-                  />
-                </div>
-
-                <div>
-                  <h2 className="text-sm font-semibold text-slate-800">
-                    Daftar Santri
-                  </h2>
-
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    Kelas{' '}
-                    {selectedClassName}
-
-                    {selectedClassData?.level
-                      ? ` • ${selectedClassData.level}`
-                      : ''}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={
-                  saving ||
-                  loadingStudents ||
-                  students.length === 0
-                }
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#07543f] px-5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#064735] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {saving ? (
-                  <>
-                    <Loader2
-                      size={15}
-                      className="animate-spin"
-                    />
-                    Menyimpan...
-                  </>
-                ) : (
-                  <>
-                    <Save size={15} />
-                    Simpan Semua Nilai
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* INFO */}
-
-            <div className="grid grid-cols-2 border-b border-slate-100 bg-slate-50/70 sm:grid-cols-4">
-
-              <div className="border-r border-slate-100 px-5 py-3">
-                <div className="text-[9px] uppercase tracking-wider text-slate-400">
-                  Kelas
-                </div>
-
-                <div className="mt-0.5 text-xs font-semibold text-slate-700">
-                  {selectedClassName}
-                </div>
-              </div>
-
-              <div className="border-r border-slate-100 px-5 py-3">
-                <div className="text-[9px] uppercase tracking-wider text-slate-400">
-                  Santri
-                </div>
-
-                <div className="mt-0.5 text-xs font-semibold text-slate-700">
-                  {students.length}{' '}
-                  Santri
-                </div>
-              </div>
-
-              <div className="border-r border-slate-100 px-5 py-3">
-                <div className="text-[9px] uppercase tracking-wider text-slate-400">
-                  Tipe
-                </div>
-
-                <div className="mt-0.5 text-xs font-semibold text-slate-700">
-                  {selectedType}
-                </div>
-              </div>
-
-              <div className="px-5 py-3">
-                <div className="text-[9px] uppercase tracking-wider text-slate-400">
-                  Status
-                </div>
-
-                <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Aktif
-                </div>
-              </div>
-            </div>
-
-            {/* TABLE */}
-
-            <div className="relative overflow-x-auto">
-              {(loadingStudents ||
-                loadingScores) && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
-                  <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-medium text-slate-600 shadow-lg">
-                    <Loader2
-                      size={16}
-                      className="animate-spin text-emerald-600"
-                    />
-
-                    {loadingStudents
-                      ? 'Memuat daftar santri...'
-                      : 'Memuat nilai...'}
-                  </div>
-                </div>
-              )}
-
-              <table className="w-full min-w-[720px] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
-                    <th className="w-16 px-4 py-3 text-center font-semibold">
-                      No
-                    </th>
-
-                    <th className="px-4 py-3 text-left font-semibold">
-                      Nama Santri
-                    </th>
-
-                    <th className="w-40 px-4 py-3 text-center font-semibold">
-                      Nilai Angka
-                    </th>
-
-                    <th className="w-72 px-4 py-3 text-left font-semibold">
-                      Predikat / Nilai Huruf
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {students.length ===
-                  0 ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-6 py-14 text-center"
-                      >
-                        <School
-                          size={28}
-                          className="mx-auto text-slate-300"
-                          strokeWidth={1.5}
-                        />
-
-                        <div className="mt-3 text-sm font-medium text-slate-600">
-                          Tidak ada santri
-                        </div>
-
-                        <div className="mt-1 text-xs text-slate-400">
-                          Belum terdapat
-                          santri pada kelas{' '}
-                          {
-                            selectedClassName
-                          }
-                          .
-                        </div>
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50 transition">
+                      <td className="p-4 text-slate-400 font-medium">{index + 1}</td>
+                      <td className="p-4 font-bold text-slate-800">{item.student?.fullname || `Siswa ID: ${item.studentId}`}</td>
+                      <td className="p-4">
+                        <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-semibold text-[10px]">
+                          {item.student?.class_name || '-'}
+                        </span>
                       </td>
+                      <td className="p-4 font-semibold text-slate-600">TP #{item.tpId}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${item.type === 'FORMATIVE' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+                          {item.type === 'FORMATIVE' ? 'Formatif' : 'Sumatif'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center font-bold text-slate-900 text-sm">{score}</td>
+                      <td className="p-4 font-medium text-emerald-800">{predicate}</td>
                     </tr>
-                  ) : (
-                    students.map(
-                      (
-                        student,
-                        index
-                      ) => (
-                        <tr
-                          key={
-                            student.id
-                          }
-                          className="border-b border-slate-100 transition hover:bg-emerald-50/30"
-                        >
-                          <td className="px-4 py-3 text-center text-xs font-medium text-slate-400">
-                            {index + 1}
-                          </td>
-
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-[10px] font-semibold text-emerald-700">
-                                {student.fullname
-                                  ?.charAt(
-                                    0
-                                  )
-                                  ?.toUpperCase()}
-                              </div>
-
-                              <div className="font-medium text-slate-700">
-                                {
-                                  student.fullname
-                                }
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="px-4 py-2 text-center">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="1"
-                              value={
-                                scoreInputs[
-                                  student
-                                    .id
-                                ]?.number ||
-                                ''
-                              }
-                              onChange={(
-                                event
-                              ) =>
-                                handleInputChange(
-                                  student.id,
-                                  'number',
-                                  event
-                                    .target
-                                    .value
-                                )
-                              }
-                              placeholder="0–100"
-                              className="h-9 w-24 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                            />
-                          </td>
-
-                          <td className="px-4 py-2">
-                            <input
-                              type="text"
-                              value={
-                                scoreInputs[
-                                  student
-                                    .id
-                                ]?.text ||
-                                ''
-                              }
-                              onChange={(
-                                event
-                              ) =>
-                                handleInputChange(
-                                  student.id,
-                                  'text',
-                                  event
-                                    .target
-                                    .value
-                                )
-                              }
-                              placeholder="Contoh: Mumtaz"
-                              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                            />
-                          </td>
-                        </tr>
-                      )
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* FOOTER */}
-
-            {students.length > 0 && (
-              <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-5 py-4 sm:px-6">
-                <div className="text-[11px] text-slate-400">
-                  Pastikan nilai sudah
-                  benar sebelum
-                  disimpan.
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={
-                    saving ||
-                    students.length === 0
-                  }
-                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#07543f] px-4 text-xs font-semibold text-white transition hover:bg-[#064735] disabled:opacity-50"
-                >
-                  {saving ? (
-                    <Loader2
-                      size={14}
-                      className="animate-spin"
-                    />
-                  ) : (
-                    <Save size={14} />
-                  )}
-
-                  {saving
-                    ? 'Menyimpan...'
-                    : 'Simpan Nilai'}
-                </button>
-              </div>
-            )}
-          </form>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }

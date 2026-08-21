@@ -1,27 +1,140 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function POST(request: Request) {
+/* =========================================================
+   GET: MENGAMBIL SELURUH DATA ASESMEN
+========================================================= */
+export async function GET() {
   try {
-    const { studentId, tpId, score, type } = await request.json();
-
-    if (!studentId || !tpId || score === undefined || !type) {
-      return NextResponse.json({ message: 'Semua kolom wajib diisi!' }, { status: 400 });
-    }
-
-    // Simpan atau update nilai asesmen siswa berdasarkan TP dan tipenya
-    const assessment = await prisma.assessment.create({
-      data: {
-        studentId: Number(studentId),
-        tpId: Number(tpId),
-        score: Number(score),
-        type, // 'FORMATIVE' atau 'SUMMATIVE'
+    const assessments = await prisma.assessment.findMany({
+      include: {
+        student: true,
+        tp: {
+          include: {
+            cp: {
+              include: {
+                subject: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        id: 'desc',
       },
     });
 
-    return NextResponse.json({ message: 'Nilai berhasil disimpan', assessment }, { status: 201 });
+    return NextResponse.json(assessments, { status: 200 });
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    return NextResponse.json(
+      { message: 'Gagal memuat data asesmen.' },
+      { status: 500 }
+    );
+  }
+}
+
+/* =========================================================
+   POST: MENYIMPAN ATAU MEMPERBARUI NILAI ASESMEN (Mendukung TP, STS, SAS)
+========================================================= */
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const studentId = Number(body?.studentId);
+    // Jika ada tpId (untuk TP), ubah jadi angka. Jika tidak ada (untuk STS/SAS), jadikan null / undefined
+    const tpId = body?.tpId ? Number(body?.tpId) : null;
+    const score = Number(body?.score);
+    const type = String(body?.type || '').trim(); // Contoh: 'ORAL', 'WRITTEN', 'STS', 'SAS', 'STS_WRITTEN', dll.
+
+    if (!studentId || Number.isNaN(score) || !type) {
+      return NextResponse.json(
+        { message: 'Data santri, nilai, dan jenis ujian wajib diisi dengan benar!' },
+        { status: 400 }
+      );
+    }
+
+    // Cari apakah nilai untuk siswa, tipe ujian, dan tpId ini sudah pernah ada
+    const existingAssessment = await prisma.assessment.findFirst({
+      where: {
+        studentId,
+        tpId: tpId ?? null,
+        type,
+      },
+    });
+
+    let assessment;
+
+    if (existingAssessment) {
+      // Jika sudah ada, update nilainya
+      assessment = await prisma.assessment.update({
+        where: { id: existingAssessment.id },
+        data: { score },
+        include: { 
+          student: true, 
+          tp: { include: { cp: { include: { subject: true } } } },
+        },
+      });
+    } else {
+      // Jika belum ada, buat baru (menggunakan properti conditional agar tpId aman jika null)
+      const createData: any = {
+        studentId,
+        score,
+        type,
+      };
+      if (tpId) {
+        createData.tpId = tpId;
+      }
+
+      assessment = await prisma.assessment.create({
+        data: createData,
+        include: { 
+          student: true, 
+          tp: { include: { cp: { include: { subject: true } } } },
+        },
+      });
+    }
+
+    return NextResponse.json(
+      { message: 'Nilai asesmen berhasil disimpan', assessment },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error saving assessment:', error);
-    return NextResponse.json({ message: 'Gagal menyimpan nilai' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Gagal menyimpan nilai asesmen.' },
+      { status: 500 }
+    );
+  }
+}
+
+/* =========================================================
+   DELETE: MENGHAPUS NILAI ASESMEN
+========================================================= */
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    const id = Number(body?.id);
+
+    if (!id) {
+      return NextResponse.json(
+        { message: 'ID Asesmen wajib disertakan!' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.assessment.delete({
+      where: { id },
+    });
+
+    return NextResponse.json(
+      { message: 'Nilai asesmen berhasil dihapus.' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error deleting assessment:', error);
+    return NextResponse.json(
+      { message: 'Gagal menghapus nilai asesmen.' },
+      { status: 500 }
+    );
   }
 }

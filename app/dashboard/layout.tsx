@@ -24,7 +24,6 @@ import {
   CalendarCheck,
   Heart,
   MessageSquare,
-  Award,
   Sparkles,
   ArrowUpCircle,
   History,
@@ -122,12 +121,6 @@ const menus: MenuItem[] = [
     category: 'Akademik',
   },
   {
-    title: 'Nilai',
-    href: '/dashboard/nilai',
-    icon: Award,
-    category: 'Akademik',
-  },
-  {
     title: 'Kepribadian',
     href: '/dashboard/personality',
     icon: Heart,
@@ -193,9 +186,11 @@ export default function DashboardLayout({
    * State dropdown.
    *
    * Default semua tertutup.
-   * Nanti grup yang sesuai halaman aktif akan otomatis terbuka.
+   * Grup yang sesuai halaman aktif
+   * akan otomatis terbuka.
    */
-  const [openCategory, setOpenCategory] = useState<string | null>(null);
+  const [openCategory, setOpenCategory] =
+    useState<string | null>(null);
 
   /* ==========================================================
      ACTIVE MENU
@@ -213,7 +208,9 @@ export default function DashboardLayout({
      * Riwayat Kenaikan harus berdiri sendiri.
      */
     if (href === '/dashboard/promotions/history') {
-      return pathname.startsWith('/dashboard/promotions/history');
+      return pathname.startsWith(
+        '/dashboard/promotions/history'
+      );
     }
 
     /*
@@ -225,7 +222,9 @@ export default function DashboardLayout({
         pathname === '/dashboard/promotions' ||
         (
           pathname.startsWith('/dashboard/promotions/') &&
-          !pathname.startsWith('/dashboard/promotions/history')
+          !pathname.startsWith(
+            '/dashboard/promotions/history'
+          )
         )
       );
     }
@@ -287,13 +286,18 @@ export default function DashboardLayout({
     setLoggingOut(true);
 
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const response = await fetch(
+        '/api/auth/logout',
+        {
+          method: 'POST',
+          credentials: 'include',
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Gagal keluar dari sistem');
+        throw new Error(
+          'Gagal keluar dari sistem'
+        );
       }
 
       router.replace('/login');
@@ -348,7 +352,9 @@ export default function DashboardLayout({
 
         <button
           type="button"
-          onClick={() => setMobileOpen((prev) => !prev)}
+          onClick={() =>
+            setMobileOpen((prev) => !prev)
+          }
           aria-label={
             mobileOpen
               ? 'Tutup menu'
@@ -379,7 +385,9 @@ export default function DashboardLayout({
         <button
           type="button"
           aria-label="Tutup menu"
-          onClick={() => setMobileOpen(false)}
+          onClick={() =>
+            setMobileOpen(false)
+          }
           className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-[2px] lg:hidden"
         />
       )}
@@ -500,7 +508,9 @@ export default function DashboardLayout({
 
             <Link
               href="/dashboard"
-              onClick={() => setMobileOpen(false)}
+              onClick={() =>
+                setMobileOpen(false)
+              }
               className={[
                 'group relative flex min-h-[44px] items-center gap-3',
                 'rounded-xl px-2.5',
@@ -564,26 +574,33 @@ export default function DashboardLayout({
 
             {categories.map((category) => {
 
-              const categoryMenus = menus.filter(
-                (menu) => menu.category === category.title
-              );
+              const categoryMenus =
+                menus.filter(
+                  (menu) =>
+                    menu.category ===
+                    category.title
+                );
 
               if (!categoryMenus.length) {
                 return null;
               }
 
               const categoryOpen =
-                openCategory === category.title;
+                openCategory ===
+                category.title;
 
               const categoryActive =
                 categoryMenus.some((menu) =>
                   isActive(menu.href)
                 );
 
-              const CategoryIcon = category.icon;
+              const CategoryIcon =
+                category.icon;
 
               return (
-                <div key={category.title}>
+                <div
+                  key={category.title}
+                >
 
                   {/* ========================================
                       CATEGORY BUTTON
@@ -592,7 +609,9 @@ export default function DashboardLayout({
                   <button
                     type="button"
                     onClick={() =>
-                      toggleCategory(category.title)
+                      toggleCategory(
+                        category.title
+                      )
                     }
                     className={[
                       'group relative flex w-full items-center gap-3',
@@ -600,7 +619,8 @@ export default function DashboardLayout({
                       'text-left',
                       'transition-all duration-200',
 
-                      categoryOpen || categoryActive
+                      categoryOpen ||
+                      categoryActive
                         ? 'bg-white/[0.055]'
                         : 'hover:bg-white/[0.035]',
                     ].join(' ')}
@@ -619,7 +639,8 @@ export default function DashboardLayout({
                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
                         'transition-all duration-200',
 
-                        categoryActive || categoryOpen
+                        categoryActive ||
+                        categoryOpen
                           ? 'bg-emerald-400/10 text-emerald-300'
                           : 'bg-white/[0.035] text-emerald-200/65 group-hover:bg-white/[0.05] group-hover:text-emerald-200',
                       ].join(' ')}
@@ -637,7 +658,8 @@ export default function DashboardLayout({
                       <span
                         className={[
                           'block text-[12px]',
-                          categoryActive || categoryOpen
+                          categoryActive ||
+                          categoryOpen
                             ? 'font-semibold text-white'
                             : 'font-semibold text-white/75 group-hover:text-white',
                         ].join(' ')}
@@ -657,7 +679,8 @@ export default function DashboardLayout({
                       className={[
                         'mr-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5',
                         'text-[8px] font-bold',
-                        categoryActive || categoryOpen
+                        categoryActive ||
+                        categoryOpen
                           ? 'bg-emerald-400/10 text-emerald-300/80'
                           : 'bg-white/[0.045] text-white/35',
                       ].join(' ')}
@@ -697,76 +720,89 @@ export default function DashboardLayout({
 
                       <div className="relative ml-[18px] border-l border-white/[0.07] py-1 pl-3">
 
-                        {categoryMenus.map((menu) => {
+                        {categoryMenus.map(
+                          (menu) => {
 
-                          const Icon = menu.icon;
-                          const active = isActive(menu.href);
+                            const Icon =
+                              menu.icon;
 
-                          return (
-                            <Link
-                              key={menu.href}
-                              href={menu.href}
-                              onClick={() =>
-                                setMobileOpen(false)
-                              }
-                              className={[
-                                'group relative flex min-h-[38px] items-center gap-2.5',
-                                'rounded-lg px-2',
-                                'text-[11.5px]',
-                                'transition-all duration-200',
+                            const active =
+                              isActive(
+                                menu.href
+                              );
 
-                                active
-                                  ? 'bg-emerald-400/[0.09] text-white'
-                                  : 'text-white/65 hover:bg-white/[0.035] hover:text-white/90',
-                              ].join(' ')}
-                            >
-
-                              {/* ACTIVE DOT */}
-
-                              {active && (
-                                <span className="absolute -left-[17px] h-1.5 w-1.5 rounded-full bg-emerald-400 ring-4 ring-[#052f27]" />
-                              )}
-
-                              {/* ICON */}
-
-                              <span
+                            return (
+                              <Link
+                                key={menu.href}
+                                href={menu.href}
+                                onClick={() =>
+                                  setMobileOpen(
+                                    false
+                                  )
+                                }
                                 className={[
-                                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
+                                  'group relative flex min-h-[38px] items-center gap-2.5',
+                                  'rounded-lg px-2',
+                                  'text-[11.5px]',
+                                  'transition-all duration-200',
+
                                   active
-                                    ? 'text-emerald-300'
-                                    : 'text-emerald-200/55 group-hover:text-emerald-200',
+                                    ? 'bg-emerald-400/[0.09] text-white'
+                                    : 'text-white/65 hover:bg-white/[0.035] hover:text-white/90',
                                 ].join(' ')}
                               >
-                                <Icon
-                                  size={14}
-                                  strokeWidth={1.7}
-                                />
-                              </span>
 
-                              {/* TITLE */}
+                                {/* ACTIVE DOT */}
 
-                              <span
-                                className={[
-                                  'min-w-0 flex-1 truncate',
-                                  active
-                                    ? 'font-semibold'
-                                    : 'font-medium',
-                                ].join(' ')}
-                              >
-                                {menu.title}
-                              </span>
+                                {active && (
+                                  <span className="absolute -left-[17px] h-1.5 w-1.5 rounded-full bg-emerald-400 ring-4 ring-[#052f27]" />
+                                )}
 
-                              {active && (
-                                <ChevronRight
-                                  size={12}
-                                  strokeWidth={1.5}
-                                  className="text-emerald-300/60"
-                                />
-                              )}
+                                {/* ICON */}
 
-                            </Link>
-                          );
-                        })}
+                                <span
+                                  className={[
+                                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
+                                    active
+                                      ? 'text-emerald-300'
+                                      : 'text-emerald-200/55 group-hover:text-emerald-200',
+                                  ].join(' ')}
+                                >
+                                  <Icon
+                                    size={14}
+                                    strokeWidth={
+                                      1.7
+                                    }
+                                  />
+                                </span>
+
+                                {/* TITLE */}
+
+                                <span
+                                  className={[
+                                    'min-w-0 flex-1 truncate',
+                                    active
+                                      ? 'font-semibold'
+                                      : 'font-medium',
+                                  ].join(' ')}
+                                >
+                                  {menu.title}
+                                </span>
+
+                                {active && (
+                                  <ChevronRight
+                                    size={12}
+                                    strokeWidth={
+                                      1.5
+                                    }
+                                    className="text-emerald-300/60"
+                                  />
+                                )}
+
+                              </Link>
+                            );
+                          }
+                        )}
 
                       </div>
 
@@ -796,20 +832,26 @@ export default function DashboardLayout({
 
             <Link
               href="/dashboard/settings"
-              onClick={() => setMobileOpen(false)}
+              onClick={() =>
+                setMobileOpen(false)
+              }
               className={[
                 'group relative flex min-h-[42px] items-center gap-3',
                 'rounded-xl px-2.5',
                 'text-[12px]',
                 'transition-all duration-200',
 
-                isActive('/dashboard/settings')
+                isActive(
+                  '/dashboard/settings'
+                )
                   ? 'bg-white/[0.08] text-white'
                   : 'text-white/70 hover:bg-white/[0.04] hover:text-white',
               ].join(' ')}
             >
 
-              {isActive('/dashboard/settings') && (
+              {isActive(
+                '/dashboard/settings'
+              ) && (
                 <span className="absolute bottom-2.5 left-0 top-2.5 w-[2px] rounded-full bg-gradient-to-b from-emerald-300 to-emerald-500" />
               )}
 
@@ -817,7 +859,9 @@ export default function DashboardLayout({
                 className={[
                   'flex h-8 w-8 items-center justify-center rounded-lg',
 
-                  isActive('/dashboard/settings')
+                  isActive(
+                    '/dashboard/settings'
+                  )
                     ? 'bg-emerald-400/10 text-emerald-300'
                     : 'bg-white/[0.035] text-emerald-200/60 group-hover:text-emerald-200',
                 ].join(' ')}
@@ -830,7 +874,9 @@ export default function DashboardLayout({
 
               <span
                 className={
-                  isActive('/dashboard/settings')
+                  isActive(
+                    '/dashboard/settings'
+                  )
                     ? 'font-semibold'
                     : 'font-medium'
                 }
@@ -838,7 +884,9 @@ export default function DashboardLayout({
                 Pengaturan
               </span>
 
-              {isActive('/dashboard/settings') && (
+              {isActive(
+                '/dashboard/settings'
+              ) && (
                 <ChevronRight
                   size={13}
                   strokeWidth={1.5}

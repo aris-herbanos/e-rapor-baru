@@ -7,53 +7,109 @@ export async function GET() {
     const cps = await prisma.cP.findMany({
       include: {
         subject: true,
-        tps: true,
+        tps: { orderBy: { id: 'asc' } },
       },
+      orderBy: { id: 'desc' },
     });
-    return NextResponse.json(cps, { status: 200 });
+    return NextResponse.json({ success: true, data: cps }, { status: 200 });
   } catch (error) {
-    console.error('Error fetching curriculum:', error);
-    return NextResponse.json({ message: 'Gagal memuat data kurikulum' }, { status: 500 });
+    console.error('Curriculum GET Error:', error);
+    return NextResponse.json({ success: false, message: 'Gagal memuat data' }, { status: 500 });
   }
 }
 
-// POST: Menambah CP atau TP baru
+// POST, PATCH, DELETE: Menangani manipulasi data
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { action, subjectId, code, description, cpId } = body;
+    const { action, id, subjectId, cpId, description, type } = body;
 
+    // 1. CREATE CP DENGAN KODE OTOMATIS
     if (action === 'CREATE_CP') {
-      if (!subjectId || !code || !description) {
-        return NextResponse.json({ message: 'Data CP tidak lengkap' }, { status: 400 });
+      if (!subjectId || !description) {
+        return NextResponse.json({ success: false, message: 'Mata pelajaran dan deskripsi wajib diisi' }, { status: 400 });
       }
-      const newCP = await prisma.cP.create({
-        data: {
-          code,
-          description,
-          subjectId: Number(subjectId),
-        },
+
+      // Ambil nama mapel untuk kode singkatan (misal: Bahasa Arab -> BAH)
+      const subject = await prisma.subject.findUnique({ where: { id: Number(subjectId) } });
+      const subjCode = subject 
+        ? subject.name.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() 
+        : 'MPL';
+
+      // Hitung jumlah CP yang sudah ada pada mapel ini
+      const count = await prisma.cP.count({ where: { subjectId: Number(subjectId) } });
+      const generatedCode = `CP-${subjCode}-${String(count + 1).padStart(2, '0')}`;
+
+      const newCP = await prisma.cP.create({ 
+        data: { 
+          code: generatedCode, 
+          description: description.trim(), 
+          subjectId: Number(subjectId) 
+        } 
       });
-      return NextResponse.json({ message: 'CP berhasil ditambahkan', data: newCP }, { status: 201 });
+
+      return NextResponse.json({ success: true, data: newCP }, { status: 201 });
     }
 
+    // 2. CREATE TP DENGAN KODE OTOMATIS
     if (action === 'CREATE_TP') {
-      if (!cpId || !code || !description) {
-        return NextResponse.json({ message: 'Data TP tidak lengkap' }, { status: 400 });
+      if (!cpId || !description) {
+        return NextResponse.json({ success: false, message: 'CP Induk dan deskripsi wajib diisi' }, { status: 400 });
       }
-      const newTP = await prisma.tP.create({
-        data: {
-          code,
-          description,
-          cpId: Number(cpId),
-        },
+
+      // Cari CP Induk untuk mengambil kodenya
+      const parentCP = await prisma.cP.findUnique({ where: { id: Number(cpId) } });
+      if (!parentCP) {
+        return NextResponse.json({ success: false, message: 'Capaian Pembelajaran induk tidak ditemukan' }, { status: 404 });
+      }
+
+      // Hitung jumlah TP yang sudah ada pada CP ini
+      const tpCount = await prisma.tP.count({ where: { cpId: Number(cpId) } });
+      const generatedTPCode = `TP-${parentCP.code}-${String(tpCount + 1).padStart(2, '0')}`;
+
+      const newTP = await prisma.tP.create({ 
+        data: { 
+          code: generatedTPCode, 
+          description: description.trim(), 
+          cpId: Number(cpId) 
+        } 
       });
-      return NextResponse.json({ message: 'TP berhasil ditambahkan', data: newTP }, { status: 201 });
+
+      return NextResponse.json({ success: true, data: newTP }, { status: 201 });
     }
 
-    return NextResponse.json({ message: 'Aksi tidak valid' }, { status: 400 });
+    // UPDATE
+    if (action === 'UPDATE') {
+      if (type === 'CP') {
+        const updated = await prisma.cP.update({ 
+          where: { id: Number(id) }, 
+          data: { description: description?.trim() } 
+        });
+        return NextResponse.json({ success: true, data: updated });
+      } else {
+        const updated = await prisma.tP.update({ 
+          where: { id: Number(id) }, 
+          data: { description: description?.trim() } 
+        });
+        return NextResponse.json({ success: true, data: updated });
+      }
+    }
+
+    // DELETE
+    if (action === 'DELETE') {
+      if (type === 'CP') {
+        // Hapus TP terkait terlebih dahulu untuk menghindari pelanggaran foreign key
+        await prisma.tP.deleteMany({ where: { cpId: Number(id) } });
+        await prisma.cP.delete({ where: { id: Number(id) } });
+      } else {
+        await prisma.tP.delete({ where: { id: Number(id) } });
+      }
+      return NextResponse.json({ success: true, message: 'Data berhasil dihapus' });
+    }
+
+    return NextResponse.json({ success: false, message: 'Aksi tidak valid' }, { status: 400 });
   } catch (error) {
-    console.error('Error saving curriculum:', error);
-    return NextResponse.json({ message: 'Gagal menyimpan data' }, { status: 500 });
+    console.error('Curriculum API Error:', error);
+    return NextResponse.json({ success: false, message: 'Gagal memproses data' }, { status: 500 });
   }
 }

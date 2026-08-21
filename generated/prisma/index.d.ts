@@ -64,11 +64,6 @@ export type ClassRoom = $Result.DefaultSelection<Prisma.$ClassRoomPayload>
  */
 export type Assignment = $Result.DefaultSelection<Prisma.$AssignmentPayload>
 /**
- * Model ScoreRecord
- * 
- */
-export type ScoreRecord = $Result.DefaultSelection<Prisma.$ScoreRecordPayload>
-/**
  * Model Personality
  * 
  */
@@ -309,16 +304,6 @@ export class PrismaClient<
     * ```
     */
   get assignment(): Prisma.AssignmentDelegate<ExtArgs, ClientOptions>;
-
-  /**
-   * `prisma.scoreRecord`: Exposes CRUD operations for the **ScoreRecord** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more ScoreRecords
-    * const scoreRecords = await prisma.scoreRecord.findMany()
-    * ```
-    */
-  get scoreRecord(): Prisma.ScoreRecordDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.personality`: Exposes CRUD operations for the **Personality** model.
@@ -816,7 +801,6 @@ export namespace Prisma {
     Attendance: 'Attendance',
     ClassRoom: 'ClassRoom',
     Assignment: 'Assignment',
-    ScoreRecord: 'ScoreRecord',
     Personality: 'Personality',
     HomeroomNote: 'HomeroomNote',
     SystemSetting: 'SystemSetting',
@@ -836,7 +820,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "teacher" | "subject" | "cP" | "tP" | "student" | "assessment" | "tahfidz" | "attendance" | "classRoom" | "assignment" | "scoreRecord" | "personality" | "homeroomNote" | "systemSetting" | "studentPromotion"
+      modelProps: "teacher" | "subject" | "cP" | "tP" | "student" | "assessment" | "tahfidz" | "attendance" | "classRoom" | "assignment" | "personality" | "homeroomNote" | "systemSetting" | "studentPromotion"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1580,80 +1564,6 @@ export namespace Prisma {
           }
         }
       }
-      ScoreRecord: {
-        payload: Prisma.$ScoreRecordPayload<ExtArgs>
-        fields: Prisma.ScoreRecordFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.ScoreRecordFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.ScoreRecordFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload>
-          }
-          findFirst: {
-            args: Prisma.ScoreRecordFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.ScoreRecordFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload>
-          }
-          findMany: {
-            args: Prisma.ScoreRecordFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload>[]
-          }
-          create: {
-            args: Prisma.ScoreRecordCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload>
-          }
-          createMany: {
-            args: Prisma.ScoreRecordCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          createManyAndReturn: {
-            args: Prisma.ScoreRecordCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload>[]
-          }
-          delete: {
-            args: Prisma.ScoreRecordDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload>
-          }
-          update: {
-            args: Prisma.ScoreRecordUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload>
-          }
-          deleteMany: {
-            args: Prisma.ScoreRecordDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.ScoreRecordUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateManyAndReturn: {
-            args: Prisma.ScoreRecordUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload>[]
-          }
-          upsert: {
-            args: Prisma.ScoreRecordUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$ScoreRecordPayload>
-          }
-          aggregate: {
-            args: Prisma.ScoreRecordAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateScoreRecord>
-          }
-          groupBy: {
-            args: Prisma.ScoreRecordGroupByArgs<ExtArgs>
-            result: $Utils.Optional<ScoreRecordGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.ScoreRecordCountArgs<ExtArgs>
-            result: $Utils.Optional<ScoreRecordCountAggregateOutputType> | number
-          }
-        }
-      }
       Personality: {
         payload: Prisma.$PersonalityPayload<ExtArgs>
         fields: Prisma.PersonalityFieldRefs
@@ -2083,7 +1993,6 @@ export namespace Prisma {
     attendance?: AttendanceOmit
     classRoom?: ClassRoomOmit
     assignment?: AssignmentOmit
-    scoreRecord?: ScoreRecordOmit
     personality?: PersonalityOmit
     homeroomNote?: HomeroomNoteOmit
     systemSetting?: SystemSettingOmit
@@ -2169,12 +2078,10 @@ export namespace Prisma {
 
   export type TeacherCountOutputType = {
     assignments: number
-    subjects: number
   }
 
   export type TeacherCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     assignments?: boolean | TeacherCountOutputTypeCountAssignmentsArgs
-    subjects?: boolean | TeacherCountOutputTypeCountSubjectsArgs
   }
 
   // Custom InputTypes
@@ -2195,13 +2102,6 @@ export namespace Prisma {
     where?: AssignmentWhereInput
   }
 
-  /**
-   * TeacherCountOutputType without action
-   */
-  export type TeacherCountOutputTypeCountSubjectsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: SubjectWhereInput
-  }
-
 
   /**
    * Count Type SubjectCountOutputType
@@ -2210,13 +2110,11 @@ export namespace Prisma {
   export type SubjectCountOutputType = {
     assignments: number
     cps: number
-    scoreRecords: number
   }
 
   export type SubjectCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     assignments?: boolean | SubjectCountOutputTypeCountAssignmentsArgs
     cps?: boolean | SubjectCountOutputTypeCountCpsArgs
-    scoreRecords?: boolean | SubjectCountOutputTypeCountScoreRecordsArgs
   }
 
   // Custom InputTypes
@@ -2242,13 +2140,6 @@ export namespace Prisma {
    */
   export type SubjectCountOutputTypeCountCpsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: CPWhereInput
-  }
-
-  /**
-   * SubjectCountOutputType without action
-   */
-  export type SubjectCountOutputTypeCountScoreRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: ScoreRecordWhereInput
   }
 
 
@@ -2321,7 +2212,6 @@ export namespace Prisma {
   export type StudentCountOutputType = {
     assessments: number
     attendances: number
-    scoreRecords: number
     tahfidzs: number
     promotions: number
   }
@@ -2329,7 +2219,6 @@ export namespace Prisma {
   export type StudentCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     assessments?: boolean | StudentCountOutputTypeCountAssessmentsArgs
     attendances?: boolean | StudentCountOutputTypeCountAttendancesArgs
-    scoreRecords?: boolean | StudentCountOutputTypeCountScoreRecordsArgs
     tahfidzs?: boolean | StudentCountOutputTypeCountTahfidzsArgs
     promotions?: boolean | StudentCountOutputTypeCountPromotionsArgs
   }
@@ -2357,13 +2246,6 @@ export namespace Prisma {
    */
   export type StudentCountOutputTypeCountAttendancesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: AttendanceWhereInput
-  }
-
-  /**
-   * StudentCountOutputType without action
-   */
-  export type StudentCountOutputTypeCountScoreRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: ScoreRecordWhereInput
   }
 
   /**
@@ -2616,7 +2498,6 @@ export namespace Prisma {
     role?: boolean
     status?: boolean
     assignments?: boolean | Teacher$assignmentsArgs<ExtArgs>
-    subjects?: boolean | Teacher$subjectsArgs<ExtArgs>
     _count?: boolean | TeacherCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["teacher"]>
 
@@ -2659,7 +2540,6 @@ export namespace Prisma {
   export type TeacherOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "identity_number" | "password" | "fullname" | "birth_date" | "education" | "address" | "role" | "status", ExtArgs["result"]["teacher"]>
   export type TeacherInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     assignments?: boolean | Teacher$assignmentsArgs<ExtArgs>
-    subjects?: boolean | Teacher$subjectsArgs<ExtArgs>
     _count?: boolean | TeacherCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type TeacherIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -2669,7 +2549,6 @@ export namespace Prisma {
     name: "Teacher"
     objects: {
       assignments: Prisma.$AssignmentPayload<ExtArgs>[]
-      subjects: Prisma.$SubjectPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -3076,7 +2955,6 @@ export namespace Prisma {
   export interface Prisma__TeacherClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     assignments<T extends Teacher$assignmentsArgs<ExtArgs> = {}>(args?: Subset<T, Teacher$assignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    subjects<T extends Teacher$subjectsArgs<ExtArgs> = {}>(args?: Subset<T, Teacher$subjectsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SubjectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3532,30 +3410,6 @@ export namespace Prisma {
   }
 
   /**
-   * Teacher.subjects
-   */
-  export type Teacher$subjectsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Subject
-     */
-    select?: SubjectSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Subject
-     */
-    omit?: SubjectOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: SubjectInclude<ExtArgs> | null
-    where?: SubjectWhereInput
-    orderBy?: SubjectOrderByWithRelationInput | SubjectOrderByWithRelationInput[]
-    cursor?: SubjectWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: SubjectScalarFieldEnum | SubjectScalarFieldEnum[]
-  }
-
-  /**
    * Teacher without action
    */
   export type TeacherDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3588,60 +3442,50 @@ export namespace Prisma {
 
   export type SubjectAvgAggregateOutputType = {
     id: number | null
-    teacherId: number | null
   }
 
   export type SubjectSumAggregateOutputType = {
     id: number | null
-    teacherId: number | null
   }
 
   export type SubjectMinAggregateOutputType = {
     id: number | null
     name: string | null
-    teacherId: number | null
   }
 
   export type SubjectMaxAggregateOutputType = {
     id: number | null
     name: string | null
-    teacherId: number | null
   }
 
   export type SubjectCountAggregateOutputType = {
     id: number
     name: number
-    teacherId: number
     _all: number
   }
 
 
   export type SubjectAvgAggregateInputType = {
     id?: true
-    teacherId?: true
   }
 
   export type SubjectSumAggregateInputType = {
     id?: true
-    teacherId?: true
   }
 
   export type SubjectMinAggregateInputType = {
     id?: true
     name?: true
-    teacherId?: true
   }
 
   export type SubjectMaxAggregateInputType = {
     id?: true
     name?: true
-    teacherId?: true
   }
 
   export type SubjectCountAggregateInputType = {
     id?: true
     name?: true
-    teacherId?: true
     _all?: true
   }
 
@@ -3734,7 +3578,6 @@ export namespace Prisma {
   export type SubjectGroupByOutputType = {
     id: number
     name: string
-    teacherId: number
     _count: SubjectCountAggregateOutputType | null
     _avg: SubjectAvgAggregateOutputType | null
     _sum: SubjectSumAggregateOutputType | null
@@ -3759,61 +3602,44 @@ export namespace Prisma {
   export type SubjectSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
-    teacherId?: boolean
-    teacher?: boolean | TeacherDefaultArgs<ExtArgs>
     assignments?: boolean | Subject$assignmentsArgs<ExtArgs>
     cps?: boolean | Subject$cpsArgs<ExtArgs>
-    scoreRecords?: boolean | Subject$scoreRecordsArgs<ExtArgs>
     _count?: boolean | SubjectCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["subject"]>
 
   export type SubjectSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
-    teacherId?: boolean
-    teacher?: boolean | TeacherDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["subject"]>
 
   export type SubjectSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
-    teacherId?: boolean
-    teacher?: boolean | TeacherDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["subject"]>
 
   export type SubjectSelectScalar = {
     id?: boolean
     name?: boolean
-    teacherId?: boolean
   }
 
-  export type SubjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "teacherId", ExtArgs["result"]["subject"]>
+  export type SubjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name", ExtArgs["result"]["subject"]>
   export type SubjectInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    teacher?: boolean | TeacherDefaultArgs<ExtArgs>
     assignments?: boolean | Subject$assignmentsArgs<ExtArgs>
     cps?: boolean | Subject$cpsArgs<ExtArgs>
-    scoreRecords?: boolean | Subject$scoreRecordsArgs<ExtArgs>
     _count?: boolean | SubjectCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type SubjectIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    teacher?: boolean | TeacherDefaultArgs<ExtArgs>
-  }
-  export type SubjectIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    teacher?: boolean | TeacherDefaultArgs<ExtArgs>
-  }
+  export type SubjectIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type SubjectIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
 
   export type $SubjectPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Subject"
     objects: {
-      teacher: Prisma.$TeacherPayload<ExtArgs>
       assignments: Prisma.$AssignmentPayload<ExtArgs>[]
       cps: Prisma.$CPPayload<ExtArgs>[]
-      scoreRecords: Prisma.$ScoreRecordPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
       name: string
-      teacherId: number
     }, ExtArgs["result"]["subject"]>
     composites: {}
   }
@@ -4208,10 +4034,8 @@ export namespace Prisma {
    */
   export interface Prisma__SubjectClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    teacher<T extends TeacherDefaultArgs<ExtArgs> = {}>(args?: Subset<T, TeacherDefaultArgs<ExtArgs>>): Prisma__TeacherClient<$Result.GetResult<Prisma.$TeacherPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     assignments<T extends Subject$assignmentsArgs<ExtArgs> = {}>(args?: Subset<T, Subject$assignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     cps<T extends Subject$cpsArgs<ExtArgs> = {}>(args?: Subset<T, Subject$cpsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CPPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    scoreRecords<T extends Subject$scoreRecordsArgs<ExtArgs> = {}>(args?: Subset<T, Subject$scoreRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4243,7 +4067,6 @@ export namespace Prisma {
   interface SubjectFieldRefs {
     readonly id: FieldRef<"Subject", 'Int'>
     readonly name: FieldRef<"Subject", 'String'>
-    readonly teacherId: FieldRef<"Subject", 'Int'>
   }
     
 
@@ -4498,10 +4321,6 @@ export namespace Prisma {
      */
     data: SubjectCreateManyInput | SubjectCreateManyInput[]
     skipDuplicates?: boolean
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: SubjectIncludeCreateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -4572,10 +4391,6 @@ export namespace Prisma {
      * Limit how many Subjects to update.
      */
     limit?: number
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: SubjectIncludeUpdateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -4690,30 +4505,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: CPScalarFieldEnum | CPScalarFieldEnum[]
-  }
-
-  /**
-   * Subject.scoreRecords
-   */
-  export type Subject$scoreRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    where?: ScoreRecordWhereInput
-    orderBy?: ScoreRecordOrderByWithRelationInput | ScoreRecordOrderByWithRelationInput[]
-    cursor?: ScoreRecordWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: ScoreRecordScalarFieldEnum | ScoreRecordScalarFieldEnum[]
   }
 
   /**
@@ -7197,7 +6988,6 @@ export namespace Prisma {
     attendances?: boolean | Student$attendancesArgs<ExtArgs>
     homeroomNote?: boolean | Student$homeroomNoteArgs<ExtArgs>
     personality?: boolean | Student$personalityArgs<ExtArgs>
-    scoreRecords?: boolean | Student$scoreRecordsArgs<ExtArgs>
     tahfidzs?: boolean | Student$tahfidzsArgs<ExtArgs>
     promotions?: boolean | Student$promotionsArgs<ExtArgs>
     _count?: boolean | StudentCountOutputTypeDefaultArgs<ExtArgs>
@@ -7242,7 +7032,6 @@ export namespace Prisma {
     attendances?: boolean | Student$attendancesArgs<ExtArgs>
     homeroomNote?: boolean | Student$homeroomNoteArgs<ExtArgs>
     personality?: boolean | Student$personalityArgs<ExtArgs>
-    scoreRecords?: boolean | Student$scoreRecordsArgs<ExtArgs>
     tahfidzs?: boolean | Student$tahfidzsArgs<ExtArgs>
     promotions?: boolean | Student$promotionsArgs<ExtArgs>
     _count?: boolean | StudentCountOutputTypeDefaultArgs<ExtArgs>
@@ -7257,7 +7046,6 @@ export namespace Prisma {
       attendances: Prisma.$AttendancePayload<ExtArgs>[]
       homeroomNote: Prisma.$HomeroomNotePayload<ExtArgs> | null
       personality: Prisma.$PersonalityPayload<ExtArgs> | null
-      scoreRecords: Prisma.$ScoreRecordPayload<ExtArgs>[]
       tahfidzs: Prisma.$TahfidzPayload<ExtArgs>[]
       promotions: Prisma.$StudentPromotionPayload<ExtArgs>[]
     }
@@ -7668,7 +7456,6 @@ export namespace Prisma {
     attendances<T extends Student$attendancesArgs<ExtArgs> = {}>(args?: Subset<T, Student$attendancesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     homeroomNote<T extends Student$homeroomNoteArgs<ExtArgs> = {}>(args?: Subset<T, Student$homeroomNoteArgs<ExtArgs>>): Prisma__HomeroomNoteClient<$Result.GetResult<Prisma.$HomeroomNotePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     personality<T extends Student$personalityArgs<ExtArgs> = {}>(args?: Subset<T, Student$personalityArgs<ExtArgs>>): Prisma__PersonalityClient<$Result.GetResult<Prisma.$PersonalityPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    scoreRecords<T extends Student$scoreRecordsArgs<ExtArgs> = {}>(args?: Subset<T, Student$scoreRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     tahfidzs<T extends Student$tahfidzsArgs<ExtArgs> = {}>(args?: Subset<T, Student$tahfidzsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TahfidzPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     promotions<T extends Student$promotionsArgs<ExtArgs> = {}>(args?: Subset<T, Student$promotionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$StudentPromotionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -8187,30 +7974,6 @@ export namespace Prisma {
   }
 
   /**
-   * Student.scoreRecords
-   */
-  export type Student$scoreRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    where?: ScoreRecordWhereInput
-    orderBy?: ScoreRecordOrderByWithRelationInput | ScoreRecordOrderByWithRelationInput[]
-    cursor?: ScoreRecordWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: ScoreRecordScalarFieldEnum | ScoreRecordScalarFieldEnum[]
-  }
-
-  /**
    * Student.tahfidzs
    */
   export type Student$tahfidzsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8457,7 +8220,7 @@ export namespace Prisma {
   export type AssessmentGroupByOutputType = {
     id: number
     studentId: number
-    tpId: number
+    tpId: number | null
     score: number
     type: string
     _count: AssessmentCountAggregateOutputType | null
@@ -8488,7 +8251,7 @@ export namespace Prisma {
     score?: boolean
     type?: boolean
     student?: boolean | StudentDefaultArgs<ExtArgs>
-    tp?: boolean | TPDefaultArgs<ExtArgs>
+    tp?: boolean | Assessment$tpArgs<ExtArgs>
   }, ExtArgs["result"]["assessment"]>
 
   export type AssessmentSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -8498,7 +8261,7 @@ export namespace Prisma {
     score?: boolean
     type?: boolean
     student?: boolean | StudentDefaultArgs<ExtArgs>
-    tp?: boolean | TPDefaultArgs<ExtArgs>
+    tp?: boolean | Assessment$tpArgs<ExtArgs>
   }, ExtArgs["result"]["assessment"]>
 
   export type AssessmentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -8508,7 +8271,7 @@ export namespace Prisma {
     score?: boolean
     type?: boolean
     student?: boolean | StudentDefaultArgs<ExtArgs>
-    tp?: boolean | TPDefaultArgs<ExtArgs>
+    tp?: boolean | Assessment$tpArgs<ExtArgs>
   }, ExtArgs["result"]["assessment"]>
 
   export type AssessmentSelectScalar = {
@@ -8522,27 +8285,27 @@ export namespace Prisma {
   export type AssessmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "studentId" | "tpId" | "score" | "type", ExtArgs["result"]["assessment"]>
   export type AssessmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     student?: boolean | StudentDefaultArgs<ExtArgs>
-    tp?: boolean | TPDefaultArgs<ExtArgs>
+    tp?: boolean | Assessment$tpArgs<ExtArgs>
   }
   export type AssessmentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     student?: boolean | StudentDefaultArgs<ExtArgs>
-    tp?: boolean | TPDefaultArgs<ExtArgs>
+    tp?: boolean | Assessment$tpArgs<ExtArgs>
   }
   export type AssessmentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     student?: boolean | StudentDefaultArgs<ExtArgs>
-    tp?: boolean | TPDefaultArgs<ExtArgs>
+    tp?: boolean | Assessment$tpArgs<ExtArgs>
   }
 
   export type $AssessmentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Assessment"
     objects: {
       student: Prisma.$StudentPayload<ExtArgs>
-      tp: Prisma.$TPPayload<ExtArgs>
+      tp: Prisma.$TPPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
       studentId: number
-      tpId: number
+      tpId: number | null
       score: number
       type: string
     }, ExtArgs["result"]["assessment"]>
@@ -8940,7 +8703,7 @@ export namespace Prisma {
   export interface Prisma__AssessmentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     student<T extends StudentDefaultArgs<ExtArgs> = {}>(args?: Subset<T, StudentDefaultArgs<ExtArgs>>): Prisma__StudentClient<$Result.GetResult<Prisma.$StudentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    tp<T extends TPDefaultArgs<ExtArgs> = {}>(args?: Subset<T, TPDefaultArgs<ExtArgs>>): Prisma__TPClient<$Result.GetResult<Prisma.$TPPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    tp<T extends Assessment$tpArgs<ExtArgs> = {}>(args?: Subset<T, Assessment$tpArgs<ExtArgs>>): Prisma__TPClient<$Result.GetResult<Prisma.$TPPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -9373,6 +9136,25 @@ export namespace Prisma {
      * Limit how many Assessments to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Assessment.tp
+   */
+  export type Assessment$tpArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TP
+     */
+    select?: TPSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TP
+     */
+    omit?: TPOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TPInclude<ExtArgs> | null
+    where?: TPWhereInput
   }
 
   /**
@@ -10550,6 +10332,8 @@ export namespace Prisma {
   export type AttendanceMinAggregateOutputType = {
     id: number | null
     studentId: number | null
+    className: string | null
+    day: string | null
     status: string | null
     date: Date | null
   }
@@ -10557,6 +10341,8 @@ export namespace Prisma {
   export type AttendanceMaxAggregateOutputType = {
     id: number | null
     studentId: number | null
+    className: string | null
+    day: string | null
     status: string | null
     date: Date | null
   }
@@ -10564,6 +10350,8 @@ export namespace Prisma {
   export type AttendanceCountAggregateOutputType = {
     id: number
     studentId: number
+    className: number
+    day: number
     status: number
     date: number
     _all: number
@@ -10583,6 +10371,8 @@ export namespace Prisma {
   export type AttendanceMinAggregateInputType = {
     id?: true
     studentId?: true
+    className?: true
+    day?: true
     status?: true
     date?: true
   }
@@ -10590,6 +10380,8 @@ export namespace Prisma {
   export type AttendanceMaxAggregateInputType = {
     id?: true
     studentId?: true
+    className?: true
+    day?: true
     status?: true
     date?: true
   }
@@ -10597,6 +10389,8 @@ export namespace Prisma {
   export type AttendanceCountAggregateInputType = {
     id?: true
     studentId?: true
+    className?: true
+    day?: true
     status?: true
     date?: true
     _all?: true
@@ -10691,6 +10485,8 @@ export namespace Prisma {
   export type AttendanceGroupByOutputType = {
     id: number
     studentId: number
+    className: string
+    day: string
     status: string
     date: Date
     _count: AttendanceCountAggregateOutputType | null
@@ -10717,6 +10513,8 @@ export namespace Prisma {
   export type AttendanceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     studentId?: boolean
+    className?: boolean
+    day?: boolean
     status?: boolean
     date?: boolean
     student?: boolean | StudentDefaultArgs<ExtArgs>
@@ -10725,6 +10523,8 @@ export namespace Prisma {
   export type AttendanceSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     studentId?: boolean
+    className?: boolean
+    day?: boolean
     status?: boolean
     date?: boolean
     student?: boolean | StudentDefaultArgs<ExtArgs>
@@ -10733,6 +10533,8 @@ export namespace Prisma {
   export type AttendanceSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     studentId?: boolean
+    className?: boolean
+    day?: boolean
     status?: boolean
     date?: boolean
     student?: boolean | StudentDefaultArgs<ExtArgs>
@@ -10741,11 +10543,13 @@ export namespace Prisma {
   export type AttendanceSelectScalar = {
     id?: boolean
     studentId?: boolean
+    className?: boolean
+    day?: boolean
     status?: boolean
     date?: boolean
   }
 
-  export type AttendanceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "studentId" | "status" | "date", ExtArgs["result"]["attendance"]>
+  export type AttendanceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "studentId" | "className" | "day" | "status" | "date", ExtArgs["result"]["attendance"]>
   export type AttendanceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     student?: boolean | StudentDefaultArgs<ExtArgs>
   }
@@ -10764,6 +10568,8 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: number
       studentId: number
+      className: string
+      day: string
       status: string
       date: Date
     }, ExtArgs["result"]["attendance"]>
@@ -11192,6 +10998,8 @@ export namespace Prisma {
   interface AttendanceFieldRefs {
     readonly id: FieldRef<"Attendance", 'Int'>
     readonly studentId: FieldRef<"Attendance", 'Int'>
+    readonly className: FieldRef<"Attendance", 'String'>
+    readonly day: FieldRef<"Attendance", 'String'>
     readonly status: FieldRef<"Attendance", 'String'>
     readonly date: FieldRef<"Attendance", 'DateTime'>
   }
@@ -13761,1149 +13569,6 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: AssignmentInclude<ExtArgs> | null
-  }
-
-
-  /**
-   * Model ScoreRecord
-   */
-
-  export type AggregateScoreRecord = {
-    _count: ScoreRecordCountAggregateOutputType | null
-    _avg: ScoreRecordAvgAggregateOutputType | null
-    _sum: ScoreRecordSumAggregateOutputType | null
-    _min: ScoreRecordMinAggregateOutputType | null
-    _max: ScoreRecordMaxAggregateOutputType | null
-  }
-
-  export type ScoreRecordAvgAggregateOutputType = {
-    id: number | null
-    studentId: number | null
-    subjectId: number | null
-    scoreNumber: number | null
-  }
-
-  export type ScoreRecordSumAggregateOutputType = {
-    id: number | null
-    studentId: number | null
-    subjectId: number | null
-    scoreNumber: number | null
-  }
-
-  export type ScoreRecordMinAggregateOutputType = {
-    id: number | null
-    studentId: number | null
-    subjectId: number | null
-    className: string | null
-    type: string | null
-    scoreNumber: number | null
-    scoreText: string | null
-  }
-
-  export type ScoreRecordMaxAggregateOutputType = {
-    id: number | null
-    studentId: number | null
-    subjectId: number | null
-    className: string | null
-    type: string | null
-    scoreNumber: number | null
-    scoreText: string | null
-  }
-
-  export type ScoreRecordCountAggregateOutputType = {
-    id: number
-    studentId: number
-    subjectId: number
-    className: number
-    type: number
-    scoreNumber: number
-    scoreText: number
-    _all: number
-  }
-
-
-  export type ScoreRecordAvgAggregateInputType = {
-    id?: true
-    studentId?: true
-    subjectId?: true
-    scoreNumber?: true
-  }
-
-  export type ScoreRecordSumAggregateInputType = {
-    id?: true
-    studentId?: true
-    subjectId?: true
-    scoreNumber?: true
-  }
-
-  export type ScoreRecordMinAggregateInputType = {
-    id?: true
-    studentId?: true
-    subjectId?: true
-    className?: true
-    type?: true
-    scoreNumber?: true
-    scoreText?: true
-  }
-
-  export type ScoreRecordMaxAggregateInputType = {
-    id?: true
-    studentId?: true
-    subjectId?: true
-    className?: true
-    type?: true
-    scoreNumber?: true
-    scoreText?: true
-  }
-
-  export type ScoreRecordCountAggregateInputType = {
-    id?: true
-    studentId?: true
-    subjectId?: true
-    className?: true
-    type?: true
-    scoreNumber?: true
-    scoreText?: true
-    _all?: true
-  }
-
-  export type ScoreRecordAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which ScoreRecord to aggregate.
-     */
-    where?: ScoreRecordWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of ScoreRecords to fetch.
-     */
-    orderBy?: ScoreRecordOrderByWithRelationInput | ScoreRecordOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: ScoreRecordWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` ScoreRecords from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` ScoreRecords.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned ScoreRecords
-    **/
-    _count?: true | ScoreRecordCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to average
-    **/
-    _avg?: ScoreRecordAvgAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to sum
-    **/
-    _sum?: ScoreRecordSumAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: ScoreRecordMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: ScoreRecordMaxAggregateInputType
-  }
-
-  export type GetScoreRecordAggregateType<T extends ScoreRecordAggregateArgs> = {
-        [P in keyof T & keyof AggregateScoreRecord]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateScoreRecord[P]>
-      : GetScalarType<T[P], AggregateScoreRecord[P]>
-  }
-
-
-
-
-  export type ScoreRecordGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: ScoreRecordWhereInput
-    orderBy?: ScoreRecordOrderByWithAggregationInput | ScoreRecordOrderByWithAggregationInput[]
-    by: ScoreRecordScalarFieldEnum[] | ScoreRecordScalarFieldEnum
-    having?: ScoreRecordScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: ScoreRecordCountAggregateInputType | true
-    _avg?: ScoreRecordAvgAggregateInputType
-    _sum?: ScoreRecordSumAggregateInputType
-    _min?: ScoreRecordMinAggregateInputType
-    _max?: ScoreRecordMaxAggregateInputType
-  }
-
-  export type ScoreRecordGroupByOutputType = {
-    id: number
-    studentId: number
-    subjectId: number
-    className: string
-    type: string
-    scoreNumber: number
-    scoreText: string
-    _count: ScoreRecordCountAggregateOutputType | null
-    _avg: ScoreRecordAvgAggregateOutputType | null
-    _sum: ScoreRecordSumAggregateOutputType | null
-    _min: ScoreRecordMinAggregateOutputType | null
-    _max: ScoreRecordMaxAggregateOutputType | null
-  }
-
-  type GetScoreRecordGroupByPayload<T extends ScoreRecordGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<ScoreRecordGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof ScoreRecordGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], ScoreRecordGroupByOutputType[P]>
-            : GetScalarType<T[P], ScoreRecordGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type ScoreRecordSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    studentId?: boolean
-    subjectId?: boolean
-    className?: boolean
-    type?: boolean
-    scoreNumber?: boolean
-    scoreText?: boolean
-    student?: boolean | StudentDefaultArgs<ExtArgs>
-    subject?: boolean | SubjectDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["scoreRecord"]>
-
-  export type ScoreRecordSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    studentId?: boolean
-    subjectId?: boolean
-    className?: boolean
-    type?: boolean
-    scoreNumber?: boolean
-    scoreText?: boolean
-    student?: boolean | StudentDefaultArgs<ExtArgs>
-    subject?: boolean | SubjectDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["scoreRecord"]>
-
-  export type ScoreRecordSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    studentId?: boolean
-    subjectId?: boolean
-    className?: boolean
-    type?: boolean
-    scoreNumber?: boolean
-    scoreText?: boolean
-    student?: boolean | StudentDefaultArgs<ExtArgs>
-    subject?: boolean | SubjectDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["scoreRecord"]>
-
-  export type ScoreRecordSelectScalar = {
-    id?: boolean
-    studentId?: boolean
-    subjectId?: boolean
-    className?: boolean
-    type?: boolean
-    scoreNumber?: boolean
-    scoreText?: boolean
-  }
-
-  export type ScoreRecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "studentId" | "subjectId" | "className" | "type" | "scoreNumber" | "scoreText", ExtArgs["result"]["scoreRecord"]>
-  export type ScoreRecordInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    student?: boolean | StudentDefaultArgs<ExtArgs>
-    subject?: boolean | SubjectDefaultArgs<ExtArgs>
-  }
-  export type ScoreRecordIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    student?: boolean | StudentDefaultArgs<ExtArgs>
-    subject?: boolean | SubjectDefaultArgs<ExtArgs>
-  }
-  export type ScoreRecordIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    student?: boolean | StudentDefaultArgs<ExtArgs>
-    subject?: boolean | SubjectDefaultArgs<ExtArgs>
-  }
-
-  export type $ScoreRecordPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "ScoreRecord"
-    objects: {
-      student: Prisma.$StudentPayload<ExtArgs>
-      subject: Prisma.$SubjectPayload<ExtArgs>
-    }
-    scalars: $Extensions.GetPayloadResult<{
-      id: number
-      studentId: number
-      subjectId: number
-      className: string
-      type: string
-      scoreNumber: number
-      scoreText: string
-    }, ExtArgs["result"]["scoreRecord"]>
-    composites: {}
-  }
-
-  type ScoreRecordGetPayload<S extends boolean | null | undefined | ScoreRecordDefaultArgs> = $Result.GetResult<Prisma.$ScoreRecordPayload, S>
-
-  type ScoreRecordCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<ScoreRecordFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: ScoreRecordCountAggregateInputType | true
-    }
-
-  export interface ScoreRecordDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ScoreRecord'], meta: { name: 'ScoreRecord' } }
-    /**
-     * Find zero or one ScoreRecord that matches the filter.
-     * @param {ScoreRecordFindUniqueArgs} args - Arguments to find a ScoreRecord
-     * @example
-     * // Get one ScoreRecord
-     * const scoreRecord = await prisma.scoreRecord.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends ScoreRecordFindUniqueArgs>(args: SelectSubset<T, ScoreRecordFindUniqueArgs<ExtArgs>>): Prisma__ScoreRecordClient<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find one ScoreRecord that matches the filter or throw an error with `error.code='P2025'`
-     * if no matches were found.
-     * @param {ScoreRecordFindUniqueOrThrowArgs} args - Arguments to find a ScoreRecord
-     * @example
-     * // Get one ScoreRecord
-     * const scoreRecord = await prisma.scoreRecord.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends ScoreRecordFindUniqueOrThrowArgs>(args: SelectSubset<T, ScoreRecordFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ScoreRecordClient<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first ScoreRecord that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ScoreRecordFindFirstArgs} args - Arguments to find a ScoreRecord
-     * @example
-     * // Get one ScoreRecord
-     * const scoreRecord = await prisma.scoreRecord.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends ScoreRecordFindFirstArgs>(args?: SelectSubset<T, ScoreRecordFindFirstArgs<ExtArgs>>): Prisma__ScoreRecordClient<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first ScoreRecord that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ScoreRecordFindFirstOrThrowArgs} args - Arguments to find a ScoreRecord
-     * @example
-     * // Get one ScoreRecord
-     * const scoreRecord = await prisma.scoreRecord.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends ScoreRecordFindFirstOrThrowArgs>(args?: SelectSubset<T, ScoreRecordFindFirstOrThrowArgs<ExtArgs>>): Prisma__ScoreRecordClient<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find zero or more ScoreRecords that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ScoreRecordFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all ScoreRecords
-     * const scoreRecords = await prisma.scoreRecord.findMany()
-     * 
-     * // Get first 10 ScoreRecords
-     * const scoreRecords = await prisma.scoreRecord.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const scoreRecordWithIdOnly = await prisma.scoreRecord.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends ScoreRecordFindManyArgs>(args?: SelectSubset<T, ScoreRecordFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
-
-    /**
-     * Create a ScoreRecord.
-     * @param {ScoreRecordCreateArgs} args - Arguments to create a ScoreRecord.
-     * @example
-     * // Create one ScoreRecord
-     * const ScoreRecord = await prisma.scoreRecord.create({
-     *   data: {
-     *     // ... data to create a ScoreRecord
-     *   }
-     * })
-     * 
-     */
-    create<T extends ScoreRecordCreateArgs>(args: SelectSubset<T, ScoreRecordCreateArgs<ExtArgs>>): Prisma__ScoreRecordClient<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Create many ScoreRecords.
-     * @param {ScoreRecordCreateManyArgs} args - Arguments to create many ScoreRecords.
-     * @example
-     * // Create many ScoreRecords
-     * const scoreRecord = await prisma.scoreRecord.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends ScoreRecordCreateManyArgs>(args?: SelectSubset<T, ScoreRecordCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create many ScoreRecords and returns the data saved in the database.
-     * @param {ScoreRecordCreateManyAndReturnArgs} args - Arguments to create many ScoreRecords.
-     * @example
-     * // Create many ScoreRecords
-     * const scoreRecord = await prisma.scoreRecord.createManyAndReturn({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Create many ScoreRecords and only return the `id`
-     * const scoreRecordWithIdOnly = await prisma.scoreRecord.createManyAndReturn({
-     *   select: { id: true },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    createManyAndReturn<T extends ScoreRecordCreateManyAndReturnArgs>(args?: SelectSubset<T, ScoreRecordCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Delete a ScoreRecord.
-     * @param {ScoreRecordDeleteArgs} args - Arguments to delete one ScoreRecord.
-     * @example
-     * // Delete one ScoreRecord
-     * const ScoreRecord = await prisma.scoreRecord.delete({
-     *   where: {
-     *     // ... filter to delete one ScoreRecord
-     *   }
-     * })
-     * 
-     */
-    delete<T extends ScoreRecordDeleteArgs>(args: SelectSubset<T, ScoreRecordDeleteArgs<ExtArgs>>): Prisma__ScoreRecordClient<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Update one ScoreRecord.
-     * @param {ScoreRecordUpdateArgs} args - Arguments to update one ScoreRecord.
-     * @example
-     * // Update one ScoreRecord
-     * const scoreRecord = await prisma.scoreRecord.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends ScoreRecordUpdateArgs>(args: SelectSubset<T, ScoreRecordUpdateArgs<ExtArgs>>): Prisma__ScoreRecordClient<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Delete zero or more ScoreRecords.
-     * @param {ScoreRecordDeleteManyArgs} args - Arguments to filter ScoreRecords to delete.
-     * @example
-     * // Delete a few ScoreRecords
-     * const { count } = await prisma.scoreRecord.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends ScoreRecordDeleteManyArgs>(args?: SelectSubset<T, ScoreRecordDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more ScoreRecords.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ScoreRecordUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many ScoreRecords
-     * const scoreRecord = await prisma.scoreRecord.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends ScoreRecordUpdateManyArgs>(args: SelectSubset<T, ScoreRecordUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more ScoreRecords and returns the data updated in the database.
-     * @param {ScoreRecordUpdateManyAndReturnArgs} args - Arguments to update many ScoreRecords.
-     * @example
-     * // Update many ScoreRecords
-     * const scoreRecord = await prisma.scoreRecord.updateManyAndReturn({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Update zero or more ScoreRecords and only return the `id`
-     * const scoreRecordWithIdOnly = await prisma.scoreRecord.updateManyAndReturn({
-     *   select: { id: true },
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    updateManyAndReturn<T extends ScoreRecordUpdateManyAndReturnArgs>(args: SelectSubset<T, ScoreRecordUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Create or update one ScoreRecord.
-     * @param {ScoreRecordUpsertArgs} args - Arguments to update or create a ScoreRecord.
-     * @example
-     * // Update or create a ScoreRecord
-     * const scoreRecord = await prisma.scoreRecord.upsert({
-     *   create: {
-     *     // ... data to create a ScoreRecord
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the ScoreRecord we want to update
-     *   }
-     * })
-     */
-    upsert<T extends ScoreRecordUpsertArgs>(args: SelectSubset<T, ScoreRecordUpsertArgs<ExtArgs>>): Prisma__ScoreRecordClient<$Result.GetResult<Prisma.$ScoreRecordPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-
-    /**
-     * Count the number of ScoreRecords.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ScoreRecordCountArgs} args - Arguments to filter ScoreRecords to count.
-     * @example
-     * // Count the number of ScoreRecords
-     * const count = await prisma.scoreRecord.count({
-     *   where: {
-     *     // ... the filter for the ScoreRecords we want to count
-     *   }
-     * })
-    **/
-    count<T extends ScoreRecordCountArgs>(
-      args?: Subset<T, ScoreRecordCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], ScoreRecordCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a ScoreRecord.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ScoreRecordAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends ScoreRecordAggregateArgs>(args: Subset<T, ScoreRecordAggregateArgs>): Prisma.PrismaPromise<GetScoreRecordAggregateType<T>>
-
-    /**
-     * Group by ScoreRecord.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {ScoreRecordGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends ScoreRecordGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: ScoreRecordGroupByArgs['orderBy'] }
-        : { orderBy?: ScoreRecordGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, ScoreRecordGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetScoreRecordGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the ScoreRecord model
-   */
-  readonly fields: ScoreRecordFieldRefs;
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for ScoreRecord.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export interface Prisma__ScoreRecordClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    student<T extends StudentDefaultArgs<ExtArgs> = {}>(args?: Subset<T, StudentDefaultArgs<ExtArgs>>): Prisma__StudentClient<$Result.GetResult<Prisma.$StudentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    subject<T extends SubjectDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SubjectDefaultArgs<ExtArgs>>): Prisma__SubjectClient<$Result.GetResult<Prisma.$SubjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the ScoreRecord model
-   */
-  interface ScoreRecordFieldRefs {
-    readonly id: FieldRef<"ScoreRecord", 'Int'>
-    readonly studentId: FieldRef<"ScoreRecord", 'Int'>
-    readonly subjectId: FieldRef<"ScoreRecord", 'Int'>
-    readonly className: FieldRef<"ScoreRecord", 'String'>
-    readonly type: FieldRef<"ScoreRecord", 'String'>
-    readonly scoreNumber: FieldRef<"ScoreRecord", 'Int'>
-    readonly scoreText: FieldRef<"ScoreRecord", 'String'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * ScoreRecord findUnique
-   */
-  export type ScoreRecordFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    /**
-     * Filter, which ScoreRecord to fetch.
-     */
-    where: ScoreRecordWhereUniqueInput
-  }
-
-  /**
-   * ScoreRecord findUniqueOrThrow
-   */
-  export type ScoreRecordFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    /**
-     * Filter, which ScoreRecord to fetch.
-     */
-    where: ScoreRecordWhereUniqueInput
-  }
-
-  /**
-   * ScoreRecord findFirst
-   */
-  export type ScoreRecordFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    /**
-     * Filter, which ScoreRecord to fetch.
-     */
-    where?: ScoreRecordWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of ScoreRecords to fetch.
-     */
-    orderBy?: ScoreRecordOrderByWithRelationInput | ScoreRecordOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for ScoreRecords.
-     */
-    cursor?: ScoreRecordWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` ScoreRecords from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` ScoreRecords.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of ScoreRecords.
-     */
-    distinct?: ScoreRecordScalarFieldEnum | ScoreRecordScalarFieldEnum[]
-  }
-
-  /**
-   * ScoreRecord findFirstOrThrow
-   */
-  export type ScoreRecordFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    /**
-     * Filter, which ScoreRecord to fetch.
-     */
-    where?: ScoreRecordWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of ScoreRecords to fetch.
-     */
-    orderBy?: ScoreRecordOrderByWithRelationInput | ScoreRecordOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for ScoreRecords.
-     */
-    cursor?: ScoreRecordWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` ScoreRecords from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` ScoreRecords.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of ScoreRecords.
-     */
-    distinct?: ScoreRecordScalarFieldEnum | ScoreRecordScalarFieldEnum[]
-  }
-
-  /**
-   * ScoreRecord findMany
-   */
-  export type ScoreRecordFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    /**
-     * Filter, which ScoreRecords to fetch.
-     */
-    where?: ScoreRecordWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of ScoreRecords to fetch.
-     */
-    orderBy?: ScoreRecordOrderByWithRelationInput | ScoreRecordOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing ScoreRecords.
-     */
-    cursor?: ScoreRecordWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` ScoreRecords from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` ScoreRecords.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of ScoreRecords.
-     */
-    distinct?: ScoreRecordScalarFieldEnum | ScoreRecordScalarFieldEnum[]
-  }
-
-  /**
-   * ScoreRecord create
-   */
-  export type ScoreRecordCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    /**
-     * The data needed to create a ScoreRecord.
-     */
-    data: XOR<ScoreRecordCreateInput, ScoreRecordUncheckedCreateInput>
-  }
-
-  /**
-   * ScoreRecord createMany
-   */
-  export type ScoreRecordCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many ScoreRecords.
-     */
-    data: ScoreRecordCreateManyInput | ScoreRecordCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * ScoreRecord createManyAndReturn
-   */
-  export type ScoreRecordCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelectCreateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * The data used to create many ScoreRecords.
-     */
-    data: ScoreRecordCreateManyInput | ScoreRecordCreateManyInput[]
-    skipDuplicates?: boolean
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordIncludeCreateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * ScoreRecord update
-   */
-  export type ScoreRecordUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    /**
-     * The data needed to update a ScoreRecord.
-     */
-    data: XOR<ScoreRecordUpdateInput, ScoreRecordUncheckedUpdateInput>
-    /**
-     * Choose, which ScoreRecord to update.
-     */
-    where: ScoreRecordWhereUniqueInput
-  }
-
-  /**
-   * ScoreRecord updateMany
-   */
-  export type ScoreRecordUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update ScoreRecords.
-     */
-    data: XOR<ScoreRecordUpdateManyMutationInput, ScoreRecordUncheckedUpdateManyInput>
-    /**
-     * Filter which ScoreRecords to update
-     */
-    where?: ScoreRecordWhereInput
-    /**
-     * Limit how many ScoreRecords to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * ScoreRecord updateManyAndReturn
-   */
-  export type ScoreRecordUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelectUpdateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * The data used to update ScoreRecords.
-     */
-    data: XOR<ScoreRecordUpdateManyMutationInput, ScoreRecordUncheckedUpdateManyInput>
-    /**
-     * Filter which ScoreRecords to update
-     */
-    where?: ScoreRecordWhereInput
-    /**
-     * Limit how many ScoreRecords to update.
-     */
-    limit?: number
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordIncludeUpdateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * ScoreRecord upsert
-   */
-  export type ScoreRecordUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    /**
-     * The filter to search for the ScoreRecord to update in case it exists.
-     */
-    where: ScoreRecordWhereUniqueInput
-    /**
-     * In case the ScoreRecord found by the `where` argument doesn't exist, create a new ScoreRecord with this data.
-     */
-    create: XOR<ScoreRecordCreateInput, ScoreRecordUncheckedCreateInput>
-    /**
-     * In case the ScoreRecord was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<ScoreRecordUpdateInput, ScoreRecordUncheckedUpdateInput>
-  }
-
-  /**
-   * ScoreRecord delete
-   */
-  export type ScoreRecordDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
-    /**
-     * Filter which ScoreRecord to delete.
-     */
-    where: ScoreRecordWhereUniqueInput
-  }
-
-  /**
-   * ScoreRecord deleteMany
-   */
-  export type ScoreRecordDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which ScoreRecords to delete
-     */
-    where?: ScoreRecordWhereInput
-    /**
-     * Limit how many ScoreRecords to delete.
-     */
-    limit?: number
-  }
-
-  /**
-   * ScoreRecord without action
-   */
-  export type ScoreRecordDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the ScoreRecord
-     */
-    select?: ScoreRecordSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the ScoreRecord
-     */
-    omit?: ScoreRecordOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ScoreRecordInclude<ExtArgs> | null
   }
 
 
@@ -19353,8 +18018,7 @@ export namespace Prisma {
 
   export const SubjectScalarFieldEnum: {
     id: 'id',
-    name: 'name',
-    teacherId: 'teacherId'
+    name: 'name'
   };
 
   export type SubjectScalarFieldEnum = (typeof SubjectScalarFieldEnum)[keyof typeof SubjectScalarFieldEnum]
@@ -19421,6 +18085,8 @@ export namespace Prisma {
   export const AttendanceScalarFieldEnum: {
     id: 'id',
     studentId: 'studentId',
+    className: 'className',
+    day: 'day',
     status: 'status',
     date: 'date'
   };
@@ -19448,19 +18114,6 @@ export namespace Prisma {
   };
 
   export type AssignmentScalarFieldEnum = (typeof AssignmentScalarFieldEnum)[keyof typeof AssignmentScalarFieldEnum]
-
-
-  export const ScoreRecordScalarFieldEnum: {
-    id: 'id',
-    studentId: 'studentId',
-    subjectId: 'subjectId',
-    className: 'className',
-    type: 'type',
-    scoreNumber: 'scoreNumber',
-    scoreText: 'scoreText'
-  };
-
-  export type ScoreRecordScalarFieldEnum = (typeof ScoreRecordScalarFieldEnum)[keyof typeof ScoreRecordScalarFieldEnum]
 
 
   export const PersonalityScalarFieldEnum: {
@@ -19615,7 +18268,6 @@ export namespace Prisma {
     role?: StringFilter<"Teacher"> | string
     status?: StringFilter<"Teacher"> | string
     assignments?: AssignmentListRelationFilter
-    subjects?: SubjectListRelationFilter
   }
 
   export type TeacherOrderByWithRelationInput = {
@@ -19629,7 +18281,6 @@ export namespace Prisma {
     role?: SortOrder
     status?: SortOrder
     assignments?: AssignmentOrderByRelationAggregateInput
-    subjects?: SubjectOrderByRelationAggregateInput
   }
 
   export type TeacherWhereUniqueInput = Prisma.AtLeast<{
@@ -19646,7 +18297,6 @@ export namespace Prisma {
     role?: StringFilter<"Teacher"> | string
     status?: StringFilter<"Teacher"> | string
     assignments?: AssignmentListRelationFilter
-    subjects?: SubjectListRelationFilter
   }, "id" | "identity_number">
 
   export type TeacherOrderByWithAggregationInput = {
@@ -19687,21 +18337,15 @@ export namespace Prisma {
     NOT?: SubjectWhereInput | SubjectWhereInput[]
     id?: IntFilter<"Subject"> | number
     name?: StringFilter<"Subject"> | string
-    teacherId?: IntFilter<"Subject"> | number
-    teacher?: XOR<TeacherScalarRelationFilter, TeacherWhereInput>
     assignments?: AssignmentListRelationFilter
     cps?: CPListRelationFilter
-    scoreRecords?: ScoreRecordListRelationFilter
   }
 
   export type SubjectOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
-    teacherId?: SortOrder
-    teacher?: TeacherOrderByWithRelationInput
     assignments?: AssignmentOrderByRelationAggregateInput
     cps?: CPOrderByRelationAggregateInput
-    scoreRecords?: ScoreRecordOrderByRelationAggregateInput
   }
 
   export type SubjectWhereUniqueInput = Prisma.AtLeast<{
@@ -19710,17 +18354,13 @@ export namespace Prisma {
     OR?: SubjectWhereInput[]
     NOT?: SubjectWhereInput | SubjectWhereInput[]
     name?: StringFilter<"Subject"> | string
-    teacherId?: IntFilter<"Subject"> | number
-    teacher?: XOR<TeacherScalarRelationFilter, TeacherWhereInput>
     assignments?: AssignmentListRelationFilter
     cps?: CPListRelationFilter
-    scoreRecords?: ScoreRecordListRelationFilter
   }, "id">
 
   export type SubjectOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
-    teacherId?: SortOrder
     _count?: SubjectCountOrderByAggregateInput
     _avg?: SubjectAvgOrderByAggregateInput
     _max?: SubjectMaxOrderByAggregateInput
@@ -19734,7 +18374,6 @@ export namespace Prisma {
     NOT?: SubjectScalarWhereWithAggregatesInput | SubjectScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Subject"> | number
     name?: StringWithAggregatesFilter<"Subject"> | string
-    teacherId?: IntWithAggregatesFilter<"Subject"> | number
   }
 
   export type CPWhereInput = {
@@ -19863,7 +18502,6 @@ export namespace Prisma {
     attendances?: AttendanceListRelationFilter
     homeroomNote?: XOR<HomeroomNoteNullableScalarRelationFilter, HomeroomNoteWhereInput> | null
     personality?: XOR<PersonalityNullableScalarRelationFilter, PersonalityWhereInput> | null
-    scoreRecords?: ScoreRecordListRelationFilter
     tahfidzs?: TahfidzListRelationFilter
     promotions?: StudentPromotionListRelationFilter
   }
@@ -19881,7 +18519,6 @@ export namespace Prisma {
     attendances?: AttendanceOrderByRelationAggregateInput
     homeroomNote?: HomeroomNoteOrderByWithRelationInput
     personality?: PersonalityOrderByWithRelationInput
-    scoreRecords?: ScoreRecordOrderByRelationAggregateInput
     tahfidzs?: TahfidzOrderByRelationAggregateInput
     promotions?: StudentPromotionOrderByRelationAggregateInput
   }
@@ -19902,7 +18539,6 @@ export namespace Prisma {
     attendances?: AttendanceListRelationFilter
     homeroomNote?: XOR<HomeroomNoteNullableScalarRelationFilter, HomeroomNoteWhereInput> | null
     personality?: XOR<PersonalityNullableScalarRelationFilter, PersonalityWhereInput> | null
-    scoreRecords?: ScoreRecordListRelationFilter
     tahfidzs?: TahfidzListRelationFilter
     promotions?: StudentPromotionListRelationFilter
   }, "id" | "nisn">
@@ -19943,17 +18579,17 @@ export namespace Prisma {
     NOT?: AssessmentWhereInput | AssessmentWhereInput[]
     id?: IntFilter<"Assessment"> | number
     studentId?: IntFilter<"Assessment"> | number
-    tpId?: IntFilter<"Assessment"> | number
+    tpId?: IntNullableFilter<"Assessment"> | number | null
     score?: IntFilter<"Assessment"> | number
     type?: StringFilter<"Assessment"> | string
     student?: XOR<StudentScalarRelationFilter, StudentWhereInput>
-    tp?: XOR<TPScalarRelationFilter, TPWhereInput>
+    tp?: XOR<TPNullableScalarRelationFilter, TPWhereInput> | null
   }
 
   export type AssessmentOrderByWithRelationInput = {
     id?: SortOrder
     studentId?: SortOrder
-    tpId?: SortOrder
+    tpId?: SortOrderInput | SortOrder
     score?: SortOrder
     type?: SortOrder
     student?: StudentOrderByWithRelationInput
@@ -19962,21 +18598,22 @@ export namespace Prisma {
 
   export type AssessmentWhereUniqueInput = Prisma.AtLeast<{
     id?: number
+    studentId_tpId_type?: AssessmentStudentIdTpIdTypeCompoundUniqueInput
     AND?: AssessmentWhereInput | AssessmentWhereInput[]
     OR?: AssessmentWhereInput[]
     NOT?: AssessmentWhereInput | AssessmentWhereInput[]
     studentId?: IntFilter<"Assessment"> | number
-    tpId?: IntFilter<"Assessment"> | number
+    tpId?: IntNullableFilter<"Assessment"> | number | null
     score?: IntFilter<"Assessment"> | number
     type?: StringFilter<"Assessment"> | string
     student?: XOR<StudentScalarRelationFilter, StudentWhereInput>
-    tp?: XOR<TPScalarRelationFilter, TPWhereInput>
-  }, "id">
+    tp?: XOR<TPNullableScalarRelationFilter, TPWhereInput> | null
+  }, "id" | "studentId_tpId_type">
 
   export type AssessmentOrderByWithAggregationInput = {
     id?: SortOrder
     studentId?: SortOrder
-    tpId?: SortOrder
+    tpId?: SortOrderInput | SortOrder
     score?: SortOrder
     type?: SortOrder
     _count?: AssessmentCountOrderByAggregateInput
@@ -19992,7 +18629,7 @@ export namespace Prisma {
     NOT?: AssessmentScalarWhereWithAggregatesInput | AssessmentScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Assessment"> | number
     studentId?: IntWithAggregatesFilter<"Assessment"> | number
-    tpId?: IntWithAggregatesFilter<"Assessment"> | number
+    tpId?: IntNullableWithAggregatesFilter<"Assessment"> | number | null
     score?: IntWithAggregatesFilter<"Assessment"> | number
     type?: StringWithAggregatesFilter<"Assessment"> | string
   }
@@ -20070,6 +18707,8 @@ export namespace Prisma {
     NOT?: AttendanceWhereInput | AttendanceWhereInput[]
     id?: IntFilter<"Attendance"> | number
     studentId?: IntFilter<"Attendance"> | number
+    className?: StringFilter<"Attendance"> | string
+    day?: StringFilter<"Attendance"> | string
     status?: StringFilter<"Attendance"> | string
     date?: DateTimeFilter<"Attendance"> | Date | string
     student?: XOR<StudentScalarRelationFilter, StudentWhereInput>
@@ -20078,6 +18717,8 @@ export namespace Prisma {
   export type AttendanceOrderByWithRelationInput = {
     id?: SortOrder
     studentId?: SortOrder
+    className?: SortOrder
+    day?: SortOrder
     status?: SortOrder
     date?: SortOrder
     student?: StudentOrderByWithRelationInput
@@ -20085,18 +18726,23 @@ export namespace Prisma {
 
   export type AttendanceWhereUniqueInput = Prisma.AtLeast<{
     id?: number
+    studentId_date?: AttendanceStudentIdDateCompoundUniqueInput
     AND?: AttendanceWhereInput | AttendanceWhereInput[]
     OR?: AttendanceWhereInput[]
     NOT?: AttendanceWhereInput | AttendanceWhereInput[]
     studentId?: IntFilter<"Attendance"> | number
+    className?: StringFilter<"Attendance"> | string
+    day?: StringFilter<"Attendance"> | string
     status?: StringFilter<"Attendance"> | string
     date?: DateTimeFilter<"Attendance"> | Date | string
     student?: XOR<StudentScalarRelationFilter, StudentWhereInput>
-  }, "id">
+  }, "id" | "studentId_date">
 
   export type AttendanceOrderByWithAggregationInput = {
     id?: SortOrder
     studentId?: SortOrder
+    className?: SortOrder
+    day?: SortOrder
     status?: SortOrder
     date?: SortOrder
     _count?: AttendanceCountOrderByAggregateInput
@@ -20112,6 +18758,8 @@ export namespace Prisma {
     NOT?: AttendanceScalarWhereWithAggregatesInput | AttendanceScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Attendance"> | number
     studentId?: IntWithAggregatesFilter<"Attendance"> | number
+    className?: StringWithAggregatesFilter<"Attendance"> | string
+    day?: StringWithAggregatesFilter<"Attendance"> | string
     status?: StringWithAggregatesFilter<"Attendance"> | string
     date?: DateTimeWithAggregatesFilter<"Attendance"> | Date | string
   }
@@ -20229,77 +18877,6 @@ export namespace Prisma {
     subjectId?: IntWithAggregatesFilter<"Assignment"> | number
     className?: StringWithAggregatesFilter<"Assignment"> | string
     academicYear?: StringWithAggregatesFilter<"Assignment"> | string
-  }
-
-  export type ScoreRecordWhereInput = {
-    AND?: ScoreRecordWhereInput | ScoreRecordWhereInput[]
-    OR?: ScoreRecordWhereInput[]
-    NOT?: ScoreRecordWhereInput | ScoreRecordWhereInput[]
-    id?: IntFilter<"ScoreRecord"> | number
-    studentId?: IntFilter<"ScoreRecord"> | number
-    subjectId?: IntFilter<"ScoreRecord"> | number
-    className?: StringFilter<"ScoreRecord"> | string
-    type?: StringFilter<"ScoreRecord"> | string
-    scoreNumber?: IntFilter<"ScoreRecord"> | number
-    scoreText?: StringFilter<"ScoreRecord"> | string
-    student?: XOR<StudentScalarRelationFilter, StudentWhereInput>
-    subject?: XOR<SubjectScalarRelationFilter, SubjectWhereInput>
-  }
-
-  export type ScoreRecordOrderByWithRelationInput = {
-    id?: SortOrder
-    studentId?: SortOrder
-    subjectId?: SortOrder
-    className?: SortOrder
-    type?: SortOrder
-    scoreNumber?: SortOrder
-    scoreText?: SortOrder
-    student?: StudentOrderByWithRelationInput
-    subject?: SubjectOrderByWithRelationInput
-  }
-
-  export type ScoreRecordWhereUniqueInput = Prisma.AtLeast<{
-    id?: number
-    studentId_subjectId_type?: ScoreRecordStudentIdSubjectIdTypeCompoundUniqueInput
-    AND?: ScoreRecordWhereInput | ScoreRecordWhereInput[]
-    OR?: ScoreRecordWhereInput[]
-    NOT?: ScoreRecordWhereInput | ScoreRecordWhereInput[]
-    studentId?: IntFilter<"ScoreRecord"> | number
-    subjectId?: IntFilter<"ScoreRecord"> | number
-    className?: StringFilter<"ScoreRecord"> | string
-    type?: StringFilter<"ScoreRecord"> | string
-    scoreNumber?: IntFilter<"ScoreRecord"> | number
-    scoreText?: StringFilter<"ScoreRecord"> | string
-    student?: XOR<StudentScalarRelationFilter, StudentWhereInput>
-    subject?: XOR<SubjectScalarRelationFilter, SubjectWhereInput>
-  }, "id" | "studentId_subjectId_type">
-
-  export type ScoreRecordOrderByWithAggregationInput = {
-    id?: SortOrder
-    studentId?: SortOrder
-    subjectId?: SortOrder
-    className?: SortOrder
-    type?: SortOrder
-    scoreNumber?: SortOrder
-    scoreText?: SortOrder
-    _count?: ScoreRecordCountOrderByAggregateInput
-    _avg?: ScoreRecordAvgOrderByAggregateInput
-    _max?: ScoreRecordMaxOrderByAggregateInput
-    _min?: ScoreRecordMinOrderByAggregateInput
-    _sum?: ScoreRecordSumOrderByAggregateInput
-  }
-
-  export type ScoreRecordScalarWhereWithAggregatesInput = {
-    AND?: ScoreRecordScalarWhereWithAggregatesInput | ScoreRecordScalarWhereWithAggregatesInput[]
-    OR?: ScoreRecordScalarWhereWithAggregatesInput[]
-    NOT?: ScoreRecordScalarWhereWithAggregatesInput | ScoreRecordScalarWhereWithAggregatesInput[]
-    id?: IntWithAggregatesFilter<"ScoreRecord"> | number
-    studentId?: IntWithAggregatesFilter<"ScoreRecord"> | number
-    subjectId?: IntWithAggregatesFilter<"ScoreRecord"> | number
-    className?: StringWithAggregatesFilter<"ScoreRecord"> | string
-    type?: StringWithAggregatesFilter<"ScoreRecord"> | string
-    scoreNumber?: IntWithAggregatesFilter<"ScoreRecord"> | number
-    scoreText?: StringWithAggregatesFilter<"ScoreRecord"> | string
   }
 
   export type PersonalityWhereInput = {
@@ -20568,7 +19145,6 @@ export namespace Prisma {
     role?: string
     status?: string
     assignments?: AssignmentCreateNestedManyWithoutTeacherInput
-    subjects?: SubjectCreateNestedManyWithoutTeacherInput
   }
 
   export type TeacherUncheckedCreateInput = {
@@ -20582,7 +19158,6 @@ export namespace Prisma {
     role?: string
     status?: string
     assignments?: AssignmentUncheckedCreateNestedManyWithoutTeacherInput
-    subjects?: SubjectUncheckedCreateNestedManyWithoutTeacherInput
   }
 
   export type TeacherUpdateInput = {
@@ -20595,7 +19170,6 @@ export namespace Prisma {
     role?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUpdateManyWithoutTeacherNestedInput
-    subjects?: SubjectUpdateManyWithoutTeacherNestedInput
   }
 
   export type TeacherUncheckedUpdateInput = {
@@ -20609,7 +19183,6 @@ export namespace Prisma {
     role?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
     assignments?: AssignmentUncheckedUpdateManyWithoutTeacherNestedInput
-    subjects?: SubjectUncheckedUpdateManyWithoutTeacherNestedInput
   }
 
   export type TeacherCreateManyInput = {
@@ -20649,42 +19222,33 @@ export namespace Prisma {
 
   export type SubjectCreateInput = {
     name: string
-    teacher: TeacherCreateNestedOneWithoutSubjectsInput
     assignments?: AssignmentCreateNestedManyWithoutSubjectInput
     cps?: CPCreateNestedManyWithoutSubjectInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateInput = {
     id?: number
     name: string
-    teacherId: number
     assignments?: AssignmentUncheckedCreateNestedManyWithoutSubjectInput
     cps?: CPUncheckedCreateNestedManyWithoutSubjectInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUpdateInput = {
     name?: StringFieldUpdateOperationsInput | string
-    teacher?: TeacherUpdateOneRequiredWithoutSubjectsNestedInput
     assignments?: AssignmentUpdateManyWithoutSubjectNestedInput
     cps?: CPUpdateManyWithoutSubjectNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
-    teacherId?: IntFieldUpdateOperationsInput | number
     assignments?: AssignmentUncheckedUpdateManyWithoutSubjectNestedInput
     cps?: CPUncheckedUpdateManyWithoutSubjectNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectCreateManyInput = {
     id?: number
     name: string
-    teacherId: number
   }
 
   export type SubjectUpdateManyMutationInput = {
@@ -20694,7 +19258,6 @@ export namespace Prisma {
   export type SubjectUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
-    teacherId?: IntFieldUpdateOperationsInput | number
   }
 
   export type CPCreateInput = {
@@ -20807,7 +19370,6 @@ export namespace Prisma {
     attendances?: AttendanceCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteCreateNestedOneWithoutStudentInput
     personality?: PersonalityCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionCreateNestedManyWithoutStudentInput
   }
@@ -20825,7 +19387,6 @@ export namespace Prisma {
     attendances?: AttendanceUncheckedCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteUncheckedCreateNestedOneWithoutStudentInput
     personality?: PersonalityUncheckedCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzUncheckedCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionUncheckedCreateNestedManyWithoutStudentInput
   }
@@ -20842,7 +19403,6 @@ export namespace Prisma {
     attendances?: AttendanceUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUpdateManyWithoutStudentNestedInput
   }
@@ -20860,7 +19420,6 @@ export namespace Prisma {
     attendances?: AttendanceUncheckedUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUncheckedUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUncheckedUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUncheckedUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUncheckedUpdateManyWithoutStudentNestedInput
   }
@@ -20901,13 +19460,13 @@ export namespace Prisma {
     score: number
     type: string
     student: StudentCreateNestedOneWithoutAssessmentsInput
-    tp: TPCreateNestedOneWithoutAssessmentsInput
+    tp?: TPCreateNestedOneWithoutAssessmentsInput
   }
 
   export type AssessmentUncheckedCreateInput = {
     id?: number
     studentId: number
-    tpId: number
+    tpId?: number | null
     score: number
     type: string
   }
@@ -20916,13 +19475,13 @@ export namespace Prisma {
     score?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
     student?: StudentUpdateOneRequiredWithoutAssessmentsNestedInput
-    tp?: TPUpdateOneRequiredWithoutAssessmentsNestedInput
+    tp?: TPUpdateOneWithoutAssessmentsNestedInput
   }
 
   export type AssessmentUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     studentId?: IntFieldUpdateOperationsInput | number
-    tpId?: IntFieldUpdateOperationsInput | number
+    tpId?: NullableIntFieldUpdateOperationsInput | number | null
     score?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
   }
@@ -20930,7 +19489,7 @@ export namespace Prisma {
   export type AssessmentCreateManyInput = {
     id?: number
     studentId: number
-    tpId: number
+    tpId?: number | null
     score: number
     type: string
   }
@@ -20943,7 +19502,7 @@ export namespace Prisma {
   export type AssessmentUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     studentId?: IntFieldUpdateOperationsInput | number
-    tpId?: IntFieldUpdateOperationsInput | number
+    tpId?: NullableIntFieldUpdateOperationsInput | number | null
     score?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
   }
@@ -21015,6 +19574,8 @@ export namespace Prisma {
   }
 
   export type AttendanceCreateInput = {
+    className: string
+    day: string
     status: string
     date?: Date | string
     student: StudentCreateNestedOneWithoutAttendancesInput
@@ -21023,11 +19584,15 @@ export namespace Prisma {
   export type AttendanceUncheckedCreateInput = {
     id?: number
     studentId: number
+    className: string
+    day: string
     status: string
     date?: Date | string
   }
 
   export type AttendanceUpdateInput = {
+    className?: StringFieldUpdateOperationsInput | string
+    day?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
     student?: StudentUpdateOneRequiredWithoutAttendancesNestedInput
@@ -21036,6 +19601,8 @@ export namespace Prisma {
   export type AttendanceUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     studentId?: IntFieldUpdateOperationsInput | number
+    className?: StringFieldUpdateOperationsInput | string
+    day?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -21043,11 +19610,15 @@ export namespace Prisma {
   export type AttendanceCreateManyInput = {
     id?: number
     studentId: number
+    className: string
+    day: string
     status: string
     date?: Date | string
   }
 
   export type AttendanceUpdateManyMutationInput = {
+    className?: StringFieldUpdateOperationsInput | string
+    day?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -21055,6 +19626,8 @@ export namespace Prisma {
   export type AttendanceUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     studentId?: IntFieldUpdateOperationsInput | number
+    className?: StringFieldUpdateOperationsInput | string
+    day?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -21161,71 +19734,6 @@ export namespace Prisma {
     subjectId?: IntFieldUpdateOperationsInput | number
     className?: StringFieldUpdateOperationsInput | string
     academicYear?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type ScoreRecordCreateInput = {
-    className: string
-    type: string
-    scoreNumber?: number
-    scoreText?: string
-    student: StudentCreateNestedOneWithoutScoreRecordsInput
-    subject: SubjectCreateNestedOneWithoutScoreRecordsInput
-  }
-
-  export type ScoreRecordUncheckedCreateInput = {
-    id?: number
-    studentId: number
-    subjectId: number
-    className: string
-    type: string
-    scoreNumber?: number
-    scoreText?: string
-  }
-
-  export type ScoreRecordUpdateInput = {
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
-    student?: StudentUpdateOneRequiredWithoutScoreRecordsNestedInput
-    subject?: SubjectUpdateOneRequiredWithoutScoreRecordsNestedInput
-  }
-
-  export type ScoreRecordUncheckedUpdateInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    studentId?: IntFieldUpdateOperationsInput | number
-    subjectId?: IntFieldUpdateOperationsInput | number
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type ScoreRecordCreateManyInput = {
-    id?: number
-    studentId: number
-    subjectId: number
-    className: string
-    type: string
-    scoreNumber?: number
-    scoreText?: string
-  }
-
-  export type ScoreRecordUpdateManyMutationInput = {
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type ScoreRecordUncheckedUpdateManyInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    studentId?: IntFieldUpdateOperationsInput | number
-    subjectId?: IntFieldUpdateOperationsInput | number
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
   }
 
   export type PersonalityCreateInput = {
@@ -21526,22 +20034,12 @@ export namespace Prisma {
     none?: AssignmentWhereInput
   }
 
-  export type SubjectListRelationFilter = {
-    every?: SubjectWhereInput
-    some?: SubjectWhereInput
-    none?: SubjectWhereInput
-  }
-
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
   }
 
   export type AssignmentOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type SubjectOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -21641,57 +20139,37 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
-  export type TeacherScalarRelationFilter = {
-    is?: TeacherWhereInput
-    isNot?: TeacherWhereInput
-  }
-
   export type CPListRelationFilter = {
     every?: CPWhereInput
     some?: CPWhereInput
     none?: CPWhereInput
   }
 
-  export type ScoreRecordListRelationFilter = {
-    every?: ScoreRecordWhereInput
-    some?: ScoreRecordWhereInput
-    none?: ScoreRecordWhereInput
-  }
-
   export type CPOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type ScoreRecordOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
   export type SubjectCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
-    teacherId?: SortOrder
   }
 
   export type SubjectAvgOrderByAggregateInput = {
     id?: SortOrder
-    teacherId?: SortOrder
   }
 
   export type SubjectMaxOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
-    teacherId?: SortOrder
   }
 
   export type SubjectMinOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
-    teacherId?: SortOrder
   }
 
   export type SubjectSumOrderByAggregateInput = {
     id?: SortOrder
-    teacherId?: SortOrder
   }
 
   export type SubjectScalarRelationFilter = {
@@ -21867,14 +20345,31 @@ export namespace Prisma {
     id?: SortOrder
   }
 
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type StudentScalarRelationFilter = {
     is?: StudentWhereInput
     isNot?: StudentWhereInput
   }
 
-  export type TPScalarRelationFilter = {
-    is?: TPWhereInput
-    isNot?: TPWhereInput
+  export type TPNullableScalarRelationFilter = {
+    is?: TPWhereInput | null
+    isNot?: TPWhereInput | null
+  }
+
+  export type AssessmentStudentIdTpIdTypeCompoundUniqueInput = {
+    studentId: number
+    tpId: number
+    type: string
   }
 
   export type AssessmentCountOrderByAggregateInput = {
@@ -21913,6 +20408,22 @@ export namespace Prisma {
     studentId?: SortOrder
     tpId?: SortOrder
     score?: SortOrder
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
   export type DateTimeFilter<$PrismaModel = never> = {
@@ -21982,9 +20493,16 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type AttendanceStudentIdDateCompoundUniqueInput = {
+    studentId: number
+    date: Date | string
+  }
+
   export type AttendanceCountOrderByAggregateInput = {
     id?: SortOrder
     studentId?: SortOrder
+    className?: SortOrder
+    day?: SortOrder
     status?: SortOrder
     date?: SortOrder
   }
@@ -21997,6 +20515,8 @@ export namespace Prisma {
   export type AttendanceMaxOrderByAggregateInput = {
     id?: SortOrder
     studentId?: SortOrder
+    className?: SortOrder
+    day?: SortOrder
     status?: SortOrder
     date?: SortOrder
   }
@@ -22004,6 +20524,8 @@ export namespace Prisma {
   export type AttendanceMinOrderByAggregateInput = {
     id?: SortOrder
     studentId?: SortOrder
+    className?: SortOrder
+    day?: SortOrder
     status?: SortOrder
     date?: SortOrder
   }
@@ -22047,6 +20569,11 @@ export namespace Prisma {
     grade?: SortOrder
   }
 
+  export type TeacherScalarRelationFilter = {
+    is?: TeacherWhereInput
+    isNot?: TeacherWhereInput
+  }
+
   export type AssignmentTeacherIdSubjectIdClassNameAcademicYearCompoundUniqueInput = {
     teacherId: number
     subjectId: number
@@ -22088,56 +20615,6 @@ export namespace Prisma {
     id?: SortOrder
     teacherId?: SortOrder
     subjectId?: SortOrder
-  }
-
-  export type ScoreRecordStudentIdSubjectIdTypeCompoundUniqueInput = {
-    studentId: number
-    subjectId: number
-    type: string
-  }
-
-  export type ScoreRecordCountOrderByAggregateInput = {
-    id?: SortOrder
-    studentId?: SortOrder
-    subjectId?: SortOrder
-    className?: SortOrder
-    type?: SortOrder
-    scoreNumber?: SortOrder
-    scoreText?: SortOrder
-  }
-
-  export type ScoreRecordAvgOrderByAggregateInput = {
-    id?: SortOrder
-    studentId?: SortOrder
-    subjectId?: SortOrder
-    scoreNumber?: SortOrder
-  }
-
-  export type ScoreRecordMaxOrderByAggregateInput = {
-    id?: SortOrder
-    studentId?: SortOrder
-    subjectId?: SortOrder
-    className?: SortOrder
-    type?: SortOrder
-    scoreNumber?: SortOrder
-    scoreText?: SortOrder
-  }
-
-  export type ScoreRecordMinOrderByAggregateInput = {
-    id?: SortOrder
-    studentId?: SortOrder
-    subjectId?: SortOrder
-    className?: SortOrder
-    type?: SortOrder
-    scoreNumber?: SortOrder
-    scoreText?: SortOrder
-  }
-
-  export type ScoreRecordSumOrderByAggregateInput = {
-    id?: SortOrder
-    studentId?: SortOrder
-    subjectId?: SortOrder
-    scoreNumber?: SortOrder
   }
 
   export type PersonalityCountOrderByAggregateInput = {
@@ -22304,25 +20781,11 @@ export namespace Prisma {
     connect?: AssignmentWhereUniqueInput | AssignmentWhereUniqueInput[]
   }
 
-  export type SubjectCreateNestedManyWithoutTeacherInput = {
-    create?: XOR<SubjectCreateWithoutTeacherInput, SubjectUncheckedCreateWithoutTeacherInput> | SubjectCreateWithoutTeacherInput[] | SubjectUncheckedCreateWithoutTeacherInput[]
-    connectOrCreate?: SubjectCreateOrConnectWithoutTeacherInput | SubjectCreateOrConnectWithoutTeacherInput[]
-    createMany?: SubjectCreateManyTeacherInputEnvelope
-    connect?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
-  }
-
   export type AssignmentUncheckedCreateNestedManyWithoutTeacherInput = {
     create?: XOR<AssignmentCreateWithoutTeacherInput, AssignmentUncheckedCreateWithoutTeacherInput> | AssignmentCreateWithoutTeacherInput[] | AssignmentUncheckedCreateWithoutTeacherInput[]
     connectOrCreate?: AssignmentCreateOrConnectWithoutTeacherInput | AssignmentCreateOrConnectWithoutTeacherInput[]
     createMany?: AssignmentCreateManyTeacherInputEnvelope
     connect?: AssignmentWhereUniqueInput | AssignmentWhereUniqueInput[]
-  }
-
-  export type SubjectUncheckedCreateNestedManyWithoutTeacherInput = {
-    create?: XOR<SubjectCreateWithoutTeacherInput, SubjectUncheckedCreateWithoutTeacherInput> | SubjectCreateWithoutTeacherInput[] | SubjectUncheckedCreateWithoutTeacherInput[]
-    connectOrCreate?: SubjectCreateOrConnectWithoutTeacherInput | SubjectCreateOrConnectWithoutTeacherInput[]
-    createMany?: SubjectCreateManyTeacherInputEnvelope
-    connect?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -22347,20 +20810,6 @@ export namespace Prisma {
     deleteMany?: AssignmentScalarWhereInput | AssignmentScalarWhereInput[]
   }
 
-  export type SubjectUpdateManyWithoutTeacherNestedInput = {
-    create?: XOR<SubjectCreateWithoutTeacherInput, SubjectUncheckedCreateWithoutTeacherInput> | SubjectCreateWithoutTeacherInput[] | SubjectUncheckedCreateWithoutTeacherInput[]
-    connectOrCreate?: SubjectCreateOrConnectWithoutTeacherInput | SubjectCreateOrConnectWithoutTeacherInput[]
-    upsert?: SubjectUpsertWithWhereUniqueWithoutTeacherInput | SubjectUpsertWithWhereUniqueWithoutTeacherInput[]
-    createMany?: SubjectCreateManyTeacherInputEnvelope
-    set?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
-    disconnect?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
-    delete?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
-    connect?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
-    update?: SubjectUpdateWithWhereUniqueWithoutTeacherInput | SubjectUpdateWithWhereUniqueWithoutTeacherInput[]
-    updateMany?: SubjectUpdateManyWithWhereWithoutTeacherInput | SubjectUpdateManyWithWhereWithoutTeacherInput[]
-    deleteMany?: SubjectScalarWhereInput | SubjectScalarWhereInput[]
-  }
-
   export type IntFieldUpdateOperationsInput = {
     set?: number
     increment?: number
@@ -22383,26 +20832,6 @@ export namespace Prisma {
     deleteMany?: AssignmentScalarWhereInput | AssignmentScalarWhereInput[]
   }
 
-  export type SubjectUncheckedUpdateManyWithoutTeacherNestedInput = {
-    create?: XOR<SubjectCreateWithoutTeacherInput, SubjectUncheckedCreateWithoutTeacherInput> | SubjectCreateWithoutTeacherInput[] | SubjectUncheckedCreateWithoutTeacherInput[]
-    connectOrCreate?: SubjectCreateOrConnectWithoutTeacherInput | SubjectCreateOrConnectWithoutTeacherInput[]
-    upsert?: SubjectUpsertWithWhereUniqueWithoutTeacherInput | SubjectUpsertWithWhereUniqueWithoutTeacherInput[]
-    createMany?: SubjectCreateManyTeacherInputEnvelope
-    set?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
-    disconnect?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
-    delete?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
-    connect?: SubjectWhereUniqueInput | SubjectWhereUniqueInput[]
-    update?: SubjectUpdateWithWhereUniqueWithoutTeacherInput | SubjectUpdateWithWhereUniqueWithoutTeacherInput[]
-    updateMany?: SubjectUpdateManyWithWhereWithoutTeacherInput | SubjectUpdateManyWithWhereWithoutTeacherInput[]
-    deleteMany?: SubjectScalarWhereInput | SubjectScalarWhereInput[]
-  }
-
-  export type TeacherCreateNestedOneWithoutSubjectsInput = {
-    create?: XOR<TeacherCreateWithoutSubjectsInput, TeacherUncheckedCreateWithoutSubjectsInput>
-    connectOrCreate?: TeacherCreateOrConnectWithoutSubjectsInput
-    connect?: TeacherWhereUniqueInput
-  }
-
   export type AssignmentCreateNestedManyWithoutSubjectInput = {
     create?: XOR<AssignmentCreateWithoutSubjectInput, AssignmentUncheckedCreateWithoutSubjectInput> | AssignmentCreateWithoutSubjectInput[] | AssignmentUncheckedCreateWithoutSubjectInput[]
     connectOrCreate?: AssignmentCreateOrConnectWithoutSubjectInput | AssignmentCreateOrConnectWithoutSubjectInput[]
@@ -22417,13 +20846,6 @@ export namespace Prisma {
     connect?: CPWhereUniqueInput | CPWhereUniqueInput[]
   }
 
-  export type ScoreRecordCreateNestedManyWithoutSubjectInput = {
-    create?: XOR<ScoreRecordCreateWithoutSubjectInput, ScoreRecordUncheckedCreateWithoutSubjectInput> | ScoreRecordCreateWithoutSubjectInput[] | ScoreRecordUncheckedCreateWithoutSubjectInput[]
-    connectOrCreate?: ScoreRecordCreateOrConnectWithoutSubjectInput | ScoreRecordCreateOrConnectWithoutSubjectInput[]
-    createMany?: ScoreRecordCreateManySubjectInputEnvelope
-    connect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-  }
-
   export type AssignmentUncheckedCreateNestedManyWithoutSubjectInput = {
     create?: XOR<AssignmentCreateWithoutSubjectInput, AssignmentUncheckedCreateWithoutSubjectInput> | AssignmentCreateWithoutSubjectInput[] | AssignmentUncheckedCreateWithoutSubjectInput[]
     connectOrCreate?: AssignmentCreateOrConnectWithoutSubjectInput | AssignmentCreateOrConnectWithoutSubjectInput[]
@@ -22436,21 +20858,6 @@ export namespace Prisma {
     connectOrCreate?: CPCreateOrConnectWithoutSubjectInput | CPCreateOrConnectWithoutSubjectInput[]
     createMany?: CPCreateManySubjectInputEnvelope
     connect?: CPWhereUniqueInput | CPWhereUniqueInput[]
-  }
-
-  export type ScoreRecordUncheckedCreateNestedManyWithoutSubjectInput = {
-    create?: XOR<ScoreRecordCreateWithoutSubjectInput, ScoreRecordUncheckedCreateWithoutSubjectInput> | ScoreRecordCreateWithoutSubjectInput[] | ScoreRecordUncheckedCreateWithoutSubjectInput[]
-    connectOrCreate?: ScoreRecordCreateOrConnectWithoutSubjectInput | ScoreRecordCreateOrConnectWithoutSubjectInput[]
-    createMany?: ScoreRecordCreateManySubjectInputEnvelope
-    connect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-  }
-
-  export type TeacherUpdateOneRequiredWithoutSubjectsNestedInput = {
-    create?: XOR<TeacherCreateWithoutSubjectsInput, TeacherUncheckedCreateWithoutSubjectsInput>
-    connectOrCreate?: TeacherCreateOrConnectWithoutSubjectsInput
-    upsert?: TeacherUpsertWithoutSubjectsInput
-    connect?: TeacherWhereUniqueInput
-    update?: XOR<XOR<TeacherUpdateToOneWithWhereWithoutSubjectsInput, TeacherUpdateWithoutSubjectsInput>, TeacherUncheckedUpdateWithoutSubjectsInput>
   }
 
   export type AssignmentUpdateManyWithoutSubjectNestedInput = {
@@ -22481,20 +20888,6 @@ export namespace Prisma {
     deleteMany?: CPScalarWhereInput | CPScalarWhereInput[]
   }
 
-  export type ScoreRecordUpdateManyWithoutSubjectNestedInput = {
-    create?: XOR<ScoreRecordCreateWithoutSubjectInput, ScoreRecordUncheckedCreateWithoutSubjectInput> | ScoreRecordCreateWithoutSubjectInput[] | ScoreRecordUncheckedCreateWithoutSubjectInput[]
-    connectOrCreate?: ScoreRecordCreateOrConnectWithoutSubjectInput | ScoreRecordCreateOrConnectWithoutSubjectInput[]
-    upsert?: ScoreRecordUpsertWithWhereUniqueWithoutSubjectInput | ScoreRecordUpsertWithWhereUniqueWithoutSubjectInput[]
-    createMany?: ScoreRecordCreateManySubjectInputEnvelope
-    set?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    disconnect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    delete?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    connect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    update?: ScoreRecordUpdateWithWhereUniqueWithoutSubjectInput | ScoreRecordUpdateWithWhereUniqueWithoutSubjectInput[]
-    updateMany?: ScoreRecordUpdateManyWithWhereWithoutSubjectInput | ScoreRecordUpdateManyWithWhereWithoutSubjectInput[]
-    deleteMany?: ScoreRecordScalarWhereInput | ScoreRecordScalarWhereInput[]
-  }
-
   export type AssignmentUncheckedUpdateManyWithoutSubjectNestedInput = {
     create?: XOR<AssignmentCreateWithoutSubjectInput, AssignmentUncheckedCreateWithoutSubjectInput> | AssignmentCreateWithoutSubjectInput[] | AssignmentUncheckedCreateWithoutSubjectInput[]
     connectOrCreate?: AssignmentCreateOrConnectWithoutSubjectInput | AssignmentCreateOrConnectWithoutSubjectInput[]
@@ -22521,20 +20914,6 @@ export namespace Prisma {
     update?: CPUpdateWithWhereUniqueWithoutSubjectInput | CPUpdateWithWhereUniqueWithoutSubjectInput[]
     updateMany?: CPUpdateManyWithWhereWithoutSubjectInput | CPUpdateManyWithWhereWithoutSubjectInput[]
     deleteMany?: CPScalarWhereInput | CPScalarWhereInput[]
-  }
-
-  export type ScoreRecordUncheckedUpdateManyWithoutSubjectNestedInput = {
-    create?: XOR<ScoreRecordCreateWithoutSubjectInput, ScoreRecordUncheckedCreateWithoutSubjectInput> | ScoreRecordCreateWithoutSubjectInput[] | ScoreRecordUncheckedCreateWithoutSubjectInput[]
-    connectOrCreate?: ScoreRecordCreateOrConnectWithoutSubjectInput | ScoreRecordCreateOrConnectWithoutSubjectInput[]
-    upsert?: ScoreRecordUpsertWithWhereUniqueWithoutSubjectInput | ScoreRecordUpsertWithWhereUniqueWithoutSubjectInput[]
-    createMany?: ScoreRecordCreateManySubjectInputEnvelope
-    set?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    disconnect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    delete?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    connect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    update?: ScoreRecordUpdateWithWhereUniqueWithoutSubjectInput | ScoreRecordUpdateWithWhereUniqueWithoutSubjectInput[]
-    updateMany?: ScoreRecordUpdateManyWithWhereWithoutSubjectInput | ScoreRecordUpdateManyWithWhereWithoutSubjectInput[]
-    deleteMany?: ScoreRecordScalarWhereInput | ScoreRecordScalarWhereInput[]
   }
 
   export type SubjectCreateNestedOneWithoutCpsInput = {
@@ -22675,13 +21054,6 @@ export namespace Prisma {
     connect?: PersonalityWhereUniqueInput
   }
 
-  export type ScoreRecordCreateNestedManyWithoutStudentInput = {
-    create?: XOR<ScoreRecordCreateWithoutStudentInput, ScoreRecordUncheckedCreateWithoutStudentInput> | ScoreRecordCreateWithoutStudentInput[] | ScoreRecordUncheckedCreateWithoutStudentInput[]
-    connectOrCreate?: ScoreRecordCreateOrConnectWithoutStudentInput | ScoreRecordCreateOrConnectWithoutStudentInput[]
-    createMany?: ScoreRecordCreateManyStudentInputEnvelope
-    connect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-  }
-
   export type TahfidzCreateNestedManyWithoutStudentInput = {
     create?: XOR<TahfidzCreateWithoutStudentInput, TahfidzUncheckedCreateWithoutStudentInput> | TahfidzCreateWithoutStudentInput[] | TahfidzUncheckedCreateWithoutStudentInput[]
     connectOrCreate?: TahfidzCreateOrConnectWithoutStudentInput | TahfidzCreateOrConnectWithoutStudentInput[]
@@ -22720,13 +21092,6 @@ export namespace Prisma {
     create?: XOR<PersonalityCreateWithoutStudentInput, PersonalityUncheckedCreateWithoutStudentInput>
     connectOrCreate?: PersonalityCreateOrConnectWithoutStudentInput
     connect?: PersonalityWhereUniqueInput
-  }
-
-  export type ScoreRecordUncheckedCreateNestedManyWithoutStudentInput = {
-    create?: XOR<ScoreRecordCreateWithoutStudentInput, ScoreRecordUncheckedCreateWithoutStudentInput> | ScoreRecordCreateWithoutStudentInput[] | ScoreRecordUncheckedCreateWithoutStudentInput[]
-    connectOrCreate?: ScoreRecordCreateOrConnectWithoutStudentInput | ScoreRecordCreateOrConnectWithoutStudentInput[]
-    createMany?: ScoreRecordCreateManyStudentInputEnvelope
-    connect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
   }
 
   export type TahfidzUncheckedCreateNestedManyWithoutStudentInput = {
@@ -22789,20 +21154,6 @@ export namespace Prisma {
     delete?: PersonalityWhereInput | boolean
     connect?: PersonalityWhereUniqueInput
     update?: XOR<XOR<PersonalityUpdateToOneWithWhereWithoutStudentInput, PersonalityUpdateWithoutStudentInput>, PersonalityUncheckedUpdateWithoutStudentInput>
-  }
-
-  export type ScoreRecordUpdateManyWithoutStudentNestedInput = {
-    create?: XOR<ScoreRecordCreateWithoutStudentInput, ScoreRecordUncheckedCreateWithoutStudentInput> | ScoreRecordCreateWithoutStudentInput[] | ScoreRecordUncheckedCreateWithoutStudentInput[]
-    connectOrCreate?: ScoreRecordCreateOrConnectWithoutStudentInput | ScoreRecordCreateOrConnectWithoutStudentInput[]
-    upsert?: ScoreRecordUpsertWithWhereUniqueWithoutStudentInput | ScoreRecordUpsertWithWhereUniqueWithoutStudentInput[]
-    createMany?: ScoreRecordCreateManyStudentInputEnvelope
-    set?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    disconnect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    delete?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    connect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    update?: ScoreRecordUpdateWithWhereUniqueWithoutStudentInput | ScoreRecordUpdateWithWhereUniqueWithoutStudentInput[]
-    updateMany?: ScoreRecordUpdateManyWithWhereWithoutStudentInput | ScoreRecordUpdateManyWithWhereWithoutStudentInput[]
-    deleteMany?: ScoreRecordScalarWhereInput | ScoreRecordScalarWhereInput[]
   }
 
   export type TahfidzUpdateManyWithoutStudentNestedInput = {
@@ -22881,20 +21232,6 @@ export namespace Prisma {
     update?: XOR<XOR<PersonalityUpdateToOneWithWhereWithoutStudentInput, PersonalityUpdateWithoutStudentInput>, PersonalityUncheckedUpdateWithoutStudentInput>
   }
 
-  export type ScoreRecordUncheckedUpdateManyWithoutStudentNestedInput = {
-    create?: XOR<ScoreRecordCreateWithoutStudentInput, ScoreRecordUncheckedCreateWithoutStudentInput> | ScoreRecordCreateWithoutStudentInput[] | ScoreRecordUncheckedCreateWithoutStudentInput[]
-    connectOrCreate?: ScoreRecordCreateOrConnectWithoutStudentInput | ScoreRecordCreateOrConnectWithoutStudentInput[]
-    upsert?: ScoreRecordUpsertWithWhereUniqueWithoutStudentInput | ScoreRecordUpsertWithWhereUniqueWithoutStudentInput[]
-    createMany?: ScoreRecordCreateManyStudentInputEnvelope
-    set?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    disconnect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    delete?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    connect?: ScoreRecordWhereUniqueInput | ScoreRecordWhereUniqueInput[]
-    update?: ScoreRecordUpdateWithWhereUniqueWithoutStudentInput | ScoreRecordUpdateWithWhereUniqueWithoutStudentInput[]
-    updateMany?: ScoreRecordUpdateManyWithWhereWithoutStudentInput | ScoreRecordUpdateManyWithWhereWithoutStudentInput[]
-    deleteMany?: ScoreRecordScalarWhereInput | ScoreRecordScalarWhereInput[]
-  }
-
   export type TahfidzUncheckedUpdateManyWithoutStudentNestedInput = {
     create?: XOR<TahfidzCreateWithoutStudentInput, TahfidzUncheckedCreateWithoutStudentInput> | TahfidzCreateWithoutStudentInput[] | TahfidzUncheckedCreateWithoutStudentInput[]
     connectOrCreate?: TahfidzCreateOrConnectWithoutStudentInput | TahfidzCreateOrConnectWithoutStudentInput[]
@@ -22943,12 +21280,22 @@ export namespace Prisma {
     update?: XOR<XOR<StudentUpdateToOneWithWhereWithoutAssessmentsInput, StudentUpdateWithoutAssessmentsInput>, StudentUncheckedUpdateWithoutAssessmentsInput>
   }
 
-  export type TPUpdateOneRequiredWithoutAssessmentsNestedInput = {
+  export type TPUpdateOneWithoutAssessmentsNestedInput = {
     create?: XOR<TPCreateWithoutAssessmentsInput, TPUncheckedCreateWithoutAssessmentsInput>
     connectOrCreate?: TPCreateOrConnectWithoutAssessmentsInput
     upsert?: TPUpsertWithoutAssessmentsInput
+    disconnect?: TPWhereInput | boolean
+    delete?: TPWhereInput | boolean
     connect?: TPWhereUniqueInput
     update?: XOR<XOR<TPUpdateToOneWithWhereWithoutAssessmentsInput, TPUpdateWithoutAssessmentsInput>, TPUncheckedUpdateWithoutAssessmentsInput>
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type StudentCreateNestedOneWithoutTahfidzsInput = {
@@ -23009,34 +21356,6 @@ export namespace Prisma {
     upsert?: SubjectUpsertWithoutAssignmentsInput
     connect?: SubjectWhereUniqueInput
     update?: XOR<XOR<SubjectUpdateToOneWithWhereWithoutAssignmentsInput, SubjectUpdateWithoutAssignmentsInput>, SubjectUncheckedUpdateWithoutAssignmentsInput>
-  }
-
-  export type StudentCreateNestedOneWithoutScoreRecordsInput = {
-    create?: XOR<StudentCreateWithoutScoreRecordsInput, StudentUncheckedCreateWithoutScoreRecordsInput>
-    connectOrCreate?: StudentCreateOrConnectWithoutScoreRecordsInput
-    connect?: StudentWhereUniqueInput
-  }
-
-  export type SubjectCreateNestedOneWithoutScoreRecordsInput = {
-    create?: XOR<SubjectCreateWithoutScoreRecordsInput, SubjectUncheckedCreateWithoutScoreRecordsInput>
-    connectOrCreate?: SubjectCreateOrConnectWithoutScoreRecordsInput
-    connect?: SubjectWhereUniqueInput
-  }
-
-  export type StudentUpdateOneRequiredWithoutScoreRecordsNestedInput = {
-    create?: XOR<StudentCreateWithoutScoreRecordsInput, StudentUncheckedCreateWithoutScoreRecordsInput>
-    connectOrCreate?: StudentCreateOrConnectWithoutScoreRecordsInput
-    upsert?: StudentUpsertWithoutScoreRecordsInput
-    connect?: StudentWhereUniqueInput
-    update?: XOR<XOR<StudentUpdateToOneWithWhereWithoutScoreRecordsInput, StudentUpdateWithoutScoreRecordsInput>, StudentUncheckedUpdateWithoutScoreRecordsInput>
-  }
-
-  export type SubjectUpdateOneRequiredWithoutScoreRecordsNestedInput = {
-    create?: XOR<SubjectCreateWithoutScoreRecordsInput, SubjectUncheckedCreateWithoutScoreRecordsInput>
-    connectOrCreate?: SubjectCreateOrConnectWithoutScoreRecordsInput
-    upsert?: SubjectUpsertWithoutScoreRecordsInput
-    connect?: SubjectWhereUniqueInput
-    update?: XOR<XOR<SubjectUpdateToOneWithWhereWithoutScoreRecordsInput, SubjectUpdateWithoutScoreRecordsInput>, SubjectUncheckedUpdateWithoutScoreRecordsInput>
   }
 
   export type StudentCreateNestedOneWithoutPersonalityInput = {
@@ -23192,6 +21511,33 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedDateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -23240,31 +21586,6 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type SubjectCreateWithoutTeacherInput = {
-    name: string
-    assignments?: AssignmentCreateNestedManyWithoutSubjectInput
-    cps?: CPCreateNestedManyWithoutSubjectInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutSubjectInput
-  }
-
-  export type SubjectUncheckedCreateWithoutTeacherInput = {
-    id?: number
-    name: string
-    assignments?: AssignmentUncheckedCreateNestedManyWithoutSubjectInput
-    cps?: CPUncheckedCreateNestedManyWithoutSubjectInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutSubjectInput
-  }
-
-  export type SubjectCreateOrConnectWithoutTeacherInput = {
-    where: SubjectWhereUniqueInput
-    create: XOR<SubjectCreateWithoutTeacherInput, SubjectUncheckedCreateWithoutTeacherInput>
-  }
-
-  export type SubjectCreateManyTeacherInputEnvelope = {
-    data: SubjectCreateManyTeacherInput | SubjectCreateManyTeacherInput[]
-    skipDuplicates?: boolean
-  }
-
   export type AssignmentUpsertWithWhereUniqueWithoutTeacherInput = {
     where: AssignmentWhereUniqueInput
     update: XOR<AssignmentUpdateWithoutTeacherInput, AssignmentUncheckedUpdateWithoutTeacherInput>
@@ -23290,61 +21611,6 @@ export namespace Prisma {
     subjectId?: IntFilter<"Assignment"> | number
     className?: StringFilter<"Assignment"> | string
     academicYear?: StringFilter<"Assignment"> | string
-  }
-
-  export type SubjectUpsertWithWhereUniqueWithoutTeacherInput = {
-    where: SubjectWhereUniqueInput
-    update: XOR<SubjectUpdateWithoutTeacherInput, SubjectUncheckedUpdateWithoutTeacherInput>
-    create: XOR<SubjectCreateWithoutTeacherInput, SubjectUncheckedCreateWithoutTeacherInput>
-  }
-
-  export type SubjectUpdateWithWhereUniqueWithoutTeacherInput = {
-    where: SubjectWhereUniqueInput
-    data: XOR<SubjectUpdateWithoutTeacherInput, SubjectUncheckedUpdateWithoutTeacherInput>
-  }
-
-  export type SubjectUpdateManyWithWhereWithoutTeacherInput = {
-    where: SubjectScalarWhereInput
-    data: XOR<SubjectUpdateManyMutationInput, SubjectUncheckedUpdateManyWithoutTeacherInput>
-  }
-
-  export type SubjectScalarWhereInput = {
-    AND?: SubjectScalarWhereInput | SubjectScalarWhereInput[]
-    OR?: SubjectScalarWhereInput[]
-    NOT?: SubjectScalarWhereInput | SubjectScalarWhereInput[]
-    id?: IntFilter<"Subject"> | number
-    name?: StringFilter<"Subject"> | string
-    teacherId?: IntFilter<"Subject"> | number
-  }
-
-  export type TeacherCreateWithoutSubjectsInput = {
-    identity_number: string
-    password: string
-    fullname: string
-    birth_date?: string | null
-    education?: string | null
-    address?: string | null
-    role?: string
-    status?: string
-    assignments?: AssignmentCreateNestedManyWithoutTeacherInput
-  }
-
-  export type TeacherUncheckedCreateWithoutSubjectsInput = {
-    id?: number
-    identity_number: string
-    password: string
-    fullname: string
-    birth_date?: string | null
-    education?: string | null
-    address?: string | null
-    role?: string
-    status?: string
-    assignments?: AssignmentUncheckedCreateNestedManyWithoutTeacherInput
-  }
-
-  export type TeacherCreateOrConnectWithoutSubjectsInput = {
-    where: TeacherWhereUniqueInput
-    create: XOR<TeacherCreateWithoutSubjectsInput, TeacherUncheckedCreateWithoutSubjectsInput>
   }
 
   export type AssignmentCreateWithoutSubjectInput = {
@@ -23393,69 +21659,6 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type ScoreRecordCreateWithoutSubjectInput = {
-    className: string
-    type: string
-    scoreNumber?: number
-    scoreText?: string
-    student: StudentCreateNestedOneWithoutScoreRecordsInput
-  }
-
-  export type ScoreRecordUncheckedCreateWithoutSubjectInput = {
-    id?: number
-    studentId: number
-    className: string
-    type: string
-    scoreNumber?: number
-    scoreText?: string
-  }
-
-  export type ScoreRecordCreateOrConnectWithoutSubjectInput = {
-    where: ScoreRecordWhereUniqueInput
-    create: XOR<ScoreRecordCreateWithoutSubjectInput, ScoreRecordUncheckedCreateWithoutSubjectInput>
-  }
-
-  export type ScoreRecordCreateManySubjectInputEnvelope = {
-    data: ScoreRecordCreateManySubjectInput | ScoreRecordCreateManySubjectInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type TeacherUpsertWithoutSubjectsInput = {
-    update: XOR<TeacherUpdateWithoutSubjectsInput, TeacherUncheckedUpdateWithoutSubjectsInput>
-    create: XOR<TeacherCreateWithoutSubjectsInput, TeacherUncheckedCreateWithoutSubjectsInput>
-    where?: TeacherWhereInput
-  }
-
-  export type TeacherUpdateToOneWithWhereWithoutSubjectsInput = {
-    where?: TeacherWhereInput
-    data: XOR<TeacherUpdateWithoutSubjectsInput, TeacherUncheckedUpdateWithoutSubjectsInput>
-  }
-
-  export type TeacherUpdateWithoutSubjectsInput = {
-    identity_number?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    fullname?: StringFieldUpdateOperationsInput | string
-    birth_date?: NullableStringFieldUpdateOperationsInput | string | null
-    education?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
-    assignments?: AssignmentUpdateManyWithoutTeacherNestedInput
-  }
-
-  export type TeacherUncheckedUpdateWithoutSubjectsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    identity_number?: StringFieldUpdateOperationsInput | string
-    password?: StringFieldUpdateOperationsInput | string
-    fullname?: StringFieldUpdateOperationsInput | string
-    birth_date?: NullableStringFieldUpdateOperationsInput | string | null
-    education?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: NullableStringFieldUpdateOperationsInput | string | null
-    role?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
-    assignments?: AssignmentUncheckedUpdateManyWithoutTeacherNestedInput
-  }
-
   export type AssignmentUpsertWithWhereUniqueWithoutSubjectInput = {
     where: AssignmentWhereUniqueInput
     update: XOR<AssignmentUpdateWithoutSubjectInput, AssignmentUncheckedUpdateWithoutSubjectInput>
@@ -23498,48 +21701,15 @@ export namespace Prisma {
     subjectId?: IntFilter<"CP"> | number
   }
 
-  export type ScoreRecordUpsertWithWhereUniqueWithoutSubjectInput = {
-    where: ScoreRecordWhereUniqueInput
-    update: XOR<ScoreRecordUpdateWithoutSubjectInput, ScoreRecordUncheckedUpdateWithoutSubjectInput>
-    create: XOR<ScoreRecordCreateWithoutSubjectInput, ScoreRecordUncheckedCreateWithoutSubjectInput>
-  }
-
-  export type ScoreRecordUpdateWithWhereUniqueWithoutSubjectInput = {
-    where: ScoreRecordWhereUniqueInput
-    data: XOR<ScoreRecordUpdateWithoutSubjectInput, ScoreRecordUncheckedUpdateWithoutSubjectInput>
-  }
-
-  export type ScoreRecordUpdateManyWithWhereWithoutSubjectInput = {
-    where: ScoreRecordScalarWhereInput
-    data: XOR<ScoreRecordUpdateManyMutationInput, ScoreRecordUncheckedUpdateManyWithoutSubjectInput>
-  }
-
-  export type ScoreRecordScalarWhereInput = {
-    AND?: ScoreRecordScalarWhereInput | ScoreRecordScalarWhereInput[]
-    OR?: ScoreRecordScalarWhereInput[]
-    NOT?: ScoreRecordScalarWhereInput | ScoreRecordScalarWhereInput[]
-    id?: IntFilter<"ScoreRecord"> | number
-    studentId?: IntFilter<"ScoreRecord"> | number
-    subjectId?: IntFilter<"ScoreRecord"> | number
-    className?: StringFilter<"ScoreRecord"> | string
-    type?: StringFilter<"ScoreRecord"> | string
-    scoreNumber?: IntFilter<"ScoreRecord"> | number
-    scoreText?: StringFilter<"ScoreRecord"> | string
-  }
-
   export type SubjectCreateWithoutCpsInput = {
     name: string
-    teacher: TeacherCreateNestedOneWithoutSubjectsInput
     assignments?: AssignmentCreateNestedManyWithoutSubjectInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateWithoutCpsInput = {
     id?: number
     name: string
-    teacherId: number
     assignments?: AssignmentUncheckedCreateNestedManyWithoutSubjectInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectCreateOrConnectWithoutCpsInput = {
@@ -23583,17 +21753,13 @@ export namespace Prisma {
 
   export type SubjectUpdateWithoutCpsInput = {
     name?: StringFieldUpdateOperationsInput | string
-    teacher?: TeacherUpdateOneRequiredWithoutSubjectsNestedInput
     assignments?: AssignmentUpdateManyWithoutSubjectNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateWithoutCpsInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
-    teacherId?: IntFieldUpdateOperationsInput | number
     assignments?: AssignmentUncheckedUpdateManyWithoutSubjectNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
   export type TPUpsertWithWhereUniqueWithoutCpInput = {
@@ -23709,7 +21875,7 @@ export namespace Prisma {
     NOT?: AssessmentScalarWhereInput | AssessmentScalarWhereInput[]
     id?: IntFilter<"Assessment"> | number
     studentId?: IntFilter<"Assessment"> | number
-    tpId?: IntFilter<"Assessment"> | number
+    tpId?: IntNullableFilter<"Assessment"> | number | null
     score?: IntFilter<"Assessment"> | number
     type?: StringFilter<"Assessment"> | string
   }
@@ -23717,12 +21883,12 @@ export namespace Prisma {
   export type AssessmentCreateWithoutStudentInput = {
     score: number
     type: string
-    tp: TPCreateNestedOneWithoutAssessmentsInput
+    tp?: TPCreateNestedOneWithoutAssessmentsInput
   }
 
   export type AssessmentUncheckedCreateWithoutStudentInput = {
     id?: number
-    tpId: number
+    tpId?: number | null
     score: number
     type: string
   }
@@ -23738,12 +21904,16 @@ export namespace Prisma {
   }
 
   export type AttendanceCreateWithoutStudentInput = {
+    className: string
+    day: string
     status: string
     date?: Date | string
   }
 
   export type AttendanceUncheckedCreateWithoutStudentInput = {
     id?: number
+    className: string
+    day: string
     status: string
     date?: Date | string
   }
@@ -23796,33 +21966,6 @@ export namespace Prisma {
   export type PersonalityCreateOrConnectWithoutStudentInput = {
     where: PersonalityWhereUniqueInput
     create: XOR<PersonalityCreateWithoutStudentInput, PersonalityUncheckedCreateWithoutStudentInput>
-  }
-
-  export type ScoreRecordCreateWithoutStudentInput = {
-    className: string
-    type: string
-    scoreNumber?: number
-    scoreText?: string
-    subject: SubjectCreateNestedOneWithoutScoreRecordsInput
-  }
-
-  export type ScoreRecordUncheckedCreateWithoutStudentInput = {
-    id?: number
-    subjectId: number
-    className: string
-    type: string
-    scoreNumber?: number
-    scoreText?: string
-  }
-
-  export type ScoreRecordCreateOrConnectWithoutStudentInput = {
-    where: ScoreRecordWhereUniqueInput
-    create: XOR<ScoreRecordCreateWithoutStudentInput, ScoreRecordUncheckedCreateWithoutStudentInput>
-  }
-
-  export type ScoreRecordCreateManyStudentInputEnvelope = {
-    data: ScoreRecordCreateManyStudentInput | ScoreRecordCreateManyStudentInput[]
-    skipDuplicates?: boolean
   }
 
   export type TahfidzCreateWithoutStudentInput = {
@@ -23919,6 +22062,8 @@ export namespace Prisma {
     NOT?: AttendanceScalarWhereInput | AttendanceScalarWhereInput[]
     id?: IntFilter<"Attendance"> | number
     studentId?: IntFilter<"Attendance"> | number
+    className?: StringFilter<"Attendance"> | string
+    day?: StringFilter<"Attendance"> | string
     status?: StringFilter<"Attendance"> | string
     date?: DateTimeFilter<"Attendance"> | Date | string
   }
@@ -23973,22 +22118,6 @@ export namespace Prisma {
     muwadhotah?: StringFieldUpdateOperationsInput | string
     nadzofah?: StringFieldUpdateOperationsInput | string
     indhiplat?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type ScoreRecordUpsertWithWhereUniqueWithoutStudentInput = {
-    where: ScoreRecordWhereUniqueInput
-    update: XOR<ScoreRecordUpdateWithoutStudentInput, ScoreRecordUncheckedUpdateWithoutStudentInput>
-    create: XOR<ScoreRecordCreateWithoutStudentInput, ScoreRecordUncheckedCreateWithoutStudentInput>
-  }
-
-  export type ScoreRecordUpdateWithWhereUniqueWithoutStudentInput = {
-    where: ScoreRecordWhereUniqueInput
-    data: XOR<ScoreRecordUpdateWithoutStudentInput, ScoreRecordUncheckedUpdateWithoutStudentInput>
-  }
-
-  export type ScoreRecordUpdateManyWithWhereWithoutStudentInput = {
-    where: ScoreRecordScalarWhereInput
-    data: XOR<ScoreRecordUpdateManyMutationInput, ScoreRecordUncheckedUpdateManyWithoutStudentInput>
   }
 
   export type TahfidzUpsertWithWhereUniqueWithoutStudentInput = {
@@ -24061,7 +22190,6 @@ export namespace Prisma {
     attendances?: AttendanceCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteCreateNestedOneWithoutStudentInput
     personality?: PersonalityCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionCreateNestedManyWithoutStudentInput
   }
@@ -24078,7 +22206,6 @@ export namespace Prisma {
     attendances?: AttendanceUncheckedCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteUncheckedCreateNestedOneWithoutStudentInput
     personality?: PersonalityUncheckedCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzUncheckedCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionUncheckedCreateNestedManyWithoutStudentInput
   }
@@ -24128,7 +22255,6 @@ export namespace Prisma {
     attendances?: AttendanceUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUpdateManyWithoutStudentNestedInput
   }
@@ -24145,7 +22271,6 @@ export namespace Prisma {
     attendances?: AttendanceUncheckedUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUncheckedUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUncheckedUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUncheckedUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUncheckedUpdateManyWithoutStudentNestedInput
   }
@@ -24186,7 +22311,6 @@ export namespace Prisma {
     attendances?: AttendanceCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteCreateNestedOneWithoutStudentInput
     personality?: PersonalityCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionCreateNestedManyWithoutStudentInput
   }
 
@@ -24203,7 +22327,6 @@ export namespace Prisma {
     attendances?: AttendanceUncheckedCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteUncheckedCreateNestedOneWithoutStudentInput
     personality?: PersonalityUncheckedCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionUncheckedCreateNestedManyWithoutStudentInput
   }
 
@@ -24235,7 +22358,6 @@ export namespace Prisma {
     attendances?: AttendanceUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUpdateManyWithoutStudentNestedInput
   }
 
@@ -24252,7 +22374,6 @@ export namespace Prisma {
     attendances?: AttendanceUncheckedUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUncheckedUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUncheckedUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUncheckedUpdateManyWithoutStudentNestedInput
   }
 
@@ -24267,7 +22388,6 @@ export namespace Prisma {
     assessments?: AssessmentCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteCreateNestedOneWithoutStudentInput
     personality?: PersonalityCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionCreateNestedManyWithoutStudentInput
   }
@@ -24284,7 +22404,6 @@ export namespace Prisma {
     assessments?: AssessmentUncheckedCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteUncheckedCreateNestedOneWithoutStudentInput
     personality?: PersonalityUncheckedCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzUncheckedCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionUncheckedCreateNestedManyWithoutStudentInput
   }
@@ -24316,7 +22435,6 @@ export namespace Prisma {
     assessments?: AssessmentUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUpdateManyWithoutStudentNestedInput
   }
@@ -24333,7 +22451,6 @@ export namespace Prisma {
     assessments?: AssessmentUncheckedUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUncheckedUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUncheckedUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUncheckedUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUncheckedUpdateManyWithoutStudentNestedInput
   }
@@ -24347,7 +22464,6 @@ export namespace Prisma {
     address?: string | null
     role?: string
     status?: string
-    subjects?: SubjectCreateNestedManyWithoutTeacherInput
   }
 
   export type TeacherUncheckedCreateWithoutAssignmentsInput = {
@@ -24360,7 +22476,6 @@ export namespace Prisma {
     address?: string | null
     role?: string
     status?: string
-    subjects?: SubjectUncheckedCreateNestedManyWithoutTeacherInput
   }
 
   export type TeacherCreateOrConnectWithoutAssignmentsInput = {
@@ -24370,17 +22485,13 @@ export namespace Prisma {
 
   export type SubjectCreateWithoutAssignmentsInput = {
     name: string
-    teacher: TeacherCreateNestedOneWithoutSubjectsInput
     cps?: CPCreateNestedManyWithoutSubjectInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectUncheckedCreateWithoutAssignmentsInput = {
     id?: number
     name: string
-    teacherId: number
     cps?: CPUncheckedCreateNestedManyWithoutSubjectInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutSubjectInput
   }
 
   export type SubjectCreateOrConnectWithoutAssignmentsInput = {
@@ -24408,7 +22519,6 @@ export namespace Prisma {
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
-    subjects?: SubjectUpdateManyWithoutTeacherNestedInput
   }
 
   export type TeacherUncheckedUpdateWithoutAssignmentsInput = {
@@ -24421,7 +22531,6 @@ export namespace Prisma {
     address?: NullableStringFieldUpdateOperationsInput | string | null
     role?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
-    subjects?: SubjectUncheckedUpdateManyWithoutTeacherNestedInput
   }
 
   export type SubjectUpsertWithoutAssignmentsInput = {
@@ -24437,144 +22546,12 @@ export namespace Prisma {
 
   export type SubjectUpdateWithoutAssignmentsInput = {
     name?: StringFieldUpdateOperationsInput | string
-    teacher?: TeacherUpdateOneRequiredWithoutSubjectsNestedInput
     cps?: CPUpdateManyWithoutSubjectNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutSubjectNestedInput
   }
 
   export type SubjectUncheckedUpdateWithoutAssignmentsInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
-    teacherId?: IntFieldUpdateOperationsInput | number
-    cps?: CPUncheckedUpdateManyWithoutSubjectNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutSubjectNestedInput
-  }
-
-  export type StudentCreateWithoutScoreRecordsInput = {
-    nisn: string
-    fullname: string
-    birth_info?: string | null
-    gender: string
-    class_name: string
-    address?: string | null
-    status?: string
-    assessments?: AssessmentCreateNestedManyWithoutStudentInput
-    attendances?: AttendanceCreateNestedManyWithoutStudentInput
-    homeroomNote?: HomeroomNoteCreateNestedOneWithoutStudentInput
-    personality?: PersonalityCreateNestedOneWithoutStudentInput
-    tahfidzs?: TahfidzCreateNestedManyWithoutStudentInput
-    promotions?: StudentPromotionCreateNestedManyWithoutStudentInput
-  }
-
-  export type StudentUncheckedCreateWithoutScoreRecordsInput = {
-    id?: number
-    nisn: string
-    fullname: string
-    birth_info?: string | null
-    gender: string
-    class_name: string
-    address?: string | null
-    status?: string
-    assessments?: AssessmentUncheckedCreateNestedManyWithoutStudentInput
-    attendances?: AttendanceUncheckedCreateNestedManyWithoutStudentInput
-    homeroomNote?: HomeroomNoteUncheckedCreateNestedOneWithoutStudentInput
-    personality?: PersonalityUncheckedCreateNestedOneWithoutStudentInput
-    tahfidzs?: TahfidzUncheckedCreateNestedManyWithoutStudentInput
-    promotions?: StudentPromotionUncheckedCreateNestedManyWithoutStudentInput
-  }
-
-  export type StudentCreateOrConnectWithoutScoreRecordsInput = {
-    where: StudentWhereUniqueInput
-    create: XOR<StudentCreateWithoutScoreRecordsInput, StudentUncheckedCreateWithoutScoreRecordsInput>
-  }
-
-  export type SubjectCreateWithoutScoreRecordsInput = {
-    name: string
-    teacher: TeacherCreateNestedOneWithoutSubjectsInput
-    assignments?: AssignmentCreateNestedManyWithoutSubjectInput
-    cps?: CPCreateNestedManyWithoutSubjectInput
-  }
-
-  export type SubjectUncheckedCreateWithoutScoreRecordsInput = {
-    id?: number
-    name: string
-    teacherId: number
-    assignments?: AssignmentUncheckedCreateNestedManyWithoutSubjectInput
-    cps?: CPUncheckedCreateNestedManyWithoutSubjectInput
-  }
-
-  export type SubjectCreateOrConnectWithoutScoreRecordsInput = {
-    where: SubjectWhereUniqueInput
-    create: XOR<SubjectCreateWithoutScoreRecordsInput, SubjectUncheckedCreateWithoutScoreRecordsInput>
-  }
-
-  export type StudentUpsertWithoutScoreRecordsInput = {
-    update: XOR<StudentUpdateWithoutScoreRecordsInput, StudentUncheckedUpdateWithoutScoreRecordsInput>
-    create: XOR<StudentCreateWithoutScoreRecordsInput, StudentUncheckedCreateWithoutScoreRecordsInput>
-    where?: StudentWhereInput
-  }
-
-  export type StudentUpdateToOneWithWhereWithoutScoreRecordsInput = {
-    where?: StudentWhereInput
-    data: XOR<StudentUpdateWithoutScoreRecordsInput, StudentUncheckedUpdateWithoutScoreRecordsInput>
-  }
-
-  export type StudentUpdateWithoutScoreRecordsInput = {
-    nisn?: StringFieldUpdateOperationsInput | string
-    fullname?: StringFieldUpdateOperationsInput | string
-    birth_info?: NullableStringFieldUpdateOperationsInput | string | null
-    gender?: StringFieldUpdateOperationsInput | string
-    class_name?: StringFieldUpdateOperationsInput | string
-    address?: NullableStringFieldUpdateOperationsInput | string | null
-    status?: StringFieldUpdateOperationsInput | string
-    assessments?: AssessmentUpdateManyWithoutStudentNestedInput
-    attendances?: AttendanceUpdateManyWithoutStudentNestedInput
-    homeroomNote?: HomeroomNoteUpdateOneWithoutStudentNestedInput
-    personality?: PersonalityUpdateOneWithoutStudentNestedInput
-    tahfidzs?: TahfidzUpdateManyWithoutStudentNestedInput
-    promotions?: StudentPromotionUpdateManyWithoutStudentNestedInput
-  }
-
-  export type StudentUncheckedUpdateWithoutScoreRecordsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    nisn?: StringFieldUpdateOperationsInput | string
-    fullname?: StringFieldUpdateOperationsInput | string
-    birth_info?: NullableStringFieldUpdateOperationsInput | string | null
-    gender?: StringFieldUpdateOperationsInput | string
-    class_name?: StringFieldUpdateOperationsInput | string
-    address?: NullableStringFieldUpdateOperationsInput | string | null
-    status?: StringFieldUpdateOperationsInput | string
-    assessments?: AssessmentUncheckedUpdateManyWithoutStudentNestedInput
-    attendances?: AttendanceUncheckedUpdateManyWithoutStudentNestedInput
-    homeroomNote?: HomeroomNoteUncheckedUpdateOneWithoutStudentNestedInput
-    personality?: PersonalityUncheckedUpdateOneWithoutStudentNestedInput
-    tahfidzs?: TahfidzUncheckedUpdateManyWithoutStudentNestedInput
-    promotions?: StudentPromotionUncheckedUpdateManyWithoutStudentNestedInput
-  }
-
-  export type SubjectUpsertWithoutScoreRecordsInput = {
-    update: XOR<SubjectUpdateWithoutScoreRecordsInput, SubjectUncheckedUpdateWithoutScoreRecordsInput>
-    create: XOR<SubjectCreateWithoutScoreRecordsInput, SubjectUncheckedCreateWithoutScoreRecordsInput>
-    where?: SubjectWhereInput
-  }
-
-  export type SubjectUpdateToOneWithWhereWithoutScoreRecordsInput = {
-    where?: SubjectWhereInput
-    data: XOR<SubjectUpdateWithoutScoreRecordsInput, SubjectUncheckedUpdateWithoutScoreRecordsInput>
-  }
-
-  export type SubjectUpdateWithoutScoreRecordsInput = {
-    name?: StringFieldUpdateOperationsInput | string
-    teacher?: TeacherUpdateOneRequiredWithoutSubjectsNestedInput
-    assignments?: AssignmentUpdateManyWithoutSubjectNestedInput
-    cps?: CPUpdateManyWithoutSubjectNestedInput
-  }
-
-  export type SubjectUncheckedUpdateWithoutScoreRecordsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
-    teacherId?: IntFieldUpdateOperationsInput | number
-    assignments?: AssignmentUncheckedUpdateManyWithoutSubjectNestedInput
     cps?: CPUncheckedUpdateManyWithoutSubjectNestedInput
   }
 
@@ -24589,7 +22566,6 @@ export namespace Prisma {
     assessments?: AssessmentCreateNestedManyWithoutStudentInput
     attendances?: AttendanceCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionCreateNestedManyWithoutStudentInput
   }
@@ -24606,7 +22582,6 @@ export namespace Prisma {
     assessments?: AssessmentUncheckedCreateNestedManyWithoutStudentInput
     attendances?: AttendanceUncheckedCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteUncheckedCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzUncheckedCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionUncheckedCreateNestedManyWithoutStudentInput
   }
@@ -24638,7 +22613,6 @@ export namespace Prisma {
     assessments?: AssessmentUpdateManyWithoutStudentNestedInput
     attendances?: AttendanceUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUpdateManyWithoutStudentNestedInput
   }
@@ -24655,7 +22629,6 @@ export namespace Prisma {
     assessments?: AssessmentUncheckedUpdateManyWithoutStudentNestedInput
     attendances?: AttendanceUncheckedUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUncheckedUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUncheckedUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUncheckedUpdateManyWithoutStudentNestedInput
   }
@@ -24671,7 +22644,6 @@ export namespace Prisma {
     assessments?: AssessmentCreateNestedManyWithoutStudentInput
     attendances?: AttendanceCreateNestedManyWithoutStudentInput
     personality?: PersonalityCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionCreateNestedManyWithoutStudentInput
   }
@@ -24688,7 +22660,6 @@ export namespace Prisma {
     assessments?: AssessmentUncheckedCreateNestedManyWithoutStudentInput
     attendances?: AttendanceUncheckedCreateNestedManyWithoutStudentInput
     personality?: PersonalityUncheckedCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzUncheckedCreateNestedManyWithoutStudentInput
     promotions?: StudentPromotionUncheckedCreateNestedManyWithoutStudentInput
   }
@@ -24720,7 +22691,6 @@ export namespace Prisma {
     assessments?: AssessmentUpdateManyWithoutStudentNestedInput
     attendances?: AttendanceUpdateManyWithoutStudentNestedInput
     personality?: PersonalityUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUpdateManyWithoutStudentNestedInput
   }
@@ -24737,7 +22707,6 @@ export namespace Prisma {
     assessments?: AssessmentUncheckedUpdateManyWithoutStudentNestedInput
     attendances?: AttendanceUncheckedUpdateManyWithoutStudentNestedInput
     personality?: PersonalityUncheckedUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUncheckedUpdateManyWithoutStudentNestedInput
     promotions?: StudentPromotionUncheckedUpdateManyWithoutStudentNestedInput
   }
@@ -24754,7 +22723,6 @@ export namespace Prisma {
     attendances?: AttendanceCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteCreateNestedOneWithoutStudentInput
     personality?: PersonalityCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzCreateNestedManyWithoutStudentInput
   }
 
@@ -24771,7 +22739,6 @@ export namespace Prisma {
     attendances?: AttendanceUncheckedCreateNestedManyWithoutStudentInput
     homeroomNote?: HomeroomNoteUncheckedCreateNestedOneWithoutStudentInput
     personality?: PersonalityUncheckedCreateNestedOneWithoutStudentInput
-    scoreRecords?: ScoreRecordUncheckedCreateNestedManyWithoutStudentInput
     tahfidzs?: TahfidzUncheckedCreateNestedManyWithoutStudentInput
   }
 
@@ -24803,7 +22770,6 @@ export namespace Prisma {
     attendances?: AttendanceUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUpdateManyWithoutStudentNestedInput
   }
 
@@ -24820,7 +22786,6 @@ export namespace Prisma {
     attendances?: AttendanceUncheckedUpdateManyWithoutStudentNestedInput
     homeroomNote?: HomeroomNoteUncheckedUpdateOneWithoutStudentNestedInput
     personality?: PersonalityUncheckedUpdateOneWithoutStudentNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutStudentNestedInput
     tahfidzs?: TahfidzUncheckedUpdateManyWithoutStudentNestedInput
   }
 
@@ -24829,11 +22794,6 @@ export namespace Prisma {
     subjectId: number
     className: string
     academicYear?: string
-  }
-
-  export type SubjectCreateManyTeacherInput = {
-    id?: number
-    name: string
   }
 
   export type AssignmentUpdateWithoutTeacherInput = {
@@ -24856,26 +22816,6 @@ export namespace Prisma {
     academicYear?: StringFieldUpdateOperationsInput | string
   }
 
-  export type SubjectUpdateWithoutTeacherInput = {
-    name?: StringFieldUpdateOperationsInput | string
-    assignments?: AssignmentUpdateManyWithoutSubjectNestedInput
-    cps?: CPUpdateManyWithoutSubjectNestedInput
-    scoreRecords?: ScoreRecordUpdateManyWithoutSubjectNestedInput
-  }
-
-  export type SubjectUncheckedUpdateWithoutTeacherInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
-    assignments?: AssignmentUncheckedUpdateManyWithoutSubjectNestedInput
-    cps?: CPUncheckedUpdateManyWithoutSubjectNestedInput
-    scoreRecords?: ScoreRecordUncheckedUpdateManyWithoutSubjectNestedInput
-  }
-
-  export type SubjectUncheckedUpdateManyWithoutTeacherInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
-  }
-
   export type AssignmentCreateManySubjectInput = {
     id?: number
     teacherId: number
@@ -24887,15 +22827,6 @@ export namespace Prisma {
     id?: number
     code: string
     description: string
-  }
-
-  export type ScoreRecordCreateManySubjectInput = {
-    id?: number
-    studentId: number
-    className: string
-    type: string
-    scoreNumber?: number
-    scoreText?: string
   }
 
   export type AssignmentUpdateWithoutSubjectInput = {
@@ -24935,32 +22866,6 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     code?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type ScoreRecordUpdateWithoutSubjectInput = {
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
-    student?: StudentUpdateOneRequiredWithoutScoreRecordsNestedInput
-  }
-
-  export type ScoreRecordUncheckedUpdateWithoutSubjectInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    studentId?: IntFieldUpdateOperationsInput | number
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type ScoreRecordUncheckedUpdateManyWithoutSubjectInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    studentId?: IntFieldUpdateOperationsInput | number
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
   }
 
   export type TPCreateManyCpInput = {
@@ -25017,24 +22922,17 @@ export namespace Prisma {
 
   export type AssessmentCreateManyStudentInput = {
     id?: number
-    tpId: number
+    tpId?: number | null
     score: number
     type: string
   }
 
   export type AttendanceCreateManyStudentInput = {
     id?: number
+    className: string
+    day: string
     status: string
     date?: Date | string
-  }
-
-  export type ScoreRecordCreateManyStudentInput = {
-    id?: number
-    subjectId: number
-    className: string
-    type: string
-    scoreNumber?: number
-    scoreText?: string
   }
 
   export type TahfidzCreateManyStudentInput = {
@@ -25059,64 +22957,44 @@ export namespace Prisma {
   export type AssessmentUpdateWithoutStudentInput = {
     score?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
-    tp?: TPUpdateOneRequiredWithoutAssessmentsNestedInput
+    tp?: TPUpdateOneWithoutAssessmentsNestedInput
   }
 
   export type AssessmentUncheckedUpdateWithoutStudentInput = {
     id?: IntFieldUpdateOperationsInput | number
-    tpId?: IntFieldUpdateOperationsInput | number
+    tpId?: NullableIntFieldUpdateOperationsInput | number | null
     score?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
   }
 
   export type AssessmentUncheckedUpdateManyWithoutStudentInput = {
     id?: IntFieldUpdateOperationsInput | number
-    tpId?: IntFieldUpdateOperationsInput | number
+    tpId?: NullableIntFieldUpdateOperationsInput | number | null
     score?: IntFieldUpdateOperationsInput | number
     type?: StringFieldUpdateOperationsInput | string
   }
 
   export type AttendanceUpdateWithoutStudentInput = {
+    className?: StringFieldUpdateOperationsInput | string
+    day?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AttendanceUncheckedUpdateWithoutStudentInput = {
     id?: IntFieldUpdateOperationsInput | number
+    className?: StringFieldUpdateOperationsInput | string
+    day?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AttendanceUncheckedUpdateManyWithoutStudentInput = {
     id?: IntFieldUpdateOperationsInput | number
+    className?: StringFieldUpdateOperationsInput | string
+    day?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
     date?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type ScoreRecordUpdateWithoutStudentInput = {
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
-    subject?: SubjectUpdateOneRequiredWithoutScoreRecordsNestedInput
-  }
-
-  export type ScoreRecordUncheckedUpdateWithoutStudentInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    subjectId?: IntFieldUpdateOperationsInput | number
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
-  }
-
-  export type ScoreRecordUncheckedUpdateManyWithoutStudentInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    subjectId?: IntFieldUpdateOperationsInput | number
-    className?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
-    scoreNumber?: IntFieldUpdateOperationsInput | number
-    scoreText?: StringFieldUpdateOperationsInput | string
   }
 
   export type TahfidzUpdateWithoutStudentInput = {

@@ -24,13 +24,12 @@ type Student = {
 };
 
 type ScoreRecord = {
-  subjectId: number;
-  subject: {
-    name: string;
-  };
-  type: string;
-  scoreNumber: number | null;
-  scoreText: string | null;
+  id: number;
+  score: number;
+  type: string; // 'ORAL' atau 'WRITTEN'
+  tpCode?: string;
+  tpDescription?: string;
+  subjectName: string;
 };
 
 type PersonalityRecord = {
@@ -98,6 +97,14 @@ function subjectMatches(databaseSubject: string, requestedSubject: string) {
   const requested = normalizeText(requestedSubject);
   if (!db || !requested) return false;
   return db === requested || db.includes(requested) || requested.includes(db);
+}
+
+function getPredicateText(score: number): string {
+  if (score >= 90) return 'Sangat Baik';
+  if (score >= 80) return 'Baik';
+  if (score >= 70) return 'Cukup Baik';
+  if (score >= 60) return 'Cukup';
+  return 'Perlu Bimbingan';
 }
 
 /* ============================================================
@@ -185,17 +192,19 @@ export default function ReportPage() {
     window.print();
   };
 
-  const getScoreRecord = (subjectName: string, type: 'Lisan' | 'Tertulis') => {
+  // Fungsi pencocokan nilai berdasarkan Nama Mapel DAN Kategori Ujian ('ORAL' atau 'WRITTEN')
+  const getScoreRecord = (subjectName: string, categoryType: 'ORAL' | 'WRITTEN') => {
     if (!reportData?.scoreRecords?.length) return { number: '-', text: '-' };
-    const found = reportData.scoreRecords.find((score) => {
-      const scoreType = normalizeText(score.type);
-      const requestedType = normalizeText(type);
-      return scoreType === requestedType && subjectMatches(score.subject?.name, subjectName);
+    const found = reportData.scoreRecords.find((scoreItem) => {
+      return (
+        scoreItem.type === categoryType &&
+        subjectMatches(scoreItem.subjectName, subjectName)
+      );
     });
     if (!found) return { number: '-', text: '-' };
     return {
-      number: found.scoreNumber !== null && found.scoreNumber !== undefined ? String(found.scoreNumber) : '-',
-      text: found.scoreText !== null && found.scoreText !== undefined && String(found.scoreText).trim() !== '' ? String(found.scoreText) : '-',
+      number: String(found.score),
+      text: getPredicateText(found.score),
     };
   };
 
@@ -309,14 +318,11 @@ export default function ReportPage() {
 
             <div className="report-content relative z-10 px-[10mm] py-[5mm]">
               
-              {/* HEADER (LOGO ABSOLUTE DI KIRI, TEKS DUA BARIS PAS DI TENGAH) */}
               <header className="relative border-b border-slate-200 pb-3 text-center">
-                {/* Logo absolute di kiri */}
                 <div className="absolute left-0 top-0 flex h-[22mm] w-[22mm] items-center justify-center">
                   <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
                 </div>
 
-                {/* Container teks diperlebar max-w-[520px] agar TERPADU muat sejajar dengan PONDOK PESANTREN */}
                 <div className="mx-auto max-w-[520px] px-[22mm]">
                   <div dir="rtl" className="arabic mb-1 text-center text-sm font-bold text-slate-600">
                     بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
@@ -338,7 +344,6 @@ export default function ReportPage() {
                 </div>
               </header>
 
-              {/* TITLE */}
               <div className="my-3 border-y border-[#9db9ad]/60 bg-[#f4f8f6] px-3 py-2 text-center">
                 <div dir="rtl" className="arabic text-sm font-bold leading-6 text-[#315f50]">
                   كَشْفُ دَرَجَاتِ الطَّالِبِ <span className="mx-2 text-[#b29b65]">•</span> الفصل الدراسي الأول
@@ -351,7 +356,6 @@ export default function ReportPage() {
                 </div>
               </div>
 
-              {/* IDENTITAS */}
               <section className="mb-3 rounded-lg border border-slate-200 bg-[#fafbfa]/95 p-3">
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
                   <div className="flex items-center justify-between border-b border-slate-200/70 pb-1.5">
@@ -395,7 +399,7 @@ export default function ReportPage() {
                   </thead>
                   <tbody>
                     {ORAL_SUBJECTS.map((subject, index) => {
-                      const score = getScoreRecord(subject.name, 'Lisan');
+                      const score = getScoreRecord(subject.name, 'ORAL');
                       return (
                         <tr key={subject.name} className="text-center">
                           <td className="border border-slate-300 bg-white/95 px-1.5 py-1.5 text-slate-500">{index + 1}</td>
@@ -426,7 +430,7 @@ export default function ReportPage() {
                   </thead>
                   <tbody>
                     {WRITTEN_SUBJECTS.map((subject, index) => {
-                      const score = getScoreRecord(subject.name, 'Tertulis');
+                      const score = getScoreRecord(subject.name, 'WRITTEN');
                       return (
                         <tr key={subject.name} className="text-center">
                           <td className="border border-slate-300 bg-white/95 px-1.5 py-1.5 text-slate-500">{index + 1}</td>
