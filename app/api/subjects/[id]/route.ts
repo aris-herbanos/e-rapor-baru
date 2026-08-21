@@ -9,17 +9,17 @@ export async function PUT(
   try {
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
-    const { name, teacherId } = await request.json();
+    const body = await request.json();
+    const name = String(body?.name || '').trim();
 
-    if (!name || !teacherId) {
-      return NextResponse.json({ message: 'Nama mapel dan ID Pengajar wajib diisi!' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ message: 'Nama mata pelajaran wajib diisi!' }, { status: 400 });
     }
 
     const updatedSubject = await prisma.subject.update({
       where: { id },
       data: {
         name,
-        teacherId: parseInt(teacherId),
       },
     });
 

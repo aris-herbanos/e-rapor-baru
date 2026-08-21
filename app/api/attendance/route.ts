@@ -241,6 +241,8 @@ export async function POST(
           studentId,
           status,
           date: targetDateStart,
+          className: student.class_name || '',
+          day: '',
         },
 
         include: {
