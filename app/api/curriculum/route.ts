@@ -22,13 +22,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { action, id, subjectId, cpId, description, type } = body;
+    const { action, id, subjectId, cpId, description, grade, type } = body;
 
-    // 1. CREATE CP DENGAN KODE OTOMATIS
+    // 1. CREATE CP DENGAN KODE OTOMATIS & TINGKAT KELAS (GRADE)
     if (action === 'CREATE_CP') {
       if (!subjectId || !description) {
         return NextResponse.json({ success: false, message: 'Mata pelajaran dan deskripsi wajib diisi' }, { status: 400 });
       }
+
+      const targetGrade = grade ? Number(grade) : 7;
 
       // Ambil nama mapel untuk kode singkatan (misal: Bahasa Arab -> BAH)
       const subject = await prisma.subject.findUnique({ where: { id: Number(subjectId) } });
@@ -36,15 +38,21 @@ export async function POST(request: Request) {
         ? subject.name.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() 
         : 'MPL';
 
-      // Hitung jumlah CP yang sudah ada pada mapel ini
-      const count = await prisma.cP.count({ where: { subjectId: Number(subjectId) } });
-      const generatedCode = `CP-${subjCode}-${String(count + 1).padStart(2, '0')}`;
+      // Hitung jumlah CP yang sudah ada pada mapel dan tingkat kelas ini
+      const count = await prisma.cP.count({ 
+        where: { 
+          subjectId: Number(subjectId),
+          grade: targetGrade
+        } 
+      });
+      const generatedCode = `CP-${subjCode}-K${targetGrade}-${String(count + 1).padStart(2, '0')}`;
 
       const newCP = await prisma.cP.create({ 
         data: { 
           code: generatedCode, 
           description: description.trim(), 
-          subjectId: Number(subjectId) 
+          subjectId: Number(subjectId),
+          grade: targetGrade
         } 
       });
 

@@ -243,7 +243,6 @@ function getMerdekaCompetencyDescriptions(subjectName: string, score: number) {
   };
 }
 
-// Deskripsi panjang untuk Kepribadian santri disamakan formatnya dengan modul nilai
 function getPersonalityMerdekaDescription(aspectName: string, value: string) {
   const val = normalizeText(value);
 
@@ -256,7 +255,7 @@ function getPersonalityMerdekaDescription(aspectName: string, value: string) {
 
   if (val.includes('sangat baik') || val.includes('mumtaz')) {
     return {
-      achieved: `Peserta didik menunjukkan sikap ${aspectName.toLowerCase()} yang sangat terpuji, konsisten menjadi teladan yang baik dan sangat baik di lingkungan ma'had.`,
+      achieved: `Peserta didik menunjukkan sikap ${aspectName.toLowerCase()} yang sangat terpuji, konsisten menjadi teladan yang baik di lingkungan ma'had.`,
       needsImprovement: `Pertahankan keteladanan yang sangat baik ini dan teruskan pembiasaan positif dalam keseharian.`,
     };
   } else if (val.includes('baik') || val.includes('jayyid')) {
@@ -650,7 +649,7 @@ export default function ReportPage() {
               </table>
             </ReportSection>
 
-            {/* KEPRIBADIAN SANTRI (DISAMAKAN MODELNYA DENGAN UJIAN TERTULIS) */}
+            {/* KEPRIBADIAN SANTRI */}
             <ReportSection number="05" title="Kepribadian Santri" arabic="شخصية الطالب / الطالبة">
               <table className="report-table w-full border-collapse border border-slate-300 bg-white text-[9px]">
                 <thead>
@@ -753,7 +752,7 @@ export default function ReportPage() {
         </main>
       )}
 
-      {/* GLOBAL CSS */}
+      {/* GLOBAL CSS & CLEAN PRINT RULES */}
       <style jsx global>{`
         @font-face {
           font-family: 'Traditional Arabic';
@@ -801,91 +800,28 @@ export default function ReportPage() {
           min-height: 100vh;
         }
 
-        @media screen {
-          .report-document {
-            overflow: hidden;
-          }
-        }
-
         @media print {
-          html, body {
+          body * {
+            visibility: hidden !important;
+          }
+
+          .report-document, .report-document * {
+            visibility: visible !important;
+          }
+
+          .report-document {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
             width: 215.9mm !important;
             margin: 0 !important;
             padding: 0 !important;
+            box-shadow: none !important;
             background: #ffffff !important;
-          }
-
-          body {
-            overflow: visible !important;
           }
 
           .control-panel, .print\\:hidden {
             display: none !important;
-          }
-
-          .report-screen {
-            width: 215.9mm !important;
-            min-height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: #ffffff !important;
-          }
-
-          .report-document {
-            width: 215.9mm !important;
-            min-height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: #ffffff !important;
-            box-shadow: none !important;
-            overflow: visible !important;
-          }
-
-          .report-header {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .report-block {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .report-section {
-            break-inside: auto;
-            page-break-inside: auto;
-          }
-
-          .report-section-header {
-            break-after: avoid;
-            page-break-after: avoid;
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .report-table {
-            width: 100% !important;
-            page-break-inside: auto;
-            break-inside: auto;
-          }
-
-          .report-table thead {
-            display: table-header-group;
-          }
-
-          .report-table tr {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .report-table td, .report-table th {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .report-footer {
-            break-inside: avoid;
-            page-break-inside: avoid;
           }
 
           * {

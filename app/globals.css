@@ -39,3 +39,42 @@ button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* =========================================================
+   PERBAIKAN CSS CETAK / PRINT (AMAN UNTUK RAPOR & REKAP)
+========================================================= */
+@media print {
+  body {
+    background: white !important;
+    visibility: visible !important;
+  }
+
+  /* Sembunyikan panel kontrol, tombol, navigasi, dan sidebar */
+  .control-panel,
+  .print\:hidden,
+  button,
+  select,
+  input,
+  header:not(.report-header),
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  /* Pastikan dokumen rapor dan area rekap tampil penuh tanpa terpotong */
+  .report-screen,
+  .report-document {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  /* Tampilkan kop surat khusus cetak */
+  .print\:block {
+    display: block !important;
+  }
+}

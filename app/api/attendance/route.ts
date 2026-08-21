@@ -5,12 +5,38 @@ import prisma from '@/lib/prisma';
 |--------------------------------------------------------------------------
 | GET
 |--------------------------------------------------------------------------
-| Mengambil seluruh riwayat kehadiran.
-| Data diurutkan dari yang terbaru.
+| Mengambil data kehadiran dengan opsi filter kelas, tanggal mulai, & tanggal selesai.
 */
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const className = searchParams.get('className');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    // Membangun kondisi where dinamis
+    const whereCondition: any = {};
+
+    if (className && className !== 'SEMUA') {
+      whereCondition.className = className;
+    }
+
+    // Filter berdasarkan rentang tanggal jika ada
+    if (startDate || endDate) {
+      whereCondition.date = {};
+      if (startDate) {
+        whereCondition.date.gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Set ke akhir hari agar mencakup data di tanggal tersebut
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        whereCondition.date.lte = end;
+      }
+    }
+
     const attendances = await prisma.attendance.findMany({
+      where: whereCondition,
       include: {
         student: true,
       },
@@ -19,7 +45,7 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(attendances, {
+    return NextResponse.json({ success: true, data: attendances }, {
       status: 200,
     });
   } catch (error) {
@@ -27,6 +53,7 @@ export async function GET() {
 
     return NextResponse.json(
       {
+        success: false,
         message: 'Gagal memuat data kehadiran.',
       },
       {
@@ -40,14 +67,12 @@ export async function GET() {
 |--------------------------------------------------------------------------
 | POST
 |--------------------------------------------------------------------------
-| Menambahkan / memperbarui kehadiran santri.
-| Mendukung penyimpanan tunggal maupun massal (sekaligus satu kelas).
+| Menambahkan / memperbarui kehadiran santri (tunggal atau massal).
 */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Cek apakah request berupa penyimpanan massal (array) atau tunggal
     const items = Array.isArray(body) ? body : [body];
     const results = [];
 
@@ -57,12 +82,12 @@ export async function POST(request: Request) {
       const rawDate = item?.date ? new Date(item.date) : new Date();
 
       if (!studentId || Number.isNaN(studentId)) {
-        continue; // Lewati jika ID tidak valid
+        continue;
       }
 
       const validStatuses = ['HADIR', 'SAKIT', 'IZIN', 'ALPA'];
       if (!validStatuses.includes(status)) {
-        continue; // Lewati jika status tidak valid
+        continue;
       }
 
       const student = await prisma.student.findUnique({
@@ -70,17 +95,16 @@ export async function POST(request: Request) {
       });
 
       if (!student) {
-        continue; // Lewati jika santri tidak ditemukan
+        continue;
       }
 
-      // Rentang waktu tanggal absensi
+      // Normalisasi tanggal untuk pencarian (mulai hari)
       const targetDateStart = new Date(rawDate);
       targetDateStart.setHours(0, 0, 0, 0);
 
       const targetDateEnd = new Date(targetDateStart);
       targetDateEnd.setDate(targetDateEnd.getDate() + 1);
 
-      // Cek apakah sudah ada catatan di tanggal tersebut
       const existingAttendance = await prisma.attendance.findFirst({
         where: {
           studentId,
@@ -94,7 +118,6 @@ export async function POST(request: Request) {
       let attendanceRecord;
 
       if (existingAttendance) {
-        // Update jika sudah ada
         attendanceRecord = await prisma.attendance.update({
           where: { id: existingAttendance.id },
           data: {
@@ -105,14 +128,13 @@ export async function POST(request: Request) {
           include: { student: true },
         });
       } else {
-        // Create jika belum ada
         attendanceRecord = await prisma.attendance.create({
           data: {
             studentId,
             status,
             date: targetDateStart,
             className: student.class_name || '',
-            day: '',
+            day: '', // Bisa diisi dengan logic hari jika diperlukan
           },
           include: { student: true },
         });
@@ -123,6 +145,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
+        success: true,
         message: 'Kehadiran berhasil disimpan.',
         data: results,
       },
@@ -135,6 +158,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
+        success: false,
         message: 'Gagal menyimpan kehadiran.',
       },
       {

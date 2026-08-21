@@ -14,6 +14,7 @@ type CP = {
   code: string;
   description: string;
   subjectId?: number;
+  grade?: number;
   subject?: {
     name: string;
   };
@@ -22,7 +23,6 @@ type CP = {
 
 type Subject = { id: number; name: string; level?: 'SMP' | 'SMA' };
 
-// Daftar Mata Pelajaran Terpisah Berdasarkan Jenjang
 const SUBJECTS_SMP: Subject[] = [
   { id: 1, name: 'Tajwid', level: 'SMP' },
   { id: 2, name: 'Tahfidz / Tahsin', level: 'SMP' },
@@ -57,6 +57,7 @@ const SUBJECTS_SMA: Subject[] = [
 
 export default function CurriculumPage() {
   const [activeTabLevel, setActiveTabLevel] = useState<'SMP' | 'SMA'>('SMP');
+  const [selectedGrade, setSelectedGrade] = useState<number>(7);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [cps, setCps] = useState<CP[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
@@ -71,6 +72,15 @@ export default function CurriculumPage() {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [message, setMessage] = useState('');
+
+  // Atur pilihan tingkat kelas (Grade) otomatis berdasarkan jenjang aktif
+  useEffect(() => {
+    if (activeTabLevel === 'SMP') {
+      setSelectedGrade(7);
+    } else {
+      setSelectedGrade(10);
+    }
+  }, [activeTabLevel]);
 
   const fetchData = async () => {
     try {
@@ -88,7 +98,6 @@ export default function CurriculumPage() {
       if (subjRes.ok) {
         const list = Array.isArray(subjData) ? subjData : subjData?.data || subjData?.subjects || [];
         if (Array.isArray(list) && list.length > 0) {
-          // Gabungkan atau gunakan dari database jika sudah ada, atau fallback ke data statis jenjang
           setSubjects(list);
         } else {
           setSubjects([...SUBJECTS_SMP, ...SUBJECTS_SMA]);
@@ -106,7 +115,7 @@ export default function CurriculumPage() {
     fetchData();
   }, []);
 
-  // Filter Mata Pelajaran berdasarkan tab jenjang yang aktif (SMP / SMA)
+  // Filter Mata Pelajaran berdasarkan tab jenjang aktif
   const filteredSubjectsByLevel = useMemo(() => {
     return subjects.filter((subj) => {
       if (activeTabLevel === 'SMA') {
@@ -117,17 +126,21 @@ export default function CurriculumPage() {
     });
   }, [subjects, activeTabLevel]);
 
-  // Filter CP berdasarkan mapel yang sedang diklik guru
+  // Filter CP berdasarkan mapel dan tingkat kelas (grade) yang dipilih
   const currentSubjectCPs = useMemo(() => {
     if (!selectedSubject) return [];
-    return cps.filter((cp) => cp.subjectId === selectedSubject.id || normalizeText(cp.subject?.name) === normalizeText(selectedSubject.name));
-  }, [cps, selectedSubject]);
+    return cps.filter((cp) => {
+      const matchSubject = cp.subjectId === selectedSubject.id || normalizeText(cp.subject?.name) === normalizeText(selectedSubject.name);
+      const matchGrade = cp.grade === undefined || cp.grade === Number(selectedGrade);
+      return matchSubject && matchGrade;
+    });
+  }, [cps, selectedSubject, selectedGrade]);
 
   function normalizeText(val: any) {
     return String(val || '').trim().toLowerCase();
   }
 
-  // Simpan CP Baru
+  // Simpan CP Baru dengan menyertakan grade
   const handleSaveCP = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSubject || !cpDesc.trim()) return;
@@ -141,6 +154,7 @@ export default function CurriculumPage() {
         body: JSON.stringify({
           action: 'CREATE_CP',
           subjectId: selectedSubject.id,
+          grade: Number(selectedGrade),
           description: cpDesc,
         }),
       });
@@ -220,7 +234,7 @@ export default function CurriculumPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Kurikulum (CP & TP)</h1>
-          <p className="text-sm text-slate-500">Kelola Capaian Pembelajaran dan Tujuan Pembelajaran berdasarkan Jenjang (SMP & SMA).</p>
+          <p className="text-sm text-slate-500">Kelola Capaian Pembelajaran dan Tujuan Pembelajaran per Tingkat Kelas.</p>
         </div>
         {selectedSubject && (
           <button
@@ -302,30 +316,50 @@ export default function CurriculumPage() {
           </div>
         </div>
       ) : (
-        /* TAHAP 2: KELOLA CP & TP UNTUK MAPEL YANG DIPILIH */
+        /* TAHAP 2: KELOLA CP & TP PER TINGKAT KELAS */
         <div className="space-y-6">
           
-          {/* INFO MAPEL AKTIF */}
-          <div className="bg-[#064e3b] text-white p-5 rounded-2xl shadow-sm flex items-center justify-between">
+          {/* INFO MAPEL AKTIF & PILIHAN TINGKAT KELAS (GRADE) */}
+          <div className="bg-[#064e3b] text-white p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <span className="text-[10px] uppercase tracking-widest text-emerald-200 font-semibold">Mata Pelajaran Aktif ({selectedSubject.name.includes('Lanjutan') || selectedSubject.id > 100 ? 'SMA' : 'SMP'})</span>
+              <span className="text-[10px] uppercase tracking-widest text-emerald-200 font-semibold">Mata Pelajaran Aktif</span>
               <h2 className="text-lg font-bold">{selectedSubject.name}</h2>
             </div>
-            <div className="text-right">
-              <span className="text-xs bg-white/10 px-3 py-1.5 rounded-xl font-medium">
-                {currentSubjectCPs.length} Capaian Pembelajaran (CP)
-              </span>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-emerald-100 font-medium">Tingkat Kelas:</span>
+              <select
+                value={selectedGrade}
+                onChange={(e) => setSelectedGrade(Number(e.target.value))}
+                className="bg-white text-slate-800 text-xs font-bold px-3 py-2 rounded-xl outline-none shadow-sm cursor-pointer"
+              >
+                {activeTabLevel === 'SMP' ? (
+                  <>
+                    <option value={7}>Kelas 7</option>
+                    <option value={8}>Kelas 8</option>
+                    <option value={9}>Kelas 9</option>
+                  </>
+                ) : (
+                  <>
+                    <option value={10}>Kelas 10</option>
+                    <option value={11}>Kelas 11</option>
+                    <option value={12}>Kelas 12</option>
+                  </>
+                )}
+              </select>
             </div>
           </div>
 
-          {/* FORM TAMBAH CP BARU */}
+          {/* FORM TAMBAH CP BARU SPESIFIK KELAS */}
           <form onSubmit={handleSaveCP} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">+ Tambah Capaian Pembelajaran (CP) Baru</h3>
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              + Tambah Capaian Pembelajaran (CP) untuk Kelas {selectedGrade}
+            </h3>
             <div>
               <textarea
                 value={cpDesc}
                 onChange={(e) => setCpDesc(e.target.value)}
-                placeholder="Tuliskan deskripsi Capaian Pembelajaran (CP) di sini..."
+                placeholder={`Tuliskan deskripsi CP khusus untuk Kelas ${selectedGrade}...`}
                 rows={3}
                 className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-500 resize-none"
                 required
@@ -336,17 +370,20 @@ export default function CurriculumPage() {
               disabled={loading}
               className="px-5 py-2.5 bg-[#064e3b] hover:bg-[#053d2e] text-white text-xs font-bold rounded-xl transition shadow-md disabled:opacity-50"
             >
-              {loading ? 'Menyimpan...' : 'Simpan CP Baru'}
+              {loading ? 'Menyimpan...' : `Simpan CP Kelas ${selectedGrade}`}
             </button>
           </form>
 
-          {/* DAFTAR CP & TP MAPEL TERSEBUT */}
+          {/* DAFTAR CP & TP BERDASARKAN KELAS */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
-            <h3 className="text-sm font-bold text-slate-800 border-b pb-3">Daftar CP & TP — {selectedSubject.name}</h3>
+            <h3 className="text-sm font-bold text-slate-800 border-b pb-3 flex items-center justify-between">
+              <span>Daftar CP & TP — {selectedSubject.name} (Kelas {selectedGrade})</span>
+              <span className="text-xs font-normal text-slate-400">{currentSubjectCPs.length} CP ditemukan</span>
+            </h3>
 
             {currentSubjectCPs.length === 0 ? (
               <div className="text-center py-10 text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                Belum ada Capaian Pembelajaran (CP) untuk mata pelajaran ini. Silakan tambahkan melalui form di atas.
+                Belum ada Capaian Pembelajaran (CP) untuk Kelas {selectedGrade}. Silakan tambahkan melalui form di atas.
               </div>
             ) : (
               <div className="space-y-4">
@@ -356,9 +393,14 @@ export default function CurriculumPage() {
                     {/* Header CP */}
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">
-                          CP: {cp.code}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">
+                            CP: {cp.code}
+                          </span>
+                          <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold">
+                            Kelas {cp.grade || selectedGrade}
+                          </span>
+                        </div>
                         <p className="text-xs text-slate-800 font-semibold mt-1.5">{cp.description}</p>
                       </div>
                       <button

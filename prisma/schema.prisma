@@ -37,11 +37,13 @@ model CP {
   code        String
   description String
   subjectId   Int
+  grade       Int    @default(7) // Menambahkan tingkat kelas (misal: 7, 8, 9, 10, 11, 12)
 
   subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   tps     TP[]
 
   @@index([subjectId])
+  @@index([grade])
 }
 
 model TP {
@@ -50,7 +52,7 @@ model TP {
   description String
   cpId        Int
 
-  cp          CP           @relation(fields: [cpId], references: [id], onDelete: Cascade)
+  cp          CP         @relation(fields: [cpId], references: [id], onDelete: Cascade)
   assessments Assessment[]
 
   @@index([cpId])

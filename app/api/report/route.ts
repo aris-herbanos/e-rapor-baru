@@ -33,18 +33,18 @@ export async function GET(request: Request) {
     // 1. Kehadiran
     let sakit = 0, izin = 0, alpa = 0;
     student.attendances.forEach((att: any) => {
-      if (att.status === 'SAKIT') sakit++;
-      else if (att.status === 'IZIN') izin++;
-      else if (att.status === 'ALPA') alpa++;
+      const status = String(att.status || '').trim().toUpperCase();
+      if (status === 'SAKIT') sakit++;
+      else if (status === 'IZIN') izin++;
+      else if (status === 'ALPA') alpa++;
     });
 
     // 2. KELOMPOKKAN NILAI BERDASARKAN MAPEL & KATEGORI (ORAL / WRITTEN / STS / SAS)
-    // Struktur: { [subjectName]: { ORAL: { tpScores: [], sts: 0, sas: 0 }, WRITTEN: { tpScores: [], sts: 0, sas: 0 } } }
     const subjectMap: Record<string, any> = {};
 
     student.assessments.forEach((ass: any) => {
       const subjName = ass.tp?.cp?.subject?.name || ass.subject?.name || 'Mata Pelajaran Umum';
-      const type = ass.type; // 'ORAL', 'WRITTEN', 'STS', 'SAS'
+      const type = String(ass.type || '').trim().toUpperCase(); // 'ORAL', 'WRITTEN', 'STS', 'SAS'
 
       if (!subjectMap[subjName]) {
         subjectMap[subjName] = {
@@ -53,27 +53,24 @@ export async function GET(request: Request) {
         };
       }
 
-      // Jika asesmen berupa TP (memiliki tpId atau bertipe ORAL/WRITTEN dari TP)
       if (type === 'ORAL' || type === 'WRITTEN') {
         if (ass.tpId) {
-          subjectMap[subjName][type].tpScores.push(ass.score);
+          subjectMap[subjName][type].tpScores.push(Number(ass.score) || 0);
         }
       } else if (type === 'STS') {
-        // Asumsi STS bisa masuk ke written/oral atau umum, kita masukkan ke keduanya jika tidak spesifik
-        subjectMap[subjName].WRITTEN.sts = ass.score;
+        subjectMap[subjName].WRITTEN.sts = Number(ass.score) || 0;
         subjectMap[subjName].WRITTEN.hasSts = true;
-        subjectMap[subjName].ORAL.sts = ass.score;
+        subjectMap[subjName].ORAL.sts = Number(ass.score) || 0;
         subjectMap[subjName].ORAL.hasSts = true;
       } else if (type === 'SAS') {
-        subjectMap[subjName].WRITTEN.sas = ass.score;
+        subjectMap[subjName].WRITTEN.sas = Number(ass.score) || 0;
         subjectMap[subjName].WRITTEN.hasSas = true;
-        subjectMap[subjName].ORAL.sas = ass.score;
+        subjectMap[subjName].ORAL.sas = Number(ass.score) || 0;
         subjectMap[subjName].ORAL.hasSas = true;
       }
     });
 
     // 3. HITUNG NILAI AKHIR RAPOR SESUAI RUMUS KEMENDIKBUD (Bobot 2 : 1 : 1)
-    // Rumus: ((2 * Rata2 Sumatif TP) + (1 * STS) + (1 * SAS)) / 4
     const scoreRecords: any[] = [];
 
     Object.keys(subjectMap).forEach((subjectName) => {
@@ -82,11 +79,10 @@ export async function GET(request: Request) {
         const tpScores = data.tpScores;
 
         if (tpScores.length > 0 || data.hasSts || data.hasSas) {
-          // Hitung rata-rata sumatif TP (Lingkup Materi)
           const sumTp = tpScores.reduce((a: number, b: number) => a + b, 0);
           const avgTp = tpScores.length > 0 ? sumTp / tpScores.length : 0;
 
-          const sts = data.hasSts ? data.sts : avgTp; // Default ke rata-rata TP jika belum diisi
+          const sts = data.hasSts ? data.sts : avgTp;
           const sas = data.hasSas ? data.sas : avgTp;
 
           // Rumus Kemendikbud (2 : 1 : 1)
@@ -94,8 +90,8 @@ export async function GET(request: Request) {
 
           scoreRecords.push({
             subjectName,
-            type: catType, // 'ORAL' atau 'WRITTEN'
-            score: Math.round(finalScore), // Dibulatkan menjadi bilangan bulat untuk rapor fisik
+            type: catType,
+            score: Math.round(finalScore),
           });
         }
       });
