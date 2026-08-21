@@ -294,30 +294,67 @@ export default function StudentsPage() {
   };
 
   // =========================
-  // DOWNLOAD CSV TEMPLATE
-  // =========================
-  const downloadTemplate = () => {
-    const rows = [
-      ['nisn', 'fullname', 'birth_info', 'class_name', 'gender', 'address'],
-      ['3123456789', 'Ahmad Fauzi', 'Purwokerto 12 Januari 2012', '7A', 'L', 'Jl. Masjid No. 1 Purwokerto'],
-      ['3123456790', 'Fatimah Zahra', 'Jakarta 5 Mei 2012', '7A', 'P', 'Jl. Merdeka No. 45 Jakarta'],
-    ];
+// DOWNLOAD CSV TEMPLATE
+// =========================
+const downloadTemplate = () => {
+  const rows = [
+    [
+      'nisn',
+      'fullname',
+      'birth_info',
+      'class_name',
+      'gender',
+      'address',
+    ],
+    [
+      '3123456789',
+      'Ahmad Fauzi',
+      'Purwokerto, 12 Januari 2012',
+      '7A',
+      'L',
+      'Jl. Masjid No. 1, Purwokerto',
+    ],
+    [
+      '3123456790',
+      'Fatimah Zahra',
+      'Jakarta, 5 Mei 2012',
+      '7A',
+      'P',
+      'Jl. Merdeka No. 45, Jakarta',
+    ],
+  ];
 
-    const escapeCsv = (value: string) => `"${String(value).replace(/"/g, '""')}"`;
-    const csvContent = '\uFEFF' + rows.map((row) => row.map(escapeCsv).join(';')).join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = 'template_import_santri.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+  const escapeCsv = (value: string) => {
+    return `"${String(value).replace(/"/g, '""')}"`;
   };
+
+  // Menggunakan titik koma (;) sebagai pemisah standar Excel Indonesia
+  const csvContent =
+    '\uFEFF' +
+    rows
+      .map((row) =>
+        row.map(escapeCsv).join(';')
+      )
+      .join('\r\n');
+
+  const blob = new Blob([csvContent], {
+    type: 'text/csv;charset=utf-8;',
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = 'template_import_santri.csv';
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 100);
+};
 
   // =========================
   // IMPORT CSV
