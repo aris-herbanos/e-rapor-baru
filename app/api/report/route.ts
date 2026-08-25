@@ -30,45 +30,77 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'Santri tidak ditemukan' }, { status: 404 });
     }
 
-    // 1. Kehadiran
+    // 1. Rekap Kehadiran
     let sakit = 0, izin = 0, alpa = 0;
-    student.attendances.forEach((att: any) => {
-      const status = String(att.status || '').trim().toUpperCase();
-      if (status === 'SAKIT') sakit++;
-      else if (status === 'IZIN') izin++;
-      else if (status === 'ALPA') alpa++;
-    });
+    if (Array.isArray(student.attendances)) {
+      student.attendances.forEach((att: any) => {
+        const status = String(att.status || '').trim().toUpperCase();
+        if (status === 'SAKIT') sakit++;
+        else if (status === 'IZIN') izin++;
+        else if (status === 'ALPA') alpa++;
+      });
+    }
 
     // 2. KELOMPOKKAN NILAI BERDASARKAN MAPEL & KATEGORI (ORAL / WRITTEN / STS / SAS)
     const subjectMap: Record<string, any> = {};
 
-    student.assessments.forEach((ass: any) => {
-      const subjName = ass.tp?.cp?.subject?.name || ass.subject?.name || 'Mata Pelajaran Umum';
-      const type = String(ass.type || '').trim().toUpperCase(); // 'ORAL', 'WRITTEN', 'STS', 'SAS'
+    if (Array.isArray(student.assessments)) {
+      student.assessments.forEach((ass: any) => {
+        const subjName = ass.tp?.cp?.subject?.name || ass.subject?.name || 'Mata Pelajaran Umum';
+        const type = String(ass.type || '').trim().toUpperCase(); 
+        const scoreVal = Number(ass.score) || 0;
 
-      if (!subjectMap[subjName]) {
-        subjectMap[subjName] = {
-          ORAL: { tpScores: [], sts: 0, sas: 0, hasSts: false, hasSas: false },
-          WRITTEN: { tpScores: [], sts: 0, sas: 0, hasSts: false, hasSas: false },
-        };
-      }
-
-      if (type === 'ORAL' || type === 'WRITTEN') {
-        if (ass.tpId) {
-          subjectMap[subjName][type].tpScores.push(Number(ass.score) || 0);
+        if (!subjectMap[subjName]) {
+          subjectMap[subjName] = {
+            ORAL: { tpScores: [], sts: 0, sas: 0, hasSts: false, hasSas: false },
+            WRITTEN: { tpScores: [], sts: 0, sas: 0, hasSts: false, hasSas: false },
+          };
         }
-      } else if (type === 'STS') {
-        subjectMap[subjName].WRITTEN.sts = Number(ass.score) || 0;
-        subjectMap[subjName].WRITTEN.hasSts = true;
-        subjectMap[subjName].ORAL.sts = Number(ass.score) || 0;
-        subjectMap[subjName].ORAL.hasSts = true;
-      } else if (type === 'SAS') {
-        subjectMap[subjName].WRITTEN.sas = Number(ass.score) || 0;
-        subjectMap[subjName].WRITTEN.hasSas = true;
-        subjectMap[subjName].ORAL.sas = Number(ass.score) || 0;
-        subjectMap[subjName].ORAL.hasSas = true;
-      }
-    });
+
+        // Penanganan TP Lisan dan Tertulis
+        if (type === 'ORAL' || type === 'TP_ORAL') {
+          if (ass.tpId) subjectMap[subjName].ORAL.tpScores.push(scoreVal);
+        } else if (type === 'WRITTEN' || type === 'TP_WRITTEN') {
+          if (ass.tpId) subjectMap[subjName].WRITTEN.tpScores.push(scoreVal);
+        } else if (type === 'ORAL' || type === 'WRITTEN') { // General fallback
+          if (ass.tpId) {
+            subjectMap[subjName][type].tpScores.push(scoreVal);
+          }
+        }
+
+        // Penanganan Ujian Tengah Semester (STS)
+        if (['STS', 'STS_WRITTEN', 'STS_ORAL'].includes(type)) {
+          if (type.includes('ORAL')) {
+            subjectMap[subjName].ORAL.sts = scoreVal;
+            subjectMap[subjName].ORAL.hasSts = true;
+          } else if (type.includes('WRITTEN')) {
+            subjectMap[subjName].WRITTEN.sts = scoreVal;
+            subjectMap[subjName].WRITTEN.hasSts = true;
+          } else {
+            subjectMap[subjName].WRITTEN.sts = scoreVal;
+            subjectMap[subjName].WRITTEN.hasSts = true;
+            subjectMap[subjName].ORAL.sts = scoreVal;
+            subjectMap[subjName].ORAL.hasSts = true;
+          }
+        }
+
+        // Penanganan Ujian Akhir Semester (SAS)
+        if (['SAS', 'SAS_WRITTEN', 'SAS_ORAL'].includes(type)) {
+          if (type.includes('ORAL')) {
+            subjectMap[subjName].ORAL.sas = scoreVal;
+            subjectMap[subjName].ORAL.hasSas = true;
+          } else if (type.includes('WRITTEN')) {
+            subjectMap[subjName].WRITTEN.sas = scoreVal;
+            subjectMap[subjName].WRITTEN.hasSas = true;
+          } else {
+            subjectMap[subjName].WRITTEN.sas = scoreVal;
+            subjectMap[subjName].WRITTEN.hasSas = true;
+            subjectMap[subjName].ORAL.sas = scoreVal;
+            subjectMap[subjName].ORAL.hasSas = true;
+          }
+        }
+      });
+    }
 
     // 3. HITUNG NILAI AKHIR RAPOR SESUAI RUMUS KEMENDIKBUD (Bobot 2 : 1 : 1)
     const scoreRecords: any[] = [];
@@ -102,25 +134,29 @@ export async function GET(request: Request) {
     scoreRecords.forEach(r => totalScore += r.score);
     const averageScore = scoreRecords.length > 0 ? Number((totalScore / scoreRecords.length).toFixed(1)) : 0;
 
+    const totalStudents = await prisma.student.count({ 
+      where: { class_name: student.class_name } 
+    }).catch(() => 1);
+
     const reportData = {
       ...student,
       scoreRecords,
       personality: student.personality ? [
-        { arabic: 'السلوك', name: 'Kelakuan / Perilaku', value: student.personality.suluk },
-        { arabic: 'المواظبة', name: 'Kerajinan / Kehadiran', value: student.personality.muwadhotah },
-        { arabic: 'النظافة', name: 'Kebersihan', value: student.personality.nadzofah },
-        { arabic: 'الانضباط', name: 'Disiplin', value: student.personality.indhiplat },
+        { arabic: 'السلوك', name: 'Kelakuan / Perilaku', value: (student.personality as any).suluk ?? '-' },
+        { arabic: 'المواظبة', name: 'Kerajinan / Kehadiran', value: (student.personality as any).muwadhotah ?? '-' },
+        { arabic: 'النظافة', name: 'Kebersihan', value: (student.personality as any).nadzofah ?? '-' },
+        { arabic: 'الانضباط', name: 'Disiplin', value: (student.personality as any).indhiplat ?? '-' },
       ] : [],
-      homeroomNote: student.homeroomNote?.note || '',
+      homeroomNote: (student.homeroomNote as any)?.note || '',
       attendance: { sakit, izin, alpa },
       averageScore,
-      totalStudents: await prisma.student.count({ where: { class_name: student.class_name } }),
+      totalStudents,
       rank: 1,
     };
 
     return NextResponse.json({ report: reportData }, { status: 200 });
   } catch (error) {
     console.error('Error fetching report:', error);
-    return NextResponse.json({ message: 'Gagal memuat data rapor' }, { status: 500 });
+    return NextResponse.json({ message: 'Gagal memuat data rapor dari server' }, { status: 500 });
   }
 }
