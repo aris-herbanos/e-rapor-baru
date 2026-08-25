@@ -5,9 +5,23 @@ import { useEffect, useState, useMemo } from 'react';
 type ClassRoom = { id: number; name: string };
 type Subject = { id: number; name: string };
 type TP = { id: number; code: string; description: string };
-type CP = { id: number; code: string; description: string; subjectId: number; subject?: { name: string }; tps: TP[] };
+type CP = { id: number; code: string; description: string; subjectId: number; subject?: { name: string }; level?: string; tps: TP[] };
 type Student = { id: number; fullname: string; class_name: string };
 type Assessment = { studentId: number; tpId?: number; score: number; type: string };
+
+function isSMALevel(className: string): boolean {
+  const c = String(className || '').trim().toLowerCase();
+  return (
+    c.includes('10') ||
+    c.includes('11') ||
+    c.includes('12') ||
+    c.includes('sma') ||
+    c.includes('ulya') ||
+    c.includes('x') ||
+    c.includes('xi') ||
+    c.includes('xii')
+  );
+}
 
 export default function AssessmentPage() {
   const [classes, setClasses] = useState<ClassRoom[]>([]);
@@ -70,21 +84,35 @@ export default function AssessmentPage() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [subjects]);
 
+  // Filter CP berdasarkan Mapel dan Jenjang (SMP / SMA) agar tidak tergabung dalam satu draf
   const filteredCPs = useMemo(() => {
-    if (!selectedSubjectId) return [];
+    if (!selectedSubjectId || !selectedClass) return [];
     const selectedSubj = subjects.find((s) => String(s.id) === String(selectedSubjectId));
     if (!selectedSubj) return [];
 
     const targetName = String(selectedSubj.name || '').trim().toLowerCase();
+    const isCurrentClassSMA = isSMALevel(selectedClass);
 
     return cps.filter((cp) => {
-      if (String(cp.subjectId) === String(selectedSubjectId)) return true;
-      if (cp.subject?.name) {
-        return String(cp.subject.name).trim().toLowerCase() === targetName;
+      const matchSubject =
+        String(cp.subjectId) === String(selectedSubjectId) ||
+        (cp.subject?.name && String(cp.subject.name).trim().toLowerCase() === targetName);
+
+      if (!matchSubject) return false;
+
+      const cpLevel = String(cp.level || '').trim().toLowerCase();
+      if (cpLevel) {
+        if (isCurrentClassSMA && (cpLevel.includes('smp') || cpLevel.includes('tsanawiyah') || cpLevel.includes('wustha'))) {
+          return false;
+        }
+        if (!isCurrentClassSMA && (cpLevel.includes('sma') || cpLevel.includes('aliyah') || cpLevel.includes('ulya'))) {
+          return false;
+        }
       }
-      return false;
+
+      return true;
     });
-  }, [cps, subjects, selectedSubjectId]);
+  }, [cps, subjects, selectedSubjectId, selectedClass]);
 
   const filteredStudents = useMemo(() => {
     if (!selectedClass) return [];
@@ -368,14 +396,14 @@ export default function AssessmentPage() {
           <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
-            <div className="bg-[#064e3b] text-white p-5 flex justify-between items-center gap-4">
+            <div className="bg-[#064e3b] text-white px-5 py-3.5 flex justify-between items-center gap-4">
               <div>
                 <span className="text-[10px] uppercase tracking-widest text-emerald-200 font-bold">Input Nilai Kelas {selectedClass} (Lisan & Tertulis)</span>
-                <h3 className="text-sm font-bold mt-0.5">{activeTarget.title}</h3>
+                <h3 className="text-xs font-bold mt-0.5">{activeTarget.title}</h3>
               </div>
               <button 
                 onClick={() => setActiveTarget(null)}
-                className="text-white/80 hover:text-white text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition shrink-0"
+                className="text-white/80 hover:text-white text-xs font-bold bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition shrink-0"
               >
                 ✕ Tutup
               </button>
