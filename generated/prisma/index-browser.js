@@ -143,7 +143,8 @@ exports.Prisma.CPScalarFieldEnum = {
   code: 'code',
   description: 'description',
   subjectId: 'subjectId',
-  grade: 'grade'
+  grade: 'grade',
+  semester: 'semester'
 };
 
 exports.Prisma.TPScalarFieldEnum = {

@@ -24,12 +24,13 @@ model Teacher {
 model Subject {
   id    Int    @id @default(autoincrement())
   name  String
-  level String @default("SMP") // Ditambahkan untuk membedakan jenjang SMP dan SMA
+  level String @default("SMP")
 
   assignments Assignment[]
   cps         CP[]
 
-  @@unique([name, level]) // Memastikan nama mapel unik per jenjang (bisa ada "Bahasa Arab" di SMP dan "Bahasa Arab" di SMA)
+  @@unique([name, level])
+  @@index([level])
 }
 
 model CP {
@@ -37,13 +38,16 @@ model CP {
   code        String
   description String
   subjectId   Int
-  grade       Int    @default(7) // Menambahkan tingkat kelas (misal: 7, 8, 9, 10, 11, 12)
+  grade       Int    @default(7)
+  semester    Int    @default(1)
 
   subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   tps     TP[]
 
   @@index([subjectId])
   @@index([grade])
+  @@index([semester])
+  @@index([subjectId, grade, semester])
 }
 
 model TP {
@@ -92,6 +96,7 @@ model Assessment {
   @@unique([studentId, tpId, type])
   @@index([studentId])
   @@index([tpId])
+  @@index([type])
 }
 
 model Tahfidz {
@@ -106,6 +111,7 @@ model Tahfidz {
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
+  @@index([date])
 }
 
 model Attendance {
@@ -123,6 +129,7 @@ model Attendance {
   @@index([className])
   @@index([date])
   @@index([day])
+  @@index([status])
 }
 
 model ClassRoom {
@@ -134,6 +141,7 @@ model ClassRoom {
 
   @@index([level])
   @@index([grade])
+  @@index([status])
 }
 
 model Assignment {
@@ -150,6 +158,7 @@ model Assignment {
   @@index([teacherId])
   @@index([subjectId])
   @@index([className])
+  @@index([academicYear])
 }
 
 model Personality {
@@ -206,4 +215,5 @@ model StudentPromotion {
   @@index([academicYear])
   @@index([fromClass])
   @@index([toClass])
+  @@index([status])
 }

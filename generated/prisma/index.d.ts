@@ -4555,12 +4555,14 @@ export namespace Prisma {
     id: number | null
     subjectId: number | null
     grade: number | null
+    semester: number | null
   }
 
   export type CPSumAggregateOutputType = {
     id: number | null
     subjectId: number | null
     grade: number | null
+    semester: number | null
   }
 
   export type CPMinAggregateOutputType = {
@@ -4569,6 +4571,7 @@ export namespace Prisma {
     description: string | null
     subjectId: number | null
     grade: number | null
+    semester: number | null
   }
 
   export type CPMaxAggregateOutputType = {
@@ -4577,6 +4580,7 @@ export namespace Prisma {
     description: string | null
     subjectId: number | null
     grade: number | null
+    semester: number | null
   }
 
   export type CPCountAggregateOutputType = {
@@ -4585,6 +4589,7 @@ export namespace Prisma {
     description: number
     subjectId: number
     grade: number
+    semester: number
     _all: number
   }
 
@@ -4593,12 +4598,14 @@ export namespace Prisma {
     id?: true
     subjectId?: true
     grade?: true
+    semester?: true
   }
 
   export type CPSumAggregateInputType = {
     id?: true
     subjectId?: true
     grade?: true
+    semester?: true
   }
 
   export type CPMinAggregateInputType = {
@@ -4607,6 +4614,7 @@ export namespace Prisma {
     description?: true
     subjectId?: true
     grade?: true
+    semester?: true
   }
 
   export type CPMaxAggregateInputType = {
@@ -4615,6 +4623,7 @@ export namespace Prisma {
     description?: true
     subjectId?: true
     grade?: true
+    semester?: true
   }
 
   export type CPCountAggregateInputType = {
@@ -4623,6 +4632,7 @@ export namespace Prisma {
     description?: true
     subjectId?: true
     grade?: true
+    semester?: true
     _all?: true
   }
 
@@ -4718,6 +4728,7 @@ export namespace Prisma {
     description: string
     subjectId: number
     grade: number
+    semester: number
     _count: CPCountAggregateOutputType | null
     _avg: CPAvgAggregateOutputType | null
     _sum: CPSumAggregateOutputType | null
@@ -4745,6 +4756,7 @@ export namespace Prisma {
     description?: boolean
     subjectId?: boolean
     grade?: boolean
+    semester?: boolean
     subject?: boolean | SubjectDefaultArgs<ExtArgs>
     tps?: boolean | CP$tpsArgs<ExtArgs>
     _count?: boolean | CPCountOutputTypeDefaultArgs<ExtArgs>
@@ -4756,6 +4768,7 @@ export namespace Prisma {
     description?: boolean
     subjectId?: boolean
     grade?: boolean
+    semester?: boolean
     subject?: boolean | SubjectDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["cP"]>
 
@@ -4765,6 +4778,7 @@ export namespace Prisma {
     description?: boolean
     subjectId?: boolean
     grade?: boolean
+    semester?: boolean
     subject?: boolean | SubjectDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["cP"]>
 
@@ -4774,9 +4788,10 @@ export namespace Prisma {
     description?: boolean
     subjectId?: boolean
     grade?: boolean
+    semester?: boolean
   }
 
-  export type CPOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "code" | "description" | "subjectId" | "grade", ExtArgs["result"]["cP"]>
+  export type CPOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "code" | "description" | "subjectId" | "grade" | "semester", ExtArgs["result"]["cP"]>
   export type CPInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     subject?: boolean | SubjectDefaultArgs<ExtArgs>
     tps?: boolean | CP$tpsArgs<ExtArgs>
@@ -4801,6 +4816,7 @@ export namespace Prisma {
       description: string
       subjectId: number
       grade: number
+      semester: number
     }, ExtArgs["result"]["cP"]>
     composites: {}
   }
@@ -5231,6 +5247,7 @@ export namespace Prisma {
     readonly description: FieldRef<"CP", 'String'>
     readonly subjectId: FieldRef<"CP", 'Int'>
     readonly grade: FieldRef<"CP", 'Int'>
+    readonly semester: FieldRef<"CP", 'Int'>
   }
     
 
@@ -18060,7 +18077,8 @@ export namespace Prisma {
     code: 'code',
     description: 'description',
     subjectId: 'subjectId',
-    grade: 'grade'
+    grade: 'grade',
+    semester: 'semester'
   };
 
   export type CPScalarFieldEnum = (typeof CPScalarFieldEnum)[keyof typeof CPScalarFieldEnum]
@@ -18423,6 +18441,7 @@ export namespace Prisma {
     description?: StringFilter<"CP"> | string
     subjectId?: IntFilter<"CP"> | number
     grade?: IntFilter<"CP"> | number
+    semester?: IntFilter<"CP"> | number
     subject?: XOR<SubjectScalarRelationFilter, SubjectWhereInput>
     tps?: TPListRelationFilter
   }
@@ -18433,6 +18452,7 @@ export namespace Prisma {
     description?: SortOrder
     subjectId?: SortOrder
     grade?: SortOrder
+    semester?: SortOrder
     subject?: SubjectOrderByWithRelationInput
     tps?: TPOrderByRelationAggregateInput
   }
@@ -18446,6 +18466,7 @@ export namespace Prisma {
     description?: StringFilter<"CP"> | string
     subjectId?: IntFilter<"CP"> | number
     grade?: IntFilter<"CP"> | number
+    semester?: IntFilter<"CP"> | number
     subject?: XOR<SubjectScalarRelationFilter, SubjectWhereInput>
     tps?: TPListRelationFilter
   }, "id">
@@ -18456,6 +18477,7 @@ export namespace Prisma {
     description?: SortOrder
     subjectId?: SortOrder
     grade?: SortOrder
+    semester?: SortOrder
     _count?: CPCountOrderByAggregateInput
     _avg?: CPAvgOrderByAggregateInput
     _max?: CPMaxOrderByAggregateInput
@@ -18472,6 +18494,7 @@ export namespace Prisma {
     description?: StringWithAggregatesFilter<"CP"> | string
     subjectId?: IntWithAggregatesFilter<"CP"> | number
     grade?: IntWithAggregatesFilter<"CP"> | number
+    semester?: IntWithAggregatesFilter<"CP"> | number
   }
 
   export type TPWhereInput = {
@@ -19314,6 +19337,7 @@ export namespace Prisma {
     code: string
     description: string
     grade?: number
+    semester?: number
     subject: SubjectCreateNestedOneWithoutCpsInput
     tps?: TPCreateNestedManyWithoutCpInput
   }
@@ -19324,6 +19348,7 @@ export namespace Prisma {
     description: string
     subjectId: number
     grade?: number
+    semester?: number
     tps?: TPUncheckedCreateNestedManyWithoutCpInput
   }
 
@@ -19331,6 +19356,7 @@ export namespace Prisma {
     code?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     grade?: IntFieldUpdateOperationsInput | number
+    semester?: IntFieldUpdateOperationsInput | number
     subject?: SubjectUpdateOneRequiredWithoutCpsNestedInput
     tps?: TPUpdateManyWithoutCpNestedInput
   }
@@ -19341,6 +19367,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     subjectId?: IntFieldUpdateOperationsInput | number
     grade?: IntFieldUpdateOperationsInput | number
+    semester?: IntFieldUpdateOperationsInput | number
     tps?: TPUncheckedUpdateManyWithoutCpNestedInput
   }
 
@@ -19350,12 +19377,14 @@ export namespace Prisma {
     description: string
     subjectId: number
     grade?: number
+    semester?: number
   }
 
   export type CPUpdateManyMutationInput = {
     code?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     grade?: IntFieldUpdateOperationsInput | number
+    semester?: IntFieldUpdateOperationsInput | number
   }
 
   export type CPUncheckedUpdateManyInput = {
@@ -19364,6 +19393,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     subjectId?: IntFieldUpdateOperationsInput | number
     grade?: IntFieldUpdateOperationsInput | number
+    semester?: IntFieldUpdateOperationsInput | number
   }
 
   export type TPCreateInput = {
@@ -20258,12 +20288,14 @@ export namespace Prisma {
     description?: SortOrder
     subjectId?: SortOrder
     grade?: SortOrder
+    semester?: SortOrder
   }
 
   export type CPAvgOrderByAggregateInput = {
     id?: SortOrder
     subjectId?: SortOrder
     grade?: SortOrder
+    semester?: SortOrder
   }
 
   export type CPMaxOrderByAggregateInput = {
@@ -20272,6 +20304,7 @@ export namespace Prisma {
     description?: SortOrder
     subjectId?: SortOrder
     grade?: SortOrder
+    semester?: SortOrder
   }
 
   export type CPMinOrderByAggregateInput = {
@@ -20280,12 +20313,14 @@ export namespace Prisma {
     description?: SortOrder
     subjectId?: SortOrder
     grade?: SortOrder
+    semester?: SortOrder
   }
 
   export type CPSumOrderByAggregateInput = {
     id?: SortOrder
     subjectId?: SortOrder
     grade?: SortOrder
+    semester?: SortOrder
   }
 
   export type CPScalarRelationFilter = {
@@ -21710,6 +21745,7 @@ export namespace Prisma {
     code: string
     description: string
     grade?: number
+    semester?: number
     tps?: TPCreateNestedManyWithoutCpInput
   }
 
@@ -21718,6 +21754,7 @@ export namespace Prisma {
     code: string
     description: string
     grade?: number
+    semester?: number
     tps?: TPUncheckedCreateNestedManyWithoutCpInput
   }
 
@@ -21772,6 +21809,7 @@ export namespace Prisma {
     description?: StringFilter<"CP"> | string
     subjectId?: IntFilter<"CP"> | number
     grade?: IntFilter<"CP"> | number
+    semester?: IntFilter<"CP"> | number
   }
 
   export type SubjectCreateWithoutCpsInput = {
@@ -21869,6 +21907,7 @@ export namespace Prisma {
     code: string
     description: string
     grade?: number
+    semester?: number
     subject: SubjectCreateNestedOneWithoutCpsInput
   }
 
@@ -21878,6 +21917,7 @@ export namespace Prisma {
     description: string
     subjectId: number
     grade?: number
+    semester?: number
   }
 
   export type CPCreateOrConnectWithoutTpsInput = {
@@ -21923,6 +21963,7 @@ export namespace Prisma {
     code?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     grade?: IntFieldUpdateOperationsInput | number
+    semester?: IntFieldUpdateOperationsInput | number
     subject?: SubjectUpdateOneRequiredWithoutCpsNestedInput
   }
 
@@ -21932,6 +21973,7 @@ export namespace Prisma {
     description?: StringFieldUpdateOperationsInput | string
     subjectId?: IntFieldUpdateOperationsInput | number
     grade?: IntFieldUpdateOperationsInput | number
+    semester?: IntFieldUpdateOperationsInput | number
   }
 
   export type AssessmentUpsertWithWhereUniqueWithoutTpInput = {
@@ -22913,6 +22955,7 @@ export namespace Prisma {
     code: string
     description: string
     grade?: number
+    semester?: number
   }
 
   export type AssignmentUpdateWithoutSubjectInput = {
@@ -22939,6 +22982,7 @@ export namespace Prisma {
     code?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     grade?: IntFieldUpdateOperationsInput | number
+    semester?: IntFieldUpdateOperationsInput | number
     tps?: TPUpdateManyWithoutCpNestedInput
   }
 
@@ -22947,6 +22991,7 @@ export namespace Prisma {
     code?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     grade?: IntFieldUpdateOperationsInput | number
+    semester?: IntFieldUpdateOperationsInput | number
     tps?: TPUncheckedUpdateManyWithoutCpNestedInput
   }
 
@@ -22955,6 +23000,7 @@ export namespace Prisma {
     code?: StringFieldUpdateOperationsInput | string
     description?: StringFieldUpdateOperationsInput | string
     grade?: IntFieldUpdateOperationsInput | number
+    semester?: IntFieldUpdateOperationsInput | number
   }
 
   export type TPCreateManyCpInput = {
