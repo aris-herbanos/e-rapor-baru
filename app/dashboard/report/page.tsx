@@ -44,7 +44,19 @@ type Attendance = {
   alpa: number;
 };
 
+type ReportSettings = {
+  schoolName?: string;
+  academicYear?: string;
+  semester?: string;
+  principalName?: string;
+};
+
 type ReportData = Student & {
+  schoolName?: string;
+  academicYear?: string;
+  semester?: string;
+  principalName?: string;
+  settings?: ReportSettings;
   scoreRecords?: ScoreRecord[];
   personality?: PersonalityRecord[];
   homeroomNote?: string | null;
@@ -170,17 +182,18 @@ function subjectMatches(databaseSubject: unknown, requestedSubject: unknown): bo
 }
 
 function isSMALevel(className: string): boolean {
-  const c = normalizeText(className);
-  return (
-    c.includes('10') ||
-    c.includes('11') ||
-    c.includes('12') ||
-    c.includes('sma') ||
-    c.includes('ulya') ||
-    c.includes('x') ||
-    c.includes('xi') ||
-    c.includes('xii')
-  );
+  const raw = normalizeText(className);
+  const compact = raw.replace(/^kelas\s+/, '').trim();
+
+  // Angka kelas 10, 11, 12 = SMA
+  if (/(^|\D)(10|11|12)(\D|$)/.test(compact)) return true;
+
+  // Penanda jenjang eksplisit
+  if (compact.includes('sma') || compact.includes('ulya')) return true;
+
+  // Romawi: hanya X, XI, XII. Hindari includes('x') karena kelas IX ikut mengandung huruf x.
+  const tokens = compact.split(/[^a-z0-9]+/).filter(Boolean);
+  return tokens.some((token) => ['x', 'xi', 'xii'].includes(token));
 }
 
 function getPersonalityValue(
@@ -354,9 +367,16 @@ export default function ReportPage() {
       setLoadingReport(true);
       setError('');
 
-      const response = await fetch(`/api/report?studentId=${encodeURIComponent(id)}`, {
-        cache: 'no-store',
-      });
+      const response = await fetch(
+        `/api/report?studentId=${encodeURIComponent(id)}&_=${Date.now()}`,
+        {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            Pragma: 'no-cache',
+          },
+        }
+      );
 
       const data = await response.json();
 
@@ -417,6 +437,44 @@ export default function ReportPage() {
   const isSMA = reportData ? isSMALevel(reportData.class_name) : false;
   const activeOralSubjects = isSMA ? ORAL_SUBJECTS_SMA : ORAL_SUBJECTS_SMP;
   const activeWrittenSubjects = isSMA ? WRITTEN_SUBJECTS_SMA : WRITTEN_SUBJECTS_SMP;
+
+  // Sinkron dengan systemSetting yang dikirim oleh /api/report.
+  const schoolName =
+    reportData?.schoolName ||
+    reportData?.settings?.schoolName ||
+    'Pondok Pesantren Terpadu Ulil Albab';
+
+  const academicYear =
+    reportData?.academicYear ||
+    reportData?.settings?.academicYear ||
+    '2026/2027';
+
+  const semester =
+    reportData?.semester ||
+    reportData?.settings?.semester ||
+    'Ganjil';
+
+  const principalName =
+    reportData?.principalName ||
+    reportData?.settings?.principalName ||
+    'Pimpinan Pesantren';
+
+  const normalizedSemester = normalizeText(semester);
+  const isEvenSemester =
+    normalizedSemester === 'genap' ||
+    normalizedSemester === '2' ||
+    normalizedSemester.includes('semester 2');
+
+  const semesterLabel = isEvenSemester ? 'Genap' : 'Ganjil';
+  const semesterArabic = isEvenSemester
+    ? 'الفصل الدراسي الثاني'
+    : 'الفصل الدراسي الأول';
+
+  const formattedPrintDate = new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date());
 
   return (
     <>
@@ -539,24 +597,24 @@ export default function ReportPage() {
                 <div dir="rtl" className="arabic mb-0.5 text-[13px] font-bold text-slate-600">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
                 <div className="text-[8px] font-bold tracking-[0.15em] text-slate-500">مَعْهَدُ أُولِي الْأَلْبَابِ الإِسْلَامِي</div>
                 <h2 className="mt-0.5 text-[17px] font-black leading-tight tracking-tight text-[#315f50]">
-                  PONDOK PESANTREN TERPADU<br /><span className="text-[19px]">ULIL ALBAB</span>
+                  {schoolName}
                 </h2>
                 <p className="mt-0.5 text-[8px] text-slate-400">Duyu Baru - Waibu - Jayapura</p>
               </div>
               <div className="mt-1.5 border-t border-slate-100 pt-1 text-center">
-                <div className="arabic text-[11px] font-semibold text-slate-600">السنة الدراسية : ١٤٤٨ - ١٤٤٧ هـ / ٢٠٢٦ - ٢٠٢٧ م</div>
+                <div className="arabic text-[11px] font-semibold text-slate-600">السنة الدراسية / Tahun Ajaran: {academicYear}</div>
               </div>
             </header>
 
             {/* TITLE */}
             <div className="report-block mx-[10mm] my-2.5 border-y border-[#9db9ad]/60 bg-[#f4f8f6] px-3 py-1.5 text-center">
               <div dir="rtl" className="arabic text-[12px] font-bold leading-5 text-[#315f50]">
-                كَشْفُ دَرَجَاتِ الطَّالِبِ <span className="mx-2 text-[#b29b65]">•</span> الفصل الدراسي الأول
+                كَشْفُ دَرَجَاتِ الطَّالِبِ <span className="mx-2 text-[#b29b65]">•</span> {semesterArabic}
               </div>
               <div className="text-[11px] font-bold uppercase tracking-wide text-slate-800">
                 LAPORAN HASIL BELAJAR SANTRI TINGKAT {isSMA ? 'SMA' : 'SMP'}
               </div>
-              <div className="text-[7.5px] font-medium tracking-[0.12em] text-slate-500">SEMESTER GANJIL • TAHUN AJARAN 2026/2027</div>
+              <div className="text-[7.5px] font-medium tracking-[0.12em] text-slate-500">SEMESTER {semesterLabel.toUpperCase()} • TAHUN AJARAN {academicYear}</div>
             </div>
 
             {/* STUDENT INFO */}
@@ -576,7 +634,7 @@ export default function ReportPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-600">Tahun Ajaran</span>
-                  <span className="font-semibold text-slate-800">2026/2027 • Ganjil</span>
+                  <span className="font-semibold text-slate-800">{academicYear} • {semesterLabel}</span>
                 </div>
               </div>
             </section>
@@ -712,7 +770,7 @@ export default function ReportPage() {
             <div className="report-block mx-[10mm] mb-2.5 rounded-lg border border-slate-300 bg-white p-2.5 text-[9.5px]">
               <div className="mb-0.5 font-bold text-[#315f50]">Keputusan :</div>
               <p className="leading-relaxed text-slate-700">
-                Berdasarkan pencapaian seluruh kompetensi pada semester ganjil ini, peserta didik ditetapkan :
+                Berdasarkan pencapaian seluruh kompetensi pada semester {semesterLabel.toLowerCase()} ini, peserta didik ditetapkan :
                 <strong className="ml-1 text-[#477b69]">Lulus / Melanjutkan ke tahap berikutnya.</strong>
               </p>
             </div>
@@ -731,10 +789,10 @@ export default function ReportPage() {
                   <div className="mt-8 font-semibold">( __________________ )</div>
                 </div>
                 <div>
-                  <div className="text-slate-500">Jayapura, 20 Agustus 2026</div>
+                  <div className="text-slate-500">Jayapura, {formattedPrintDate}</div>
                   <div dir="rtl" className="arabic mt-0.5 text-[14px] font-bold text-slate-800">مدير المعهد</div>
                   <div className="mt-0.5 text-slate-500">Mudir Ma'had</div>
-                  <div className="mt-7 font-bold text-[#315f50] underline underline-offset-2">Ayub Fakhruddin</div>
+                  <div className="mt-7 font-bold text-[#315f50] underline underline-offset-2">{principalName}</div>
                 </div>
               </div>
             </div>

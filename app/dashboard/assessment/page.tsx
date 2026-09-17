@@ -5,9 +5,15 @@ import { useEffect, useState, useMemo } from 'react';
 type ClassRoom = { id: number; name: string };
 type Subject = { id: number; name: string };
 type TP = { id: number; code: string; description: string };
-type CP = { id: number; code: string; description: string; subjectId: number; subject?: { name: string }; tps: TP[] };
+type CP = { id: number; code: string; description: string; subjectId: number; subject?: { name: string }; grade?: number; tps: TP[] };
 type Student = { id: number; fullname: string; class_name: string };
 type Assessment = { studentId: number; tpId?: number; score: number; type: string };
+
+// Helper untuk mengekstrak angka tingkat kelas dari string nama kelas (Contoh: "Kelas 7A" -> 7, "10 IPA" -> 10)
+function extractGradeNumber(className: string): number {
+  const match = String(className || '').match(/\d+/);
+  return match ? Number(match[0]) : 7;
+}
 
 export default function AssessmentPage() {
   const [classes, setClasses] = useState<ClassRoom[]>([]);
@@ -70,21 +76,38 @@ export default function AssessmentPage() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [subjects]);
 
+  // Filter CP berdasarkan Mata Pelajaran DAN tingkat kelas (Grade) yang sesuai
   const filteredCPs = useMemo(() => {
-    if (!selectedSubjectId) return [];
+    if (!selectedSubjectId || !selectedClass) return [];
     const selectedSubj = subjects.find((s) => String(s.id) === String(selectedSubjectId));
     if (!selectedSubj) return [];
 
     const targetName = String(selectedSubj.name || '').trim().toLowerCase();
+    const currentGradeNum = extractGradeNumber(selectedClass); // Contoh: Kelas 7A -> 7, Kelas 10B -> 10
 
     return cps.filter((cp) => {
-      if (String(cp.subjectId) === String(selectedSubjectId)) return true;
-      if (cp.subject?.name) {
-        return String(cp.subject.name).trim().toLowerCase() === targetName;
+      // 1. Cocokkan berdasarkan Mata Pelajaran
+      const matchSubject =
+        String(cp.subjectId) === String(selectedSubjectId) ||
+        (cp.subject?.name && String(cp.subject.name).trim().toLowerCase() === targetName);
+
+      if (!matchSubject) return false;
+
+      // 2. Cocokkan berdasarkan tingkat kelas (Grade)
+      // Jika CP memiliki properti grade, pastikan sama atau dalam kelompok jenjang yang sama (SMP: 7-9, SMA: 10-12)
+      if (cp.grade !== null && cp.grade !== undefined) {
+        const isCurrentSMA = currentGradeNum >= 10;
+        const isCpSMA = Number(cp.grade) >= 10;
+
+        // Jika jenjangnya berbeda (misal kelas SMP tapi CP-nya milik SMA), abaikan
+        if (isCurrentSMA !== isCpSMA) {
+          return false;
+        }
       }
-      return false;
+
+      return true;
     });
-  }, [cps, subjects, selectedSubjectId]);
+  }, [cps, subjects, selectedSubjectId, selectedClass]);
 
   const filteredStudents = useMemo(() => {
     if (!selectedClass) return [];
@@ -309,13 +332,16 @@ export default function AssessmentPage() {
             <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Capaian & Tujuan Pembelajaran (Sumatif TP)</h2>
             {filteredCPs.length === 0 ? (
               <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 text-xs text-slate-400">
-                Belum ada struktur kurikulum untuk mata pelajaran ini.
+                Belum ada struktur kurikulum untuk tingkat kelas ini pada mata pelajaran tersebut.
               </div>
             ) : (
               filteredCPs.map((cp, cpIdx) => (
                 <div key={cp.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-5 space-y-4">
                   <div>
-                    <span className="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg text-xs font-bold">Capaian Pembelajaran {cpIdx + 1}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg text-xs font-bold">Capaian Pembelajaran {cpIdx + 1}</span>
+                      {cp.grade && <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">Kelas {cp.grade}</span>}
+                    </div>
                     <p className="text-sm font-semibold text-slate-800 mt-2">{cp.description}</p>
                   </div>
 
@@ -368,14 +394,14 @@ export default function AssessmentPage() {
           <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
-            <div className="bg-[#064e3b] text-white p-5 flex justify-between items-center gap-4">
+            <div className="bg-[#064e3b] text-white px-5 py-3.5 flex justify-between items-center gap-4">
               <div>
                 <span className="text-[10px] uppercase tracking-widest text-emerald-200 font-bold">Input Nilai Kelas {selectedClass} (Lisan & Tertulis)</span>
-                <h3 className="text-sm font-bold mt-0.5">{activeTarget.title}</h3>
+                <h3 className="text-xs font-bold mt-0.5">{activeTarget.title}</h3>
               </div>
               <button 
                 onClick={() => setActiveTarget(null)}
-                className="text-white/80 hover:text-white text-xs font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition shrink-0"
+                className="text-white/80 hover:text-white text-xs font-bold bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition shrink-0"
               >
                 ✕ Tutup
               </button>
