@@ -185,13 +185,9 @@ function isSMALevel(className: string): boolean {
   const raw = normalizeText(className);
   const compact = raw.replace(/^kelas\s+/, '').trim();
 
-  // Angka kelas 10, 11, 12 = SMA
   if (/(^|\D)(10|11|12)(\D|$)/.test(compact)) return true;
-
-  // Penanda jenjang eksplisit
   if (compact.includes('sma') || compact.includes('ulya')) return true;
 
-  // Romawi: hanya X, XI, XII. Hindari includes('x') karena kelas IX ikut mengandung huruf x.
   const tokens = compact.split(/[^a-z0-9]+/).filter(Boolean);
   return tokens.some((token) => ['x', 'xi', 'xii'].includes(token));
 }
@@ -282,6 +278,37 @@ function getPersonalityMerdekaDescription(aspectName: string, value: string) {
       needsImprovement: `Perlu bimbingan lanjutan dan pengawasan intensif dalam pembentukan karakter ${aspectName.toLowerCase()}.`,
     };
   }
+}
+
+function ReportSection({
+  number,
+  title,
+  arabic,
+  children,
+}: {
+  number: string;
+  title: string;
+  arabic: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="report-block mx-[10mm] mb-3">
+      <div className="mb-1 flex items-center justify-between border-b-2 border-[#315f50] pb-1">
+        <div className="flex items-center gap-2">
+          <span className="flex h-4 w-4 items-center justify-center rounded bg-[#315f50] text-[8px] font-bold text-white">
+            {number}
+          </span>
+          <h3 className="text-[11px] font-bold uppercase tracking-wide text-slate-800">
+            {title}
+          </h3>
+        </div>
+        <div dir="rtl" className="arabic text-[11px] font-semibold text-slate-600">
+          {arabic}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
 }
 
 /* ============================================================
@@ -438,7 +465,6 @@ export default function ReportPage() {
   const activeOralSubjects = isSMA ? ORAL_SUBJECTS_SMA : ORAL_SUBJECTS_SMP;
   const activeWrittenSubjects = isSMA ? WRITTEN_SUBJECTS_SMA : WRITTEN_SUBJECTS_SMP;
 
-  // Sinkron dengan systemSetting yang dikirim oleh /api/report.
   const schoolName =
     reportData?.schoolName ||
     reportData?.settings?.schoolName ||
@@ -741,168 +767,75 @@ export default function ReportPage() {
               </table>
             </ReportSection>
 
-            {/* ATTENDANCE + NOTE */}
-            <div className="report-block mx-[10mm] mb-2.5 grid grid-cols-[1fr_1.6fr] gap-2.5 text-[9.5px]">
-              <div className="rounded-lg border border-slate-300 bg-white p-2.5">
-                <div className="mb-1.5 flex items-center justify-between border-b border-slate-200 pb-1">
-                  <span className="font-bold text-[#315f50]">Ketidakhadiran</span>
-                  <span dir="rtl" className="arabic text-[12px] font-bold text-slate-600">الغياب والحضور</span>
+            {/* KEHADIRAN & CATATAN WALI KELAS */}
+            <div className="mx-[10mm] mb-4 grid grid-cols-2 gap-3">
+              <section className="report-block">
+                <div className="mb-1 flex items-center justify-between border-b-2 border-[#315f50] pb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-800">Ketidakhadiran</span>
+                  <span dir="rtl" className="arabic text-[10px] font-semibold text-slate-600">الغياب</span>
                 </div>
-                <div className="space-y-1 leading-4">
-                  <div className="flex justify-between"><span>Sakit / مرض</span><strong>{attendance.sakit} hari</strong></div>
-                  <div className="flex justify-between"><span>Izin / الاستئذان</span><strong>{attendance.izin} hari</strong></div>
-                  <div className="flex justify-between"><span>Alpa / بلا عذر</span><strong>{attendance.alpa} hari</strong></div>
-                </div>
-              </div>
+                <table className="w-full border-collapse border border-slate-300 bg-white text-[9.5px]">
+                  <tbody>
+                    <tr>
+                      <td className="border border-slate-300 px-2 py-1 text-slate-600">Sakit (مرض)</td>
+                      <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-800">{attendance.sakit} hari</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-slate-300 px-2 py-1 text-slate-600">Izin (إذن)</td>
+                      <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-800">{attendance.izin} hari</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-slate-300 px-2 py-1 text-slate-600">Alpa / Tanpa Keterangan (غائب)</td>
+                      <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-800">{attendance.alpa} hari</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
 
-              <div className="rounded-lg border border-slate-300 bg-white p-2.5">
-                <div className="mb-1.5 flex items-center justify-between border-b border-slate-200 pb-1">
-                  <span className="font-bold text-[#315f50]">Catatan Wali Kelas</span>
-                  <span dir="rtl" className="arabic text-[12px] font-bold text-slate-600">ملاحظات</span>
+              <section className="report-block">
+                <div className="mb-1 flex items-center justify-between border-b-2 border-[#315f50] pb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-800">Catatan Wali Kelas</span>
+                  <span dir="rtl" className="arabic text-[10px] font-semibold text-slate-600">ملاحظات مربي الفصل</span>
                 </div>
-                <p className="min-h-[40px] text-[9.5px] leading-4 text-slate-700">
-                  {reportData.homeroomNote || `${reportData.fullname} memiliki semangat belajar yang baik. Pertahankan prestasi dan terus tingkatkan kedisiplinan.`}
-                </p>
-              </div>
+                <div className="h-[74px] rounded border border-slate-300 bg-white p-2 text-[9px] leading-relaxed text-slate-700 overflow-y-auto">
+                  {reportData.homeroomNote ? (
+                    reportData.homeroomNote
+                  ) : (
+                    <span className="italic text-slate-400">Terus tingkatkan prestasi belajar dan jaga kedisiplinan selama berada di lingkungan pondok pesantren.</span>
+                  )}
+                </div>
+              </section>
             </div>
 
-            {/* KEPUTUSAN */}
-            <div className="report-block mx-[10mm] mb-2.5 rounded-lg border border-slate-300 bg-white p-2.5 text-[9.5px]">
-              <div className="mb-0.5 font-bold text-[#315f50]">Keputusan :</div>
-              <p className="leading-relaxed text-slate-700">
-                Berdasarkan pencapaian seluruh kompetensi pada semester {semesterLabel.toLowerCase()} ini, peserta didik ditetapkan :
-                <strong className="ml-1 text-[#477b69]">Lulus / Melanjutkan ke tahap berikutnya.</strong>
-              </p>
-            </div>
-
-            {/* SIGNATURE */}
-            <div className="report-block mx-[10mm] mb-2.5 border-t border-slate-300 pt-3">
-              <div className="grid grid-cols-3 gap-4 text-center text-[9.5px]">
+            {/* TANDA TANGAN */}
+            <section className="report-block mx-[10mm] pb-6 text-[9.5px]">
+              <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div dir="rtl" className="arabic text-[14px] font-bold text-slate-800">ولي الأمر</div>
-                  <div className="mt-0.5 text-slate-500">Orang Tua / Wali</div>
-                  <div className="mt-8 font-semibold">( __________________ )</div>
+                  <div className="mb-1 text-slate-600">Mengetahui,</div>
+                  <div className="font-bold text-slate-800">Orang Tua / Wali Murid</div>
+                  <div className="h-14"></div>
+                  <div className="border-b border-slate-400 pb-0.5 font-bold text-slate-800">( ........................................ )</div>
                 </div>
-                <div>
-                  <div dir="rtl" className="arabic text-[14px] font-bold text-slate-800">معلم الفصل</div>
-                  <div className="mt-0.5 text-slate-500">Wali Kelas</div>
-                  <div className="mt-8 font-semibold">( __________________ )</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Jayapura, {formattedPrintDate}</div>
-                  <div dir="rtl" className="arabic mt-0.5 text-[14px] font-bold text-slate-800">مدير المعهد</div>
-                  <div className="mt-0.5 text-slate-500">Mudir Ma'had</div>
-                  <div className="mt-7 font-bold text-[#315f50] underline underline-offset-2">{principalName}</div>
-                </div>
-              </div>
-            </div>
 
-            {/* FOOTER */}
-            <div className="report-footer mx-[10mm] flex items-center justify-between border-t border-slate-100 py-2.5 text-[7px] uppercase tracking-[0.15em] text-slate-400">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={9} />
-                <span>Dokumen Akademik • E-Rapor Ulil Albab</span>
+                <div>
+                  <div className="mb-1 text-slate-600">Wali Kelas</div>
+                  <div className="font-bold text-slate-800">مربي الفصل</div>
+                  <div className="h-14"></div>
+                  <div className="border-b border-slate-400 pb-0.5 font-bold text-slate-800">________________________</div>
+                </div>
+
+                <div>
+                  <div className="mb-1 text-slate-600">Duyu Baru, {formattedPrintDate}</div>
+                  <div className="font-bold text-slate-800">{principalName}</div>
+                  <div className="h-14"></div>
+                  <div className="border-b border-slate-400 pb-0.5 font-bold text-slate-800">Pimpinan Pesantren</div>
+                </div>
               </div>
-              <span>Dokumen Resmi</span>
-            </div>
+            </section>
 
           </div>
         </main>
       )}
-
-      {/* GLOBAL CSS & CLEAN PRINT RULES */}
-      <style jsx global>{`
-        @font-face {
-          font-family: 'Traditional Arabic';
-          src: local('Traditional Arabic');
-          font-style: normal;
-          font-weight: normal;
-        }
-
-        .arabic {
-          font-family: 'Traditional Arabic', 'Amiri', 'Noto Naskh Arabic', 'Times New Roman', serif;
-          font-weight: normal;
-        }
-
-        @page {
-          size: 215.9mm 330.2mm;
-          margin: 0;
-        }
-
-        html, body {
-          margin: 0;
-          padding: 0;
-          background: #f5f7f6;
-        }
-
-        select option {
-          background: #ffffff;
-          color: #0f172a;
-        }
-
-        .report-table {
-          width: 100%;
-          table-layout: fixed;
-          border-collapse: collapse;
-        }
-
-        .report-table th, .report-table td {
-          vertical-align: middle;
-        }
-
-        .report-document {
-          min-height: 330.2mm;
-        }
-
-        .report-screen {
-          min-height: 100vh;
-        }
-
-        @media print {
-          body * {
-            visibility: hidden !important;
-          }
-
-          .report-document, .report-document * {
-            visibility: visible !important;
-          }
-
-          .report-document {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 215.9mm !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            background: #ffffff !important;
-          }
-
-          .control-panel, .print\\:hidden {
-            display: none !important;
-          }
-
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-      `}</style>
     </>
-  );
-}
-
-function ReportSection({ number, title, arabic, children }: { number: string; title: string; arabic: string; children: ReactNode }) {
-  return (
-    <section className="report-section mx-[10mm] mb-2.5">
-      <div className="report-section-header flex items-center justify-between rounded-t-lg bg-[#477b69] px-3 py-1.5 text-white">
-        <div className="flex items-center gap-2">
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/10 text-[8px] font-bold text-white">{number}</span>
-          <span className="text-[10px] font-bold tracking-wide">{title}</span>
-        </div>
-        <span dir="rtl" className="arabic text-[12px] font-semibold leading-5 text-white/95">{arabic}</span>
-      </div>
-      {children}
-    </section>
   );
 }
