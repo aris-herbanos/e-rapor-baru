@@ -82,14 +82,9 @@ export default function DashboardLayout({
     return pathname.startsWith(href);
   };
 
-  const getActiveCategory = () => {
-    const activeMenu = menus.find((menu) => isActive(menu.href));
-    return activeMenu?.category || null;
-  };
-
   useEffect(() => {
-    const activeCategory = getActiveCategory();
-    if (activeCategory) setOpenCategory(activeCategory);
+    const activeMenu = menus.find((menu) => isActive(menu.href));
+    if (activeMenu?.category) setOpenCategory(activeMenu.category);
   }, [pathname]);
 
   const toggleCategory = (category: string) => {
@@ -147,19 +142,20 @@ export default function DashboardLayout({
           <span>E-Rapor</span>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-2 text-[13px]">
+        {/* Nav dengan overflow-y auto tapi overflow-x hidden */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 text-[13px]">
           {/* Dashboard */}
           <Link
             href="/dashboard"
             onClick={() => setMobileOpen(false)}
-            className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-[#2c3338] ${
-              isActive('/dashboard') ? 'bg-[#2271b1] hover:bg-[#2271b1]' : ''
+            className={`group relative flex items-center gap-3 px-4 py-2.5 hover:bg-[#2c3338] ${
+              isActive('/dashboard') ? 'bg-[#2271b1]' : ''
             }`}
           >
             <LayoutDashboard size={18} />
             <span>Dashboard</span>
             {isActive('/dashboard') && (
-              <span className="absolute -right-[8px] top-1/2 h-0 w-0 -translate-y-1/2 border-y-[10px] border-l-[10px] border-y-transparent border-l-[#2271b1]" />
+              <span className="absolute right-0 top-1/2 z-20 h-0 w-0 -translate-y-1/2 translate-x-[11px] border-y-[11px] border-l-[11px] border-y-transparent border-l-[#2271b1]" />
             )}
           </Link>
 
@@ -200,7 +196,7 @@ export default function DashboardLayout({
                           <menu.icon size={16} />
                           <span>{menu.title}</span>
                           {active && (
-                            <span className="absolute -right-[8px] top-1/2 h-0 w-0 -translate-y-1/2 border-y-[10px] border-l-[10px] border-y-transparent border-l-[#2271b1]" />
+                            <span className="absolute right-0 top-1/2 z-20 h-0 w-0 -translate-y-1/2 translate-x-[11px] border-y-[11px] border-l-[11px] border-y-transparent border-l-[#2271b1]" />
                           )}
                         </Link>
                       );
@@ -222,7 +218,7 @@ export default function DashboardLayout({
             <Settings size={18} />
             <span>Pengaturan</span>
             {pathname.startsWith('/dashboard/settings') && (
-              <span className="absolute -right-[8px] top-1/2 h-0 w-0 -translate-y-1/2 border-y-[10px] border-l-[10px] border-y-transparent border-l-[#2271b1]" />
+              <span className="absolute right-0 top-1/2 z-20 h-0 w-0 -translate-y-1/2 translate-x-[11px] border-y-[11px] border-l-[11px] border-y-transparent border-l-[#2271b1]" />
             )}
           </Link>
         </nav>
