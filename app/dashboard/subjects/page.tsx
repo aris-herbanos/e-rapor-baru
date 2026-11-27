@@ -1,6 +1,8 @@
+
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { FormEvent, ReactNode, ChangeEvent } from 'react';
 
 type Subject = {
   id: number;
@@ -8,44 +10,91 @@ type Subject = {
   level?: string;
 };
 
-// Daftar referensi lengkap seluruh mata pelajaran pesantren (gabungan standar)
-const ALL_DEFAULT_SUBJECTS = [
-  'Bahasa Arab (اللغة العربية)',
-  'Balaghoh & Adab (البلاغة والأدب)',
-  'Fiqih (الفقه)',
-  'Fiqih Muqoron (الفقه المقارن)',
-  'Hadis (الحديث)',
-  'Imla dan Khot (الإملاء والخط)',
-  'Mahfudzot (المحفوظات)',
-  'Mustholah Hadis (مصطلح الحديث)',
-  'Muhadatsah (محادثة)',
-  "Muroja'ah (المراجعة)",
-  'Muroja’ah Lanjutan (المراجعة المتقدمة)',
-  'Nahwu / Sorof (النحو و الصرف)',
-  'Nahwu & Sorof Lanjutan (النحو والصرف المتقدم)',
-  'Pendidikan Agama Islam',
-  'Pidato (الخطابة)',
-  'Pidato & Debat (الخطابة والمناظرة)',
-  'Siroh Nabawiyah (السيرة النبوية)',
-  'Tahfidz / Tahsin (تحفيظ القرآن)',
-  'Tajwid (تجويد)',
-  'Tarikh Islam (التاريخ الإسلامي)',
-  'Tauhid & Aqidah (التوحيد والعقيدة)',
-  'Tsaqofah Islamiyah (الثقافة الإسلامية)',
-  'Ulumul Quran (علوم القرآن)',
-  'Ushul Fiqih (أصول الفقه)',
-];
+/* ============================================================
+   DAFTAR MAPEL STANDAR
+
+   Nama dibuat sama dengan nama mapel yang digunakan
+   pada halaman input penilaian dan laporan rapor.
+
+   Jangan menambahkan keterangan bahasa Arab dalam kurung
+   agar pencocokan nama mapel tetap konsisten.
+============================================================ */
+
+const SUBJECTS_BY_LEVEL: Record<'SMP' | 'SMA', string[]> = {
+  SMP: [
+    'Bahasa Arab',
+    'Fiqih',
+    'Hadis',
+    'Imla dan Khot',
+    'Mahfudzot',
+    'Muroja\'ah',
+    'Nahwu / Sorof',
+    'Pendidikan Agama Islam',
+    'Pidato',
+    'Siroh Nabawiyah',
+    'Tahfidz / Tahsin',
+    'Tajwid',
+    'Tsaqofah Islamiyah',
+  ],
+
+  SMA: [
+    'Balaghoh & Adab',
+    'Fiqih Muqoron',
+    'Muhadatsah',
+    'Muroja\'ah Lanjutan',
+    'Mustholah Hadis',
+    'Nahwu & Sorof Lanjutan',
+    'Pidato & Debat',
+    'Tahfidz / Tahsin',
+    'Tajwid',
+    'Tarikh Islam',
+    'Tauhid & Aqidah',
+    'Ulumul Quran',
+    'Ushul Fiqih',
+  ],
+};
+
+/* ============================================================
+   HELPER
+============================================================ */
+
+function normalizeText(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+async function readResponse(res: Response) {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
+
+/* ============================================================
+   MAIN PAGE
+============================================================ */
 
 export default function SubjectsPage() {
-  const [activeTabLevel, setActiveTabLevel] = useState<'SMP' | 'SMA'>('SMP');
+  const [activeTabLevel, setActiveTabLevel] =
+    useState<'SMP' | 'SMA'>('SMP');
+
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  
-  // State form mapel dengan opsi dropdown & custom
-  const [selectedSubjectOption, setSelectedSubjectOption] = useState('');
-  const [customSubjectName, setCustomSubjectName] = useState('');
+
+  const [selectedSubjectOption, setSelectedSubjectOption] =
+    useState('');
+
+  const [customSubjectName, setCustomSubjectName] =
+    useState('');
+
   const [isCustomMode, setIsCustomMode] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
+
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
@@ -53,44 +102,201 @@ export default function SubjectsPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
 
-  const fetchSubjects = async () => {
-    try {
-      setLoadingSubjects(true);
+  /* ============================================================
+     PILIHAN MAPEL BERDASARKAN JENJANG
 
-      const res = await fetch(`/api/subjects?level=${activeTabLevel}`, {
-        cache: 'no-store',
-      });
+     Mapel yang sudah terdaftar tidak ditampilkan lagi
+     sebagai pilihan tambah baru.
+  ============================================================ */
 
-      const data = await res.json();
+  const defaultSubjects = SUBJECTS_BY_LEVEL[activeTabLevel];
 
-      if (!res.ok) {
-        throw new Error(
-          data.message || 'Gagal memuat mata pelajaran.'
-        );
+  const availableDefaultSubjects = useMemo(() => {
+    const registeredNames = new Set(
+      subjects.map((subject) => normalizeText(subject.name))
+    );
+
+    return defaultSubjects.filter((name) => {
+      // Saat edit, tetap izinkan nama mapel yang sedang diedit.
+      const currentEditingSubject = subjects.find(
+        (subject) => subject.id === editingId
+      );
+
+      if (
+        currentEditingSubject &&
+        normalizeText(currentEditingSubject.name) === normalizeText(name)
+      ) {
+        return true;
       }
 
-      setSubjects(Array.isArray(data) ? data : data?.data || []);
-      setSelectedIds([]);
-    } catch (err) {
-      console.error(err);
-      setMessage('Gagal memuat daftar mata pelajaran.');
-    } finally {
-      setLoadingSubjects(false);
-    }
-  };
+      return !registeredNames.has(normalizeText(name));
+    });
+  }, [defaultSubjects, subjects, editingId]);
+
+  /* ============================================================
+     LOAD DATA MAPEL
+
+     API:
+     GET /api/subjects?level=SMP
+     GET /api/subjects?level=SMA
+
+     Mendukung response:
+     { success: true, data: [...] }
+     maupun response array langsung.
+  ============================================================ */
+
+  const fetchSubjects = useCallback(
+    async (signal?: AbortSignal) => {
+      try {
+        setLoadingSubjects(true);
+
+        const res = await fetch(
+          `/api/subjects?level=${activeTabLevel}`,
+          {
+            method: 'GET',
+            cache: 'no-store',
+            signal,
+            headers: {
+              Accept: 'application/json',
+            },
+          }
+        );
+
+        const data = await readResponse(res);
+
+        if (!res.ok || data.success === false) {
+          throw new Error(
+            data.message || 'Gagal memuat mata pelajaran.'
+          );
+        }
+
+        const subjectData = Array.isArray(data)
+          ? data
+          : Array.isArray(data.data)
+            ? data.data
+            : [];
+
+        // Pastikan data yang ditampilkan sesuai jenjang aktif.
+        const filteredSubjects: Subject[] = subjectData.filter(
+          (subject: Subject) => {
+            if (!subject || typeof subject.id !== 'number') {
+              return false;
+            }
+
+            if (!subject.name) {
+              return false;
+            }
+
+            return (
+              normalizeText(subject.level) ===
+              normalizeText(activeTabLevel)
+            );
+          }
+        );
+
+        setSubjects(filteredSubjects);
+        setSelectedIds((previous) =>
+          previous.filter((id) =>
+            filteredSubjects.some((subject) => subject.id === id)
+          )
+        );
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+
+        console.error('FETCH SUBJECTS ERROR:', error);
+        setSubjects([]);
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : 'Gagal memuat daftar mata pelajaran.'
+        );
+      } finally {
+        if (!signal?.aborted) {
+          setLoadingSubjects(false);
+        }
+      }
+    },
+    [activeTabLevel]
+  );
 
   useEffect(() => {
-    fetchSubjects();
-  }, [activeTabLevel]);
+    const controller = new AbortController();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    setSelectedIds([]);
+    setEditingId(null);
+    setSelectedSubjectOption('');
+    setCustomSubjectName('');
+    setIsCustomMode(false);
+    setMessage('');
+
+    fetchSubjects(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [fetchSubjects]);
+
+  /* ============================================================
+     RESET FORM
+  ============================================================ */
+
+  const resetForm = () => {
+    setEditingId(null);
+    setSelectedSubjectOption('');
+    setCustomSubjectName('');
+    setIsCustomMode(false);
+  };
+
+  /* ============================================================
+     GANTI JENJANG
+  ============================================================ */
+
+  const handleChangeLevel = (level: 'SMP' | 'SMA') => {
+    if (level === activeTabLevel) return;
+
+    setActiveTabLevel(level);
+    setSelectedIds([]);
+    setMessage('');
+    resetForm();
+  };
+
+  /* ============================================================
+     SIMPAN / UPDATE MAPEL
+  ============================================================ */
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage('');
 
-    const finalName = isCustomMode ? customSubjectName.trim() : selectedSubjectOption;
+    const finalName = (
+      isCustomMode ? customSubjectName : selectedSubjectOption
+    )
+      .trim()
+      .replace(/\s+/g, ' ');
 
     if (!finalName) {
       setMessage('Nama mata pelajaran wajib diisi.');
+      return;
+    }
+
+    if (finalName.length > 100) {
+      setMessage('Nama mata pelajaran maksimal 100 karakter.');
+      return;
+    }
+
+    // Cek duplikat di sisi frontend.
+    const duplicate = subjects.find(
+      (subject) =>
+        normalizeText(subject.name) === normalizeText(finalName) &&
+        subject.id !== editingId
+    );
+
+    if (duplicate) {
+      setMessage(
+        `Mata pelajaran "${duplicate.name}" sudah terdaftar pada jenjang ${activeTabLevel}.`
+      );
       return;
     }
 
@@ -107,6 +313,7 @@ export default function SubjectsPage() {
         method,
         headers: {
           'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify({
           name: finalName,
@@ -114,9 +321,9 @@ export default function SubjectsPage() {
         }),
       });
 
-      const data = await res.json();
+      const data = await readResponse(res);
 
-      if (!res.ok) {
+      if (!res.ok || data.success === false) {
         throw new Error(
           data.message || 'Gagal menyimpan mata pelajaran.'
         );
@@ -128,29 +335,39 @@ export default function SubjectsPage() {
           : 'Sukses! Mata pelajaran berhasil ditambahkan.'
       );
 
-      setSelectedSubjectOption('');
-      setCustomSubjectName('');
-      setIsCustomMode(false);
-      setEditingId(null);
-
+      resetForm();
       await fetchSubjects();
-    } catch (err: any) {
+    } catch (error) {
+      console.error('SAVE SUBJECT ERROR:', error);
+
       setMessage(
-        err?.message || 'Terjadi kesalahan saat menyimpan.'
+        error instanceof Error
+          ? error.message
+          : 'Terjadi kesalahan saat menyimpan.'
       );
     } finally {
       setLoading(false);
     }
   };
 
+  /* ============================================================
+     EDIT MAPEL
+  ============================================================ */
+
   const handleEdit = (subject: Subject) => {
     setEditingId(subject.id);
-    
-    if (ALL_DEFAULT_SUBJECTS.includes(subject.name)) {
-      setSelectedSubjectOption(subject.name);
-      setIsCustomMode(false);
+    setMessage('');
+
+    const matchingDefault = defaultSubjects.find(
+      (name) => normalizeText(name) === normalizeText(subject.name)
+    );
+
+    if (matchingDefault) {
+      setSelectedSubjectOption(matchingDefault);
       setCustomSubjectName('');
+      setIsCustomMode(false);
     } else {
+      // Data lama atau nama khusus tetap bisa diedit.
       setIsCustomMode(true);
       setCustomSubjectName(subject.name);
       setSelectedSubjectOption('');
@@ -162,17 +379,16 @@ export default function SubjectsPage() {
     });
   };
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setSelectedSubjectOption('');
-    setCustomSubjectName('');
-    setIsCustomMode(false);
-  };
+  /* ============================================================
+     HAPUS SATU MAPEL
+  ============================================================ */
 
   const handleDelete = async (id: number) => {
+    const subject = subjects.find((item) => item.id === id);
+
     if (
       !confirm(
-        'Apakah Anda yakin ingin menghapus mata pelajaran ini?'
+        `Apakah Anda yakin ingin menghapus mata pelajaran "${subject?.name ?? ''}"?`
       )
     ) {
       return;
@@ -183,46 +399,62 @@ export default function SubjectsPage() {
 
       const res = await fetch(`/api/subjects/${id}`, {
         method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+        },
       });
 
-      const data = await res.json();
+      const data = await readResponse(res);
 
-      if (!res.ok) {
+      if (!res.ok || data.success === false) {
         throw new Error(
           data.message || 'Gagal menghapus mata pelajaran.'
         );
       }
 
-      setMessage(
-        'Sukses! Mata pelajaran berhasil dihapus.'
-      );
+      if (editingId === id) {
+        resetForm();
+      }
+
+      setMessage('Sukses! Mata pelajaran berhasil dihapus.');
 
       await fetchSubjects();
-    } catch (err: any) {
+    } catch (error) {
+      console.error('DELETE SUBJECT ERROR:', error);
+
       setMessage(
-        err?.message ||
-          'Terjadi kesalahan saat menghapus.'
+        error instanceof Error
+          ? error.message
+          : 'Terjadi kesalahan saat menghapus.'
       );
     }
   };
 
+  /* ============================================================
+     PILIH DATA
+  ============================================================ */
+
   const handleSelectAll = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: ChangeEvent<HTMLInputElement>
   ) => {
     if (e.target.checked) {
-      setSelectedIds(subjects.map((s) => s.id));
+      setSelectedIds(subjects.map((subject) => subject.id));
     } else {
       setSelectedIds([]);
     }
   };
 
   const handleSelectOne = (id: number) => {
-    setSelectedIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((item) => item !== id)
-        : [...prev, id]
+    setSelectedIds((previous) =>
+      previous.includes(id)
+        ? previous.filter((item) => item !== id)
+        : [...previous, id]
     );
   };
+
+  /* ============================================================
+     HAPUS MASSAL
+  ============================================================ */
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
@@ -239,55 +471,67 @@ export default function SubjectsPage() {
       setDeletingBulk(true);
       setMessage('');
 
-      const res = await fetch(
-        '/api/subjects/bulk-delete',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ids: selectedIds,
-          }),
-        }
-      );
+      const res = await fetch('/api/subjects/bulk-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          ids: selectedIds,
+        }),
+      });
 
-      const data = await res.json();
+      const data = await readResponse(res);
 
-      if (!res.ok) {
+      if (!res.ok || data.success === false) {
         throw new Error(
-          data.message ||
-            'Gagal menghapus data terpilih.'
+          data.message || 'Gagal menghapus data terpilih.'
         );
       }
 
-      setMessage(
-        `Sukses! ${selectedIds.length} mata pelajaran berhasil dihapus.`
-      );
+      const deletedCount = selectedIds.length;
 
       setSelectedIds([]);
+      setMessage(
+        `Sukses! ${deletedCount} mata pelajaran berhasil dihapus.`
+      );
 
       await fetchSubjects();
-    } catch (err: any) {
+    } catch (error) {
+      console.error('BULK DELETE ERROR:', error);
+
       setMessage(
-        err?.message ||
-          'Terjadi kesalahan saat hapus massal.'
+        error instanceof Error
+          ? error.message
+          : 'Terjadi kesalahan saat hapus massal.'
       );
     } finally {
       setDeletingBulk(false);
     }
   };
 
+  /* ============================================================
+     SUMMARY
+  ============================================================ */
+
   const totalSubjects = subjects.length;
+
   const allSelected =
     subjects.length > 0 &&
     selectedIds.length === subjects.length;
+
+  const isSuccessMessage = message.startsWith('Sukses');
+
+  /* ============================================================
+     RENDER
+  ============================================================ */
 
   return (
     <main className="min-h-screen bg-[#f7f9f8] text-slate-800">
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
 
-        {/* ================= HEADER ================= */}
+        {/* HEADER */}
         <header className="mb-5 flex items-center justify-between border-b border-slate-200/80 pb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
@@ -306,7 +550,7 @@ export default function SubjectsPage() {
               </div>
 
               <p className="mt-0.5 text-[11px] text-slate-500">
-                Kelola daftar master mata pelajaran pesantren berdasarkan jenjang.
+                Kelola daftar master mata pelajaran berdasarkan jenjang.
               </p>
             </div>
           </div>
@@ -321,31 +565,48 @@ export default function SubjectsPage() {
           </div>
         </header>
 
-        {/* ================= TAB JENJANG (SMP / SMA) ================= */}
-        <div className="mb-5 flex rounded-2xl bg-slate-200/70 p-1.5 max-w-xs shadow-inner">
+        {/* TAB JENJANG */}
+        <div className="mb-5 flex max-w-xs rounded-2xl bg-slate-200/70 p-1.5 shadow-inner">
           <button
             type="button"
-            onClick={() => {
-              setActiveTabLevel('SMP');
-              setSelectedIds([]);
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${activeTabLevel === 'SMP' ? 'bg-[#064e3b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            onClick={() => handleChangeLevel('SMP')}
+            className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
+              activeTabLevel === 'SMP'
+                ? 'bg-[#064e3b] text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
           >
             🎓 Jenjang SMP
           </button>
+
           <button
             type="button"
-            onClick={() => {
-              setActiveTabLevel('SMA');
-              setSelectedIds([]);
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${activeTabLevel === 'SMA' ? 'bg-[#064e3b] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            onClick={() => handleChangeLevel('SMA')}
+            className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
+              activeTabLevel === 'SMA'
+                ? 'bg-[#064e3b] text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
           >
             🎓 Jenjang SMA
           </button>
         </div>
 
-        {/* ================= SUMMARY ================= */}
+        {/* INFO JENJANG */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-100 bg-emerald-50/70 px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <CheckIcon />
+            <p className="text-[11px] font-medium text-emerald-800">
+              Anda sedang mengelola mata pelajaran jenjang {activeTabLevel}.
+            </p>
+          </div>
+
+          <span className="text-[10px] font-semibold text-emerald-700">
+            {defaultSubjects.length} pilihan standar
+          </span>
+        </div>
+
+        {/* SUMMARY */}
         <div className="mb-5 flex flex-wrap items-center divide-x divide-slate-200 rounded-xl border border-slate-200/80 bg-white shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
           <MiniStat
             label={`Total Mapel (${activeTabLevel})`}
@@ -373,31 +634,25 @@ export default function SubjectsPage() {
           </div>
         </div>
 
-        {/* ================= MESSAGE ================= */}
+        {/* MESSAGE */}
         {message && (
           <div
             className={`mb-5 flex items-center gap-2.5 rounded-lg border px-3.5 py-2.5 text-xs ${
-              message.startsWith('Sukses')
+              isSuccessMessage
                 ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                 : 'border-red-200 bg-red-50 text-red-700'
             }`}
           >
-            {message.startsWith('Sukses') ? (
-              <CheckIcon />
-            ) : (
-              <AlertIcon />
-            )}
-
+            {isSuccessMessage ? <CheckIcon /> : <AlertIcon />}
             <span>{message}</span>
           </div>
         )}
 
-        {/* ================= MAIN ================= */}
+        {/* MAIN */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
 
-          {/* ================= FORM ================= */}
+          {/* FORM */}
           <section className="h-fit rounded-xl border border-slate-200 bg-white shadow-[0_3px_16px_rgba(15,23,42,0.035)]">
-
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
               <div>
                 <h2 className="text-xs font-bold text-slate-800">
@@ -408,15 +663,15 @@ export default function SubjectsPage() {
 
                 <p className="mt-0.5 text-[10px] text-slate-400">
                   {editingId
-                    ? 'Perbarui data yang dipilih.'
-                    : 'Pilih atau ketik mata pelajaran.'}
+                    ? 'Perbarui data mata pelajaran.'
+                    : 'Pilih mapel sesuai jenjang.'}
                 </p>
               </div>
 
               {editingId && (
                 <button
                   type="button"
-                  onClick={handleCancelEdit}
+                  onClick={resetForm}
                   className="text-[10px] font-semibold text-red-600 hover:text-red-700"
                 >
                   Batal
@@ -424,10 +679,7 @@ export default function SubjectsPage() {
               )}
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-4 p-4"
-            >
+            <form onSubmit={handleSubmit} className="space-y-4 p-4">
               <div>
                 <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-slate-500">
                   Nama Mata Pelajaran ({activeTabLevel})
@@ -440,16 +692,26 @@ export default function SubjectsPage() {
                       onChange={(e) =>
                         setSelectedSubjectOption(e.target.value)
                       }
-                      required={!isCustomMode}
+                      required
                       className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
                     >
-                      <option value="">-- Pilih Mata Pelajaran --</option>
-                      {ALL_DEFAULT_SUBJECTS.map((subj) => (
-                        <option key={subj} value={subj}>
-                          {subj}
+                      <option value="">
+                        -- Pilih Mapel {activeTabLevel} --
+                      </option>
+
+                      {availableDefaultSubjects.map((subject) => (
+                        <option key={subject} value={subject}>
+                          {subject}
                         </option>
                       ))}
                     </select>
+
+                    {availableDefaultSubjects.length === 0 && (
+                      <p className="text-[10px] text-amber-600">
+                        Semua pilihan mapel standar sudah terdaftar.
+                        Gunakan pilihan tambah mapel khusus jika diperlukan.
+                      </p>
+                    )}
 
                     <button
                       type="button"
@@ -470,8 +732,9 @@ export default function SubjectsPage() {
                       onChange={(e) =>
                         setCustomSubjectName(e.target.value)
                       }
-                      required={isCustomMode}
-                      placeholder="Ketik nama mapel baru..."
+                      required
+                      maxLength={100}
+                      placeholder="Ketik nama mapel..."
                       className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
                     />
 
@@ -489,30 +752,44 @@ export default function SubjectsPage() {
                 )}
               </div>
 
+              <div className="rounded-lg bg-slate-50 px-3 py-2">
+                <p className="text-[10px] leading-4 text-slate-500">
+                  Jenjang penyimpanan:
+                  <strong className="ml-1 text-emerald-700">
+                    {activeTabLevel}
+                  </strong>
+                </p>
+                <p className="mt-0.5 text-[9px] leading-4 text-slate-400">
+                  Mapel yang disimpan di sini akan digunakan pada input penilaian
+                  untuk jenjang yang sama.
+                </p>
+              </div>
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={
+                  loading ||
+                  (!isCustomMode && availableDefaultSubjects.length === 0 &&
+                    !selectedSubjectOption)
+                }
                 className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? (
-                  <SpinnerIcon />
-                ) : (
-                  <PlusIcon />
-                )}
+                {loading ? <SpinnerIcon /> : <PlusIcon />}
 
-                {editingId
-                  ? 'Simpan Perubahan'
-                  : 'Tambah Mata Pelajaran'}
+                {loading
+                  ? 'Menyimpan...'
+                  : editingId
+                    ? 'Simpan Perubahan'
+                    : 'Tambah Mata Pelajaran'}
               </button>
             </form>
           </section>
 
-          {/* ================= LIST ================= */}
+          {/* LIST */}
           <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_3px_16px_rgba(15,23,42,0.035)]">
 
             {/* LIST HEADER */}
             <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-xs font-bold text-slate-800">
@@ -525,7 +802,7 @@ export default function SubjectsPage() {
                 </div>
 
                 <p className="mt-0.5 text-[10px] text-slate-400">
-                  Data mata pelajaran tersedia untuk jenjang {activeTabLevel}.
+                  Hanya menampilkan mapel jenjang {activeTabLevel}.
                 </p>
               </div>
 
@@ -546,9 +823,8 @@ export default function SubjectsPage() {
             </div>
 
             {/* SELECT ALL */}
-            {subjects.length > 0 && (
+            {subjects.length > 0 && !loadingSubjects && (
               <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-2.5">
-
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -559,13 +835,11 @@ export default function SubjectsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (allSelected) {
-                      setSelectedIds([]);
-                    } else {
-                      setSelectedIds(
-                        subjects.map((s) => s.id)
-                      );
-                    }
+                    setSelectedIds(
+                      allSelected
+                        ? []
+                        : subjects.map((subject) => subject.id)
+                    );
                   }}
                   className="text-[10px] font-semibold text-slate-500 hover:text-emerald-700"
                 >
@@ -584,11 +858,10 @@ export default function SubjectsPage() {
 
             {/* CONTENT */}
             <div className="p-3">
-
               {loadingSubjects ? (
                 <LoadingState />
               ) : subjects.length === 0 ? (
-                <EmptyState />
+                <EmptyState level={activeTabLevel} />
               ) : (
                 <div className="overflow-hidden rounded-lg border border-slate-200">
 
@@ -596,18 +869,13 @@ export default function SubjectsPage() {
                   <div className="hidden grid-cols-[40px_minmax(0,1fr)_90px] items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 sm:grid">
                     <span>No</span>
                     <span>Mata Pelajaran</span>
-                    <span className="text-right">
-                      Aksi
-                    </span>
+                    <span className="text-right">Aksi</span>
                   </div>
 
                   {/* ROWS */}
                   <div className="divide-y divide-slate-100">
                     {subjects.map((subject, index) => {
-                      const isChecked =
-                        selectedIds.includes(
-                          subject.id
-                        );
+                      const isChecked = selectedIds.includes(subject.id);
 
                       return (
                         <div
@@ -618,24 +886,17 @@ export default function SubjectsPage() {
                               : 'bg-white hover:bg-slate-50/70'
                           }`}
                         >
-
                           {/* NUMBER + CHECKBOX */}
                           <div className="flex items-center gap-2">
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              onChange={() =>
-                                handleSelectOne(
-                                  subject.id
-                                )
-                              }
+                              onChange={() => handleSelectOne(subject.id)}
                               className="h-3.5 w-3.5 cursor-pointer rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                             />
 
                             <span className="text-[9px] font-bold text-slate-400">
-                              {String(
-                                index + 1
-                              ).padStart(2, '0')}
+                              {String(index + 1).padStart(2, '0')}
                             </span>
                           </div>
 
@@ -650,16 +911,17 @@ export default function SubjectsPage() {
                                 ID {subject.id}
                               </span>
                             </div>
+
+                            <p className="mt-0.5 text-[9px] text-slate-400">
+                              Jenjang {subject.level || activeTabLevel}
+                            </p>
                           </div>
 
                           {/* ACTION */}
                           <div className="flex items-center justify-end gap-1.5 border-t border-slate-100 pt-2 sm:border-0 sm:pt-0">
-
                             <button
                               type="button"
-                              onClick={() =>
-                                handleEdit(subject)
-                              }
+                              onClick={() => handleEdit(subject)}
                               title="Edit"
                               className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-amber-50 hover:text-amber-600"
                             >
@@ -668,11 +930,7 @@ export default function SubjectsPage() {
 
                             <button
                               type="button"
-                              onClick={() =>
-                                handleDelete(
-                                  subject.id
-                                )
-                              }
+                              onClick={() => handleDelete(subject.id)}
                               title="Hapus"
                               className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                             >
@@ -689,7 +947,7 @@ export default function SubjectsPage() {
           </section>
         </div>
 
-        {/* ================= FOOTER ================= */}
+        {/* FOOTER */}
         <footer className="mt-5 flex items-center justify-between border-t border-slate-200/70 pt-3 text-[9px] text-slate-400">
           <span>
             Sistem Akademik · Pondok Pesantren Terpadu Ulil Albab
@@ -715,7 +973,7 @@ function MiniStat({
 }: {
   label: string;
   value: number | string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <div className="flex min-w-[140px] flex-1 items-center gap-2.5 px-4 py-3">
@@ -761,7 +1019,7 @@ function LoadingState() {
    EMPTY
 ===================================================== */
 
-function EmptyState() {
+function EmptyState({ level }: { level: string }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center">
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
@@ -769,12 +1027,11 @@ function EmptyState() {
       </div>
 
       <h3 className="text-xs font-bold text-slate-700">
-        Belum ada mata pelajaran
+        Belum ada mata pelajaran {level}
       </h3>
 
       <p className="mt-1 max-w-xs text-[10px] leading-4 text-slate-400">
-        Tambahkan mata pelajaran menggunakan
-        formulir di sebelah kiri.
+        Tambahkan mata pelajaran menggunakan formulir di sebelah kiri.
       </p>
     </div>
   );
@@ -895,11 +1152,6 @@ function EditIcon() {
       strokeWidth="1.8"
       className="h-4 w-4"
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 20h9"
-      />
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
