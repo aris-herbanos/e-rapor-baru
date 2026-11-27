@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -51,13 +50,7 @@ export default function AssessmentPage() {
 
   const loadData = async () => {
     try {
-      const [
-        classRes,
-        subjectRes,
-        currRes,
-        studentRes,
-        assessRes,
-      ] = await Promise.all([
+      const [classRes, subjectRes, currRes, studentRes, assessRes] = await Promise.all([
         fetch('/api/classes', { cache: 'no-store' }),
         fetch('/api/subjects', { cache: 'no-store' }),
         fetch('/api/curriculum', { cache: 'no-store' }),
@@ -65,13 +58,7 @@ export default function AssessmentPage() {
         fetch('/api/assessment', { cache: 'no-store' }),
       ]);
 
-      const [
-        classData,
-        subjectData,
-        currData,
-        studentData,
-        assessData,
-      ] = await Promise.all([
+      const [classData, subjectData, currData, studentData, assessData] = await Promise.all([
         classRes.json(),
         subjectRes.json(),
         currRes.json(),
@@ -79,35 +66,11 @@ export default function AssessmentPage() {
         assessRes.json(),
       ]);
 
-      if (classRes.ok) {
-        setClasses(
-          Array.isArray(classData) ? classData : classData?.data || []
-        );
-      }
-
-      if (subjectRes.ok) {
-        setSubjects(
-          Array.isArray(subjectData) ? subjectData : subjectData?.data || []
-        );
-      }
-
-      if (currRes.ok) {
-        setCps(
-          Array.isArray(currData) ? currData : currData?.data || []
-        );
-      }
-
-      if (studentRes.ok) {
-        setStudents(
-          Array.isArray(studentData) ? studentData : studentData?.data || []
-        );
-      }
-
-      if (assessRes.ok) {
-        setAssessments(
-          Array.isArray(assessData) ? assessData : assessData?.data || []
-        );
-      }
+      if (classRes.ok) setClasses(Array.isArray(classData) ? classData : classData?.data || []);
+      if (subjectRes.ok) setSubjects(Array.isArray(subjectData) ? subjectData : subjectData?.data || []);
+      if (currRes.ok) setCps(Array.isArray(currData) ? currData : currData?.data || []);
+      if (studentRes.ok) setStudents(Array.isArray(studentData) ? studentData : studentData?.data || []);
+      if (assessRes.ok) setAssessments(Array.isArray(assessData) ? assessData : assessData?.data || []);
     } catch (err) {
       console.error('Gagal memuat data:', err);
     }
@@ -119,294 +82,148 @@ export default function AssessmentPage() {
 
   const uniqueSubjects = useMemo(() => {
     const map = new Map<string, Subject>();
-
     subjects.forEach((subj) => {
       const cleanName = String(subj.name || '').trim().toLowerCase();
-
-      if (cleanName && !map.has(cleanName)) {
-        map.set(cleanName, subj);
-      }
+      if (cleanName && !map.has(cleanName)) map.set(cleanName, subj);
     });
-
-    return Array.from(map.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [subjects]);
 
   const filteredCPs = useMemo(() => {
     if (!selectedSubjectId || !selectedClass) return [];
-
-    const selectedSubj = subjects.find(
-      (s) => String(s.id) === String(selectedSubjectId)
-    );
-
+    const selectedSubj = subjects.find((s) => String(s.id) === String(selectedSubjectId));
     if (!selectedSubj) return [];
-
-    const targetName = String(selectedSubj.name || '')
-      .trim()
-      .toLowerCase();
-
+    const targetName = String(selectedSubj.name || '').trim().toLowerCase();
     const currentGradeNum = extractGradeNumber(selectedClass);
 
     return cps.filter((cp) => {
       const matchSubject =
         String(cp.subjectId) === String(selectedSubjectId) ||
-        (cp.subject?.name &&
-          String(cp.subject.name).trim().toLowerCase() === targetName);
-
+        (cp.subject?.name && String(cp.subject.name).trim().toLowerCase() === targetName);
       if (!matchSubject) return false;
-
       if (cp.grade !== null && cp.grade !== undefined) {
         const isCurrentSMA = currentGradeNum >= 10;
         const isCpSMA = Number(cp.grade) >= 10;
-
-        if (isCurrentSMA !== isCpSMA) {
-          return false;
-        }
+        if (isCurrentSMA !== isCpSMA) return false;
       }
-
       return true;
     });
   }, [cps, subjects, selectedSubjectId, selectedClass]);
 
   const filteredStudents = useMemo(() => {
     if (!selectedClass) return [];
-
-    return students.filter(
-      (s) => s.class_name === selectedClass
-    );
+    return students.filter((s) => s.class_name === selectedClass);
   }, [students, selectedClass]);
 
-  const getGradingPercentage = (
-    targetType: 'TP' | 'STS' | 'SAS',
-    tpId?: number
-  ) => {
+  const getGradingPercentage = (targetType: 'TP' | 'STS' | 'SAS', tpId?: number) => {
     if (filteredStudents.length === 0) return 0;
-
     let gradedCount = 0;
-
     filteredStudents.forEach((student) => {
       let hasScore = false;
-
       if (targetType === 'TP' && tpId) {
         hasScore = assessments.some(
-          (a) =>
-            a.studentId === student.id &&
-            a.tpId === tpId &&
-            a.score !== null &&
-            a.score !== undefined
+          (a) => a.studentId === student.id && a.tpId === tpId && a.score !== null && a.score !== undefined
         );
       } else {
         const subjectId = Number(selectedSubjectId);
-
         hasScore = assessments.some(
           (a) =>
             a.studentId === student.id &&
             Number(a.subjectId) === subjectId &&
-            (a.type === `${targetType}_ORAL` ||
-              a.type === `${targetType}_WRITTEN`) &&
+            (a.type === `${targetType}_ORAL` || a.type === `${targetType}_WRITTEN`) &&
             a.score !== null &&
             a.score !== undefined
         );
       }
-
       if (hasScore) gradedCount++;
     });
-
-    return Math.round(
-      (gradedCount / filteredStudents.length) * 100
-    );
+    return Math.round((gradedCount / filteredStudents.length) * 100);
   };
 
-  const openModal = (
-    targetType: 'TP' | 'STS' | 'SAS',
-    title: string,
-    tpData?: TP
-  ) => {
-    setActiveTarget({
-      targetType,
-      data: tpData,
-      title,
-    });
-
+  const openModal = (targetType: 'TP' | 'STS' | 'SAS', title: string, tpData?: TP) => {
+    setActiveTarget({ targetType, data: tpData, title });
     const initialMap: Record<string, string> = {};
-
     filteredStudents.forEach((student) => {
-      let foundOral;
-      let foundWritten;
-
+      let foundOral, foundWritten;
       if (targetType === 'TP' && tpData) {
         foundOral = assessments.find(
-          (a) =>
-            a.studentId === student.id &&
-            a.tpId === tpData.id &&
-            (a.type === 'ORAL' || a.type === 'TP_ORAL')
+          (a) => a.studentId === student.id && a.tpId === tpData.id && (a.type === 'ORAL' || a.type === 'TP_ORAL')
         );
-
         foundWritten = assessments.find(
-          (a) =>
-            a.studentId === student.id &&
-            a.tpId === tpData.id &&
-            (a.type === 'WRITTEN' || a.type === 'TP_WRITTEN')
+          (a) => a.studentId === student.id && a.tpId === tpData.id && (a.type === 'WRITTEN' || a.type === 'TP_WRITTEN')
         );
       } else {
         const subjectId = Number(selectedSubjectId);
-
         foundOral = assessments.find(
-          (a) =>
-            a.studentId === student.id &&
-            Number(a.subjectId) === subjectId &&
-            a.type === `${targetType}_ORAL`
+          (a) => a.studentId === student.id && Number(a.subjectId) === subjectId && a.type === `${targetType}_ORAL`
         );
-
         foundWritten = assessments.find(
-          (a) =>
-            a.studentId === student.id &&
-            Number(a.subjectId) === subjectId &&
-            a.type === `${targetType}_WRITTEN`
+          (a) => a.studentId === student.id && Number(a.subjectId) === subjectId && a.type === `${targetType}_WRITTEN`
         );
       }
-
-      if (foundOral) {
-        initialMap[`${student.id}-ORAL`] = String(foundOral.score);
-      }
-
-      if (foundWritten) {
-        initialMap[`${student.id}-WRITTEN`] = String(foundWritten.score);
-      }
+      if (foundOral) initialMap[`${student.id}-ORAL`] = String(foundOral.score);
+      if (foundWritten) initialMap[`${student.id}-WRITTEN`] = String(foundWritten.score);
     });
-
     setScoresMap(initialMap);
   };
 
-  const handleScoreChange = (
-    studentId: number,
-    type: 'ORAL' | 'WRITTEN',
-    val: string
-  ) => {
-    if (
-      val === '' ||
-      (Number.isInteger(Number(val)) &&
-        Number(val) >= 0 &&
-        Number(val) <= 100)
-    ) {
-      setScoresMap((prev) => ({
-        ...prev,
-        [`${studentId}-${type}`]: val,
-      }));
+  const handleScoreChange = (studentId: number, type: 'ORAL' | 'WRITTEN', val: string) => {
+    if (val === '' || (Number.isInteger(Number(val)) && Number(val) >= 0 && Number(val) <= 100)) {
+      setScoresMap((prev) => ({ ...prev, [`${studentId}-${type}`]: val }));
     }
   };
 
   const handleSaveAllScores = async () => {
     if (!activeTarget) return;
-
     if (!selectedSubjectId) {
       setMessage('error:Mata pelajaran belum dipilih.');
       return;
     }
-
     setLoading(true);
     setMessage('');
-
     try {
       const subjectId = Number(selectedSubjectId);
-
       for (const student of filteredStudents) {
         const oralVal = scoresMap[`${student.id}-ORAL`];
         const writtenVal = scoresMap[`${student.id}-WRITTEN`];
-
-        const saveOne = async (
-          value: string,
-          component: 'ORAL' | 'WRITTEN'
-        ) => {
+        const saveOne = async (value: string, component: 'ORAL' | 'WRITTEN') => {
           const score = Number(value);
-
-          if (
-            !Number.isInteger(score) ||
-            score < 0 ||
-            score > 100
-          ) {
-            throw new Error(
-              `Nilai ${component.toLowerCase()} untuk ${student.fullname} harus bilangan bulat 0–100.`
-            );
+          if (!Number.isInteger(score) || score < 0 || score > 100) {
+            throw new Error(`Nilai ${component.toLowerCase()} untuk ${student.fullname} harus bilangan bulat 0–100.`);
           }
-
-          const payload: {
-            studentId: number;
-            subjectId: number;
-            score: number;
-            type: string;
-            tpId?: number;
-          } = {
+          const payload: any = {
             studentId: student.id,
             subjectId,
             score,
-            type:
-              activeTarget.targetType === 'TP'
-                ? component
-                : `${activeTarget.targetType}_${component}`,
+            type: activeTarget.targetType === 'TP' ? component : `${activeTarget.targetType}_${component}`,
           };
-
           if (activeTarget.targetType === 'TP') {
-            if (!activeTarget.data?.id) {
-              throw new Error(
-                'Tujuan Pembelajaran belum dipilih.'
-              );
-            }
-
+            if (!activeTarget.data?.id) throw new Error('Tujuan Pembelajaran belum dipilih.');
             payload.tpId = activeTarget.data.id;
           }
-
           const response = await fetch('/api/assessment', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
-
           let result: any = null;
-
-          try {
-            result = await response.json();
-          } catch {
-            // Respons non-JSON ditangani sebagai kegagalan.
-          }
-
+          try { result = await response.json(); } catch {}
           if (!response.ok || result?.success === false) {
-            throw new Error(
-              result?.message ||
-                `Gagal menyimpan nilai ${component.toLowerCase()} untuk ${student.fullname}.`
-            );
+            throw new Error(result?.message || `Gagal menyimpan nilai ${component.toLowerCase()} untuk ${student.fullname}.`);
           }
         };
-
-        if (oralVal !== undefined && oralVal !== '') {
-          await saveOne(oralVal, 'ORAL');
-        }
-
-        if (writtenVal !== undefined && writtenVal !== '') {
-          await saveOne(writtenVal, 'WRITTEN');
-        }
+        if (oralVal !== undefined && oralVal !== '') await saveOne(oralVal, 'ORAL');
+        if (writtenVal !== undefined && writtenVal !== '') await saveOne(writtenVal, 'WRITTEN');
       }
-
       await loadData();
-
-      setMessage(
-        'success:Semua nilai berhasil disimpan dan data asesmen telah diperbarui.'
-      );
-
+      setMessage('success:Semua nilai berhasil disimpan dan data asesmen telah diperbarui.');
       setTimeout(() => {
         setMessage('');
         setActiveTarget(null);
       }, 1500);
     } catch (err: any) {
       console.error('Gagal menyimpan nilai:', err);
-
-      setMessage(
-        `error:${err?.message || 'Terjadi kesalahan saat menyimpan nilai.'}`
-      );
-
+      setMessage(`error:${err?.message || 'Terjadi kesalahan saat menyimpan nilai.'}`);
       await loadData();
     } finally {
       setLoading(false);
@@ -417,278 +234,131 @@ export default function AssessmentPage() {
   const displayMessage = message.replace(/^(success|error):/, '');
 
   return (
-    <main className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">
-          Input Nilai Asesmen
-        </h1>
-
-        <p className="text-sm text-slate-500">
-          Pilih kelas dan mapel, lalu klik tombol input untuk mengisi
-          nilai lisan dan tertulis secara bersamaan.
+        <h1 className="text-2xl font-semibold text-[#1d2327]">Input Nilai Asesmen</h1>
+        <p className="mt-1 text-sm text-[#646970]">
+          Pilih kelas dan mata pelajaran, lalu input nilai lisan dan tertulis.
         </p>
       </div>
 
       {message && (
-        <div
-          className={`p-4 rounded-xl text-xs font-bold ${
-            isSuccess
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              : 'bg-red-50 text-red-700 border border-red-200'
-          }`}
-        >
+        <div className={`rounded border p-3 text-sm ${
+          isSuccess
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        }`}>
           {displayMessage}
         </div>
       )}
 
-      {/* FILTER UTAMA */}
-      <div className="grid sm:grid-cols-2 gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      {/* Filter */}
+      <div className="grid gap-4 rounded-lg border border-[#c3c4c7] bg-white p-5 sm:grid-cols-2">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">
-            1. Pilih Kelas *
-          </label>
-
+          <label className="mb-1 block text-sm font-medium text-[#1d2327]">Kelas</label>
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
-            className="w-full h-11 px-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:border-emerald-500 font-medium"
+            className="w-full rounded border border-[#8c8f94] px-3 py-2 text-sm focus:border-[#2271b1] focus:outline-none focus:ring-1 focus:ring-[#2271b1]"
           >
-            <option value="">-- Pilih Kelas --</option>
-
+            <option value="">— Pilih Kelas —</option>
             {classes.map((cls) => (
-              <option key={cls.id} value={cls.name}>
-                Kelas {cls.name}
-              </option>
+              <option key={cls.id} value={cls.name}>Kelas {cls.name}</option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">
-            2. Pilih Mata Pelajaran *
-          </label>
-
+          <label className="mb-1 block text-sm font-medium text-[#1d2327]">Mata Pelajaran</label>
           <select
             value={selectedSubjectId}
             onChange={(e) => setSelectedSubjectId(e.target.value)}
-            className="w-full h-11 px-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:border-emerald-500 font-medium"
+            className="w-full rounded border border-[#8c8f94] px-3 py-2 text-sm focus:border-[#2271b1] focus:outline-none focus:ring-1 focus:ring-[#2271b1]"
           >
-            <option value="">-- Pilih Mata Pelajaran --</option>
-
+            <option value="">— Pilih Mata Pelajaran —</option>
             {uniqueSubjects.map((subj) => (
-              <option key={subj.id} value={subj.id}>
-                {subj.name}
-              </option>
+              <option key={subj.id} value={subj.id}>{subj.name}</option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* KONTEN UTAMA */}
       {selectedClass && selectedSubjectId ? (
         <div className="space-y-6">
-          {/* KARTU STS & SAS */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            {/* STS CARD */}
-            {(() => {
-              const pct = getGradingPercentage('STS');
-
+          {/* STS & SAS */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(['STS', 'SAS'] as const).map((type) => {
+              const pct = getGradingPercentage(type);
+              const title = type === 'STS' ? 'Sumatif Tengah Semester (STS)' : 'Sumatif Akhir Semester (SAS)';
               return (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+                <div key={type} className="flex items-center justify-between rounded-lg border border-[#c3c4c7] bg-white p-5">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-lg text-xs font-bold">
-                        Ujian Tengah Semester
+                      <span className="rounded bg-[#f0f0f1] px-2 py-0.5 text-xs font-medium text-[#1d2327]">
+                        {type === 'STS' ? 'UTS' : 'UAS'}
                       </span>
-
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          pct === 100
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : pct > 0
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-slate-100 text-slate-500'
-                        }`}
-                      >
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        pct === 100 ? 'bg-emerald-100 text-emerald-700' :
+                        pct > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
                         {pct}% Dinilai
                       </span>
                     </div>
-
-                    <h3 className="text-sm font-bold text-slate-800 mt-2">
-                      Sumatif Tengah Semester (STS)
-                    </h3>
+                    <h3 className="mt-2 font-medium text-[#1d2327]">{title}</h3>
                   </div>
-
                   <button
-                    type="button"
-                    onClick={() =>
-                      openModal(
-                        'STS',
-                        'Sumatif Tengah Semester (STS)'
-                      )
-                    }
-                    className={`px-4 py-2.5 text-white text-xs font-bold rounded-xl transition shadow-sm shrink-0 ${
-                      pct === 100
-                        ? 'bg-emerald-700 hover:bg-emerald-800'
-                        : 'bg-blue-700 hover:bg-blue-800'
-                    }`}
+                    onClick={() => openModal(type, title)}
+                    className="rounded bg-[#2271b1] px-4 py-2 text-sm font-medium text-white hover:bg-[#135e96]"
                   >
-                    ✏️ Input Nilai
+                    Input Nilai
                   </button>
                 </div>
               );
-            })()}
-
-            {/* SAS CARD */}
-            {(() => {
-              const pct = getGradingPercentage('SAS');
-
-              return (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="bg-purple-100 text-purple-800 px-2.5 py-1 rounded-lg text-xs font-bold">
-                        Ujian Akhir Semester
-                      </span>
-
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          pct === 100
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : pct > 0
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-slate-100 text-slate-500'
-                        }`}
-                      >
-                        {pct}% Dinilai
-                      </span>
-                    </div>
-
-                    <h3 className="text-sm font-bold text-slate-800 mt-2">
-                      Sumatif Akhir Semester (SAS)
-                    </h3>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openModal(
-                        'SAS',
-                        'Sumatif Akhir Semester (SAS)'
-                      )
-                    }
-                    className={`px-4 py-2.5 text-white text-xs font-bold rounded-xl transition shadow-sm shrink-0 ${
-                      pct === 100
-                        ? 'bg-emerald-700 hover:bg-emerald-800'
-                        : 'bg-purple-700 hover:bg-purple-800'
-                    }`}
-                  >
-                    ✏️ Input Nilai
-                  </button>
-                </div>
-              );
-            })()}
+            })}
           </div>
 
-          <hr className="border-slate-200 my-2" />
-
-          {/* DAFTAR CP & TP */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-              Capaian & Tujuan Pembelajaran (Sumatif TP)
-            </h2>
-
+          {/* CP & TP */}
+          <div>
+            <h2 className="mb-4 text-lg font-semibold text-[#1d2327]">Capaian & Tujuan Pembelajaran</h2>
             {filteredCPs.length === 0 ? (
-              <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 text-xs text-slate-400">
-                Belum ada struktur kurikulum untuk tingkat kelas ini
-                pada mata pelajaran tersebut.
+              <div className="rounded-lg border border-dashed border-[#c3c4c7] bg-white py-12 text-center text-sm text-[#646970]">
+                Belum ada struktur kurikulum untuk kelas dan mata pelajaran ini.
               </div>
             ) : (
               filteredCPs.map((cp, cpIdx) => (
-                <div
-                  key={cp.id}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-5 space-y-4"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg text-xs font-bold">
-                        Capaian Pembelajaran {cpIdx + 1}
-                      </span>
-
-                      {cp.grade && (
-                        <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">
-                          Kelas {cp.grade}
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="text-sm font-semibold text-slate-800 mt-2">
-                      {cp.description}
-                    </p>
+                <div key={cp.id} className="mb-4 rounded-lg border border-[#c3c4c7] bg-white p-5">
+                  <div className="mb-3">
+                    <span className="rounded bg-[#f0f0f1] px-2 py-0.5 text-xs font-medium">
+                      Capaian Pembelajaran {cpIdx + 1}
+                    </span>
+                    <p className="mt-2 text-sm font-medium text-[#1d2327]">{cp.description}</p>
                   </div>
-
-                  <div className="pl-4 border-l-2 border-amber-400 space-y-3">
-                    {cp.tps?.length === 0 ? (
-                      <div className="text-xs text-slate-400 italic">
-                        Belum ada Tujuan Pembelajaran untuk capaian ini.
-                      </div>
-                    ) : (
-                      cp.tps.map((tp, tpIdx) => {
-                        const pct = getGradingPercentage(
-                          'TP',
-                          tp.id
-                        );
-
-                        return (
-                          <div
-                            key={tp.id}
-                            className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-                          >
-                            <div className="flex-1 space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">
-                                  Tujuan {tpIdx + 1}
-                                </span>
-
-                                <span
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                    pct === 100
-                                      ? 'bg-emerald-100 text-emerald-800'
-                                      : pct > 0
-                                        ? 'bg-amber-100 text-amber-800'
-                                        : 'bg-slate-200 text-slate-600'
-                                  }`}
-                                >
-                                  {pct}% Dinilai
-                                </span>
-                              </div>
-
-                              <p className="text-xs text-slate-700 font-medium">
-                                {tp.description}
-                              </p>
+                  <div className="space-y-3 border-l-2 border-[#c3c4c7] pl-4">
+                    {cp.tps?.map((tp, tpIdx) => {
+                      const pct = getGradingPercentage('TP', tp.id);
+                      return (
+                        <div key={tp.id} className="flex items-center justify-between rounded border border-[#c3c4c7] bg-[#f6f7f7] p-4">
+                          <div>
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="font-medium">Tujuan {tpIdx + 1}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] ${
+                                pct === 100 ? 'bg-emerald-100 text-emerald-700' :
+                                pct > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+                              }`}>
+                                {pct}%
+                              </span>
                             </div>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openModal(
-                                  'TP',
-                                  `Capaian ${cpIdx + 1} — Tujuan ${tpIdx + 1}: ${tp.description}`,
-                                  tp
-                                )
-                              }
-                              className={`px-4 py-2 text-white text-xs font-bold rounded-xl transition shadow-sm shrink-0 ${
-                                pct === 100
-                                  ? 'bg-emerald-700 hover:bg-emerald-800'
-                                  : 'bg-[#064e3b] hover:bg-[#053d2e]'
-                              }`}
-                            >
-                              ✏️ Input Nilai
-                            </button>
+                            <p className="mt-1 text-sm text-[#1d2327]">{tp.description}</p>
                           </div>
-                        );
-                      })
-                    )}
+                          <button
+                            onClick={() => openModal('TP', `CP ${cpIdx + 1} — TP ${tpIdx + 1}: ${tp.description}`, tp)}
+                            className="rounded bg-[#2271b1] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#135e96]"
+                          >
+                            Input
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))
@@ -696,109 +366,67 @@ export default function AssessmentPage() {
           </div>
         </div>
       ) : (
-        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400 text-xs">
-          ⚠️ Silakan pilih <strong>Kelas</strong> dan{' '}
-          <strong>Mata Pelajaran</strong> di atas untuk menampilkan
-          lembar asesmen.
+        <div className="rounded-lg border border-dashed border-[#c3c4c7] bg-white py-16 text-center text-sm text-[#646970]">
+          Silakan pilih <strong>Kelas</strong> dan <strong>Mata Pelajaran</strong> untuk menampilkan asesmen.
         </div>
       )}
 
-      {/* MODAL POP-UP */}
+      {/* Modal */}
       {activeTarget && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Modal Header */}
-            <div className="bg-[#064e3b] text-white px-5 py-3.5 flex justify-between items-center gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-[#c3c4c7] bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-[#c3c4c7] bg-[#1d2327] px-5 py-3 text-white">
               <div>
-                <span className="text-[10px] uppercase tracking-widest text-emerald-200 font-bold">
-                  Input Nilai Kelas {selectedClass} (Lisan & Tertulis)
-                </span>
-
-                <h3 className="text-xs font-bold mt-0.5">
-                  {activeTarget.title}
-                </h3>
+                <div className="text-xs uppercase tracking-wider text-gray-300">Input Nilai</div>
+                <h3 className="text-sm font-medium">{activeTarget.title}</h3>
               </div>
-
               <button
-                type="button"
-                disabled={loading}
                 onClick={() => setActiveTarget(null)}
-                className="text-white/80 hover:text-white text-xs font-bold bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition shrink-0"
+                disabled={loading}
+                className="rounded px-2 py-1 text-sm hover:bg-white/10"
               >
-                ✕ Tutup
+                Tutup
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+            <div className="flex-1 overflow-y-auto p-5">
               {filteredStudents.length === 0 ? (
-                <div className="text-center py-8 text-xs text-slate-400">
-                  Tidak ada santri di kelas ini.
-                </div>
+                <div className="py-10 text-center text-sm text-[#646970]">Tidak ada santri di kelas ini.</div>
               ) : (
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 font-bold text-slate-600">
-                      <th className="p-3 w-12 text-center">No</th>
+                    <tr className="border-b border-[#c3c4c7] bg-[#f6f7f7] text-left text-[#1d2327]">
+                      <th className="p-3 w-12">No</th>
                       <th className="p-3">Nama Santri</th>
-                      <th className="p-3 w-36 text-center text-emerald-800">
-                        🗣️ Ujian Lisan / Praktik
-                      </th>
-                      <th className="p-3 w-36 text-center text-blue-800">
-                        ✍️ Ujian Tertulis
-                      </th>
+                      <th className="p-3 text-center">Lisan / Praktik</th>
+                      <th className="p-3 text-center">Tertulis</th>
                     </tr>
                   </thead>
-
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody>
                     {filteredStudents.map((s, idx) => (
-                      <tr
-                        key={s.id}
-                        className="hover:bg-slate-50/50"
-                      >
-                        <td className="p-3 text-center text-slate-400">
-                          {idx + 1}
-                        </td>
-
-                        <td className="p-3 font-semibold text-slate-800">
-                          {s.fullname}
-                        </td>
-
+                      <tr key={s.id} className="border-b border-[#c3c4c7] hover:bg-[#f6f7f7]">
+                        <td className="p-3 text-[#646970]">{idx + 1}</td>
+                        <td className="p-3 font-medium">{s.fullname}</td>
                         <td className="p-3 text-center">
                           <input
                             type="number"
                             min="0"
                             max="100"
-                            step="1"
                             value={scoresMap[`${s.id}-ORAL`] ?? ''}
-                            onChange={(e) =>
-                              handleScoreChange(
-                                s.id,
-                                'ORAL',
-                                e.target.value
-                              )
-                            }
+                            onChange={(e) => handleScoreChange(s.id, 'ORAL', e.target.value)}
+                            className="w-24 rounded border border-[#8c8f94] px-2 py-1 text-center text-sm focus:border-[#2271b1] focus:outline-none"
                             placeholder="0-100"
-                            className="h-9 w-28 text-center rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:border-emerald-500 bg-white shadow-inner"
                           />
                         </td>
-
                         <td className="p-3 text-center">
                           <input
                             type="number"
                             min="0"
                             max="100"
-                            step="1"
                             value={scoresMap[`${s.id}-WRITTEN`] ?? ''}
-                            onChange={(e) =>
-                              handleScoreChange(
-                                s.id,
-                                'WRITTEN',
-                                e.target.value
-                              )
-                            }
+                            onChange={(e) => handleScoreChange(s.id, 'WRITTEN', e.target.value)}
+                            className="w-24 rounded border border-[#8c8f94] px-2 py-1 text-center text-sm focus:border-[#2271b1] focus:outline-none"
                             placeholder="0-100"
-                            className="h-9 w-28 text-center rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:border-blue-500 bg-white shadow-inner"
                           />
                         </td>
                       </tr>
@@ -808,29 +436,25 @@ export default function AssessmentPage() {
               )}
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+            <div className="flex justify-end gap-3 border-t border-[#c3c4c7] bg-[#f6f7f7] px-5 py-4">
               <button
-                type="button"
                 onClick={() => setActiveTarget(null)}
                 disabled={loading}
-                className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition"
+                className="rounded border border-[#8c8f94] px-4 py-2 text-sm hover:bg-white"
               >
                 Batal
               </button>
-
               <button
-                type="button"
                 onClick={handleSaveAllScores}
                 disabled={loading}
-                className="px-6 py-2.5 bg-[#064e3b] hover:bg-[#053d2e] text-white text-xs font-bold rounded-xl transition shadow-md disabled:opacity-50"
+                className="rounded bg-[#2271b1] px-5 py-2 text-sm font-medium text-white hover:bg-[#135e96] disabled:opacity-50"
               >
-                {loading ? 'Menyimpan...' : 'Simpan'}
+                {loading ? 'Menyimpan...' : 'Simpan Nilai'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
