@@ -155,6 +155,7 @@ export async function GET(
           include: {
             assessments: {
               include: {
+                subject: true,
                 tp: {
                   include: {
                     cp: {
@@ -269,9 +270,8 @@ export async function GET(
       student.assessments.forEach(
         (assessment: any) => {
           const subjectName =
-            assessment.tp?.cp?.subject
-              ?.name ||
             assessment.subject?.name ||
+            assessment.tp?.cp?.subject?.name ||
             'Mata Pelajaran Umum';
 
           const type = String(

@@ -1,139 +1,282 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const assessmentInclude = {
+  student: true,
+  subject: true,
+  tp: {
+    include: {
+      cp: {
+        include: {
+          subject: true,
+        },
+      },
+    },
+  },
+};
+
+const allowedTypes = [
+  'ORAL',
+  'WRITTEN',
+  'STS_ORAL',
+  'STS_WRITTEN',
+  'SAS_ORAL',
+  'SAS_WRITTEN',
+] as const;
+
+type AssessmentType = (typeof allowedTypes)[number];
+
+function jsonError(message: string, status: number) {
+  return NextResponse.json({ success: false, message }, { status });
+}
+
+function isPrismaErrorCode(error: unknown, code: string) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: string }).code === code
+  );
+}
+
 /* =========================================================
-   GET: MENGAMBIL SELURUH DATA ASESMEN
+   GET: AMBIL SELURUH ASESMEN
 ========================================================= */
 export async function GET() {
   try {
     const assessments = await prisma.assessment.findMany({
-      include: {
-        student: true,
-        tp: {
-          include: {
-            cp: {
-              include: {
-                subject: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        id: 'desc',
-      },
+      include: assessmentInclude,
+      orderBy: { id: 'desc' },
     });
 
-    return NextResponse.json(assessments, { status: 200 });
+    return NextResponse.json(assessments, {
+      status: 200,
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
+    });
   } catch (error) {
-    console.error('Error fetching assessments:', error);
-    return NextResponse.json(
-      { message: 'Gagal memuat data asesmen.' },
-      { status: 500 }
-    );
+    console.error('GET /api/assessment:', error);
+    return jsonError('Gagal memuat data asesmen.', 500);
   }
 }
 
 /* =========================================================
-   POST: MENYIMPAN ATAU MEMPERBARUI NILAI ASESMEN (Mendukung TP, STS, SAS)
+   POST: SIMPAN / PERBARUI NILAI
+   Semua nilai baru menyimpan subjectId.
+   TP: tpId wajib.
+   STS/SAS: tpId null, subjectId wajib.
 ========================================================= */
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const studentId = Number(body?.studentId);
-    const tpId = body?.tpId ? Number(body?.tpId) : null;
-    const score = Number(body?.score);
-    const type = String(body?.type || '').trim(); // Contoh: 'ORAL', 'WRITTEN', 'STS_ORAL', 'STS_WRITTEN', 'SAS_ORAL', 'SAS_WRITTEN'
+  let body: Record<string, unknown>;
 
-    if (!studentId || Number.isNaN(score) || !type) {
-      return NextResponse.json(
-        { message: 'Data santri, nilai, dan jenis ujian wajib diisi dengan benar!' },
-        { status: 400 }
-      );
+  try {
+    const parsed: unknown = await request.json();
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return jsonError('Format data tidak valid.', 400);
     }
 
-    // Cari apakah nilai untuk siswa, tipe ujian, dan tpId ini sudah pernah ada
-    const existingAssessment = await prisma.assessment.findFirst({
-      where: {
-        studentId,
-        tpId: tpId ?? null,
-        type,
-      },
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return jsonError('Format JSON tidak valid.', 400);
+  }
+
+  const studentId = Number(body.studentId);
+  const subjectId = Number(body.subjectId);
+  const score = Number(body.score);
+  const type = String(body.type ?? '').trim().toUpperCase();
+
+  const tpId =
+    body.tpId === null || body.tpId === undefined || body.tpId === ''
+      ? null
+      : Number(body.tpId);
+
+  if (!Number.isSafeInteger(studentId) || studentId <= 0) {
+    return jsonError('ID santri tidak valid.', 400);
+  }
+
+  if (!Number.isSafeInteger(subjectId) || subjectId <= 0) {
+    return jsonError('Mata pelajaran wajib dipilih.', 400);
+  }
+
+  if (
+    body.score === null ||
+    body.score === undefined ||
+    body.score === '' ||
+    !Number.isInteger(score) ||
+    score < 0 ||
+    score > 100
+  ) {
+    return jsonError('Nilai harus berupa bilangan bulat antara 0 sampai 100.', 400);
+  }
+
+  if (!allowedTypes.includes(type as AssessmentType)) {
+    return jsonError('Jenis asesmen tidak valid.', 400);
+  }
+
+  if (tpId !== null && (!Number.isSafeInteger(tpId) || tpId <= 0)) {
+    return jsonError('ID tujuan pembelajaran tidak valid.', 400);
+  }
+
+  const isTP = type === 'ORAL' || type === 'WRITTEN';
+
+  if (isTP && tpId === null) {
+    return jsonError('Tujuan Pembelajaran wajib dipilih untuk nilai TP.', 400);
+  }
+
+  if (!isTP && tpId !== null) {
+    return jsonError('STS dan SAS tidak menggunakan TP.', 400);
+  }
+
+  try {
+    // Pastikan mata pelajaran benar-benar ada.
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+      select: { id: true },
     });
 
-    let assessment;
-
-    if (existingAssessment) {
-      // Jika sudah ada, update nilainya
-      assessment = await prisma.assessment.update({
-        where: { id: existingAssessment.id },
-        data: { score },
-        include: { 
-          student: true, 
-          tp: { include: { cp: { include: { subject: true } } } },
-        },
-      });
-    } else {
-      // Jika belum ada, buat baru
-      const createData: any = {
-        studentId,
-        score,
-        type,
-      };
-      if (tpId) {
-        createData.tpId = tpId;
-      }
-
-      assessment = await prisma.assessment.create({
-        data: createData,
-        include: { 
-          student: true, 
-          tp: { include: { cp: { include: { subject: true } } } },
-        },
-      });
+    if (!subject) {
+      return jsonError('Mata pelajaran tidak ditemukan.', 404);
     }
 
+    // Untuk nilai TP, pastikan TP yang dipilih memang milik mapel tersebut.
+    if (isTP && tpId !== null) {
+      const tp = await prisma.tP.findUnique({
+        where: { id: tpId },
+        select: {
+          id: true,
+          cp: { select: { subjectId: true } },
+        },
+      });
+
+      if (!tp || tp.cp.subjectId !== subjectId) {
+        return jsonError(
+          'Tujuan Pembelajaran tidak sesuai dengan mata pelajaran yang dipilih.',
+          400
+        );
+      }
+    }
+
+    // TP dicari berdasarkan studentId + tpId + type.
+    // STS/SAS dicari berdasarkan studentId + subjectId + type.
+    const where = isTP
+      ? { studentId, tpId, type }
+      : { studentId, subjectId, tpId: null, type };
+
+    const existing = await prisma.assessment.findFirst({
+      where,
+      select: { id: true },
+    });
+
+    const data = {
+      studentId,
+      subjectId,
+      tpId,
+      score,
+      type,
+    };
+
+    const assessment = existing
+      ? await prisma.assessment.update({
+          where: { id: existing.id },
+          data,
+          include: assessmentInclude,
+        })
+      : await prisma.assessment.create({
+          data,
+          include: assessmentInclude,
+        });
+
     return NextResponse.json(
-      { message: 'Nilai asesmen berhasil disimpan', assessment },
-      { status: 201 }
+      {
+        success: true,
+        message: existing
+          ? 'Nilai asesmen berhasil diperbarui.'
+          : 'Nilai asesmen berhasil disimpan.',
+        assessment,
+      },
+      { status: existing ? 200 : 201 }
     );
   } catch (error) {
-    console.error('Error saving assessment:', error);
-    return NextResponse.json(
-      { message: 'Gagal menyimpan nilai asesmen.' },
-      { status: 500 }
-    );
+    // Jika dua request STS/SAS bersamaan membuat baris yang sama,
+    // indeks unik parsial akan menolak duplikasi. Ambil baris lalu update.
+    if (isPrismaErrorCode(error, 'P2002')) {
+      try {
+        const isTP = type === 'ORAL' || type === 'WRITTEN';
+        const existing = await prisma.assessment.findFirst({
+          where: isTP
+            ? { studentId, tpId, type }
+            : { studentId, subjectId, tpId: null, type },
+          select: { id: true },
+        });
+
+        if (existing) {
+          const assessment = await prisma.assessment.update({
+            where: { id: existing.id },
+            data: { subjectId, tpId, score, type },
+            include: assessmentInclude,
+          });
+
+          return NextResponse.json({
+            success: true,
+            message: 'Nilai asesmen berhasil diperbarui.',
+            assessment,
+          });
+        }
+      } catch (retryError) {
+        console.error('POST /api/assessment retry:', retryError);
+      }
+    }
+
+    console.error('POST /api/assessment:', error);
+
+    if (isPrismaErrorCode(error, 'P2003')) {
+      return jsonError('Santri, mata pelajaran, atau TP tidak ditemukan.', 400);
+    }
+
+    return jsonError('Gagal menyimpan nilai asesmen.', 500);
   }
 }
 
 /* =========================================================
-   DELETE: MENGHAPUS NILAI ASESMEN
+   DELETE: HAPUS NILAI ASESMEN
 ========================================================= */
 export async function DELETE(request: Request) {
-  try {
-    const body = await request.json();
-    const id = Number(body?.id);
+  let body: Record<string, unknown>;
 
-    if (!id) {
-      return NextResponse.json(
-        { message: 'ID Asesmen wajib disertakan!' },
-        { status: 400 }
-      );
+  try {
+    const parsed: unknown = await request.json();
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return jsonError('Format data tidak valid.', 400);
     }
 
-    await prisma.assessment.delete({
-      where: { id },
-    });
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return jsonError('Format JSON tidak valid.', 400);
+  }
 
-    return NextResponse.json(
-      { message: 'Nilai asesmen berhasil dihapus.' },
-      { status: 200 }
-    );
+  const id = Number(body.id);
+
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return jsonError('ID asesmen tidak valid.', 400);
+  }
+
+  try {
+    await prisma.assessment.delete({ where: { id } });
+    return NextResponse.json({
+      success: true,
+      message: 'Nilai asesmen berhasil dihapus.',
+    });
   } catch (error) {
-    console.error('Error deleting assessment:', error);
-    return NextResponse.json(
-      { message: 'Gagal menghapus nilai asesmen.' },
-      { status: 500 }
-    );
+    console.error('DELETE /api/assessment:', error);
+
+    if (isPrismaErrorCode(error, 'P2025')) {
+      return jsonError('Data asesmen tidak ditemukan.', 404);
+    }
+
+    return jsonError('Gagal menghapus nilai asesmen.', 500);
   }
 }

@@ -7,7 +7,7 @@ type Subject = { id: number; name: string };
 type TP = { id: number; code: string; description: string };
 type CP = { id: number; code: string; description: string; subjectId: number; subject?: { name: string }; grade?: number; tps: TP[] };
 type Student = { id: number; fullname: string; class_name: string };
-type Assessment = { studentId: number; tpId?: number; score: number; type: string };
+type Assessment = { studentId: number; tpId?: number | null; subjectId?: number | null; score: number; type: string };
 
 // Helper untuk mengekstrak angka tingkat kelas dari string nama kelas (Contoh: "Kelas 7A" -> 7, "10 IPA" -> 10)
 function extractGradeNumber(className: string): number {
@@ -121,8 +121,14 @@ export default function AssessmentPage() {
           (a) => a.studentId === student.id && a.tpId === tpId && (a.score !== null && a.score !== undefined)
         );
       } else {
+        const subjectId = Number(selectedSubjectId);
         hasScore = assessments.some(
-          (a) => a.studentId === student.id && (a.type === targetType || a.type === `${targetType}_ORAL` || a.type === `${targetType}_WRITTEN`) && (a.score !== null && a.score !== undefined)
+          (a) =>
+            a.studentId === student.id &&
+            Number(a.subjectId) === subjectId &&
+            (a.type === `${targetType}_ORAL` || a.type === `${targetType}_WRITTEN`) &&
+            a.score !== null &&
+            a.score !== undefined
         );
       }
       if (hasScore) gradedCount++;
@@ -142,8 +148,19 @@ export default function AssessmentPage() {
         foundOral = assessments.find((a) => a.studentId === student.id && a.tpId === tpData.id && (a.type === 'ORAL' || a.type === 'TP_ORAL'));
         foundWritten = assessments.find((a) => a.studentId === student.id && a.tpId === tpData.id && (a.type === 'WRITTEN' || a.type === 'TP_WRITTEN'));
       } else {
-        foundOral = assessments.find((a) => a.studentId === student.id && (a.type === targetType || a.type === `${targetType}_ORAL`));
-        foundWritten = assessments.find((a) => a.studentId === student.id && a.type === `${targetType}_WRITTEN`);
+        const subjectId = Number(selectedSubjectId);
+        foundOral = assessments.find(
+          (a) =>
+            a.studentId === student.id &&
+            Number(a.subjectId) === subjectId &&
+            a.type === `${targetType}_ORAL`
+        );
+        foundWritten = assessments.find(
+          (a) =>
+            a.studentId === student.id &&
+            Number(a.subjectId) === subjectId &&
+            a.type === `${targetType}_WRITTEN`
+        );
       }
 
       if (foundOral) initialMap[`${student.id}-ORAL`] = String(foundOral.score);
@@ -154,60 +171,102 @@ export default function AssessmentPage() {
   };
 
   const handleScoreChange = (studentId: number, type: 'ORAL' | 'WRITTEN', val: string) => {
-    if (val === '' || (Number(val) >= 0 && Number(val) <= 100)) {
+    if (
+      val === '' ||
+      (Number.isInteger(Number(val)) && Number(val) >= 0 && Number(val) <= 100)
+    ) {
       setScoresMap((prev) => ({ ...prev, [`${studentId}-${type}`]: val }));
     }
   };
 
   const handleSaveAllScores = async () => {
     if (!activeTarget) return;
+
+    if (!selectedSubjectId) {
+      setMessage('error:Mata pelajaran belum dipilih.');
+      return;
+    }
+
     setLoading(true);
     setMessage('');
 
     try {
+      const subjectId = Number(selectedSubjectId);
+
       for (const student of filteredStudents) {
         const oralVal = scoresMap[`${student.id}-ORAL`];
         const writtenVal = scoresMap[`${student.id}-WRITTEN`];
 
-        if (oralVal !== undefined && oralVal !== '') {
-          const payloadOral: any = {
-            studentId: student.id,
-            score: Number(oralVal),
-            type: activeTarget.targetType === 'TP' ? 'ORAL' : `${activeTarget.targetType}_ORAL`,
-          };
-          if (activeTarget.targetType === 'TP' && activeTarget.data) payloadOral.tpId = activeTarget.data.id;
+        const saveOne = async (value: string, component: 'ORAL' | 'WRITTEN') => {
+          const score = Number(value);
 
-          await fetch('/api/assessment', {
+          if (!Number.isInteger(score) || score < 0 || score > 100) {
+            throw new Error(`Nilai ${component.toLowerCase()} untuk ${student.fullname} harus bilangan bulat 0–100.`);
+          }
+
+          const payload: {
+            studentId: number;
+            subjectId: number;
+            score: number;
+            type: string;
+            tpId?: number;
+          } = {
+            studentId: student.id,
+            subjectId,
+            score,
+            type:
+              activeTarget.targetType === 'TP'
+                ? component
+                : `${activeTarget.targetType}_${component}`,
+          };
+
+          if (activeTarget.targetType === 'TP') {
+            if (!activeTarget.data?.id) {
+              throw new Error('Tujuan Pembelajaran belum dipilih.');
+            }
+            payload.tpId = activeTarget.data.id;
+          }
+
+          const response = await fetch('/api/assessment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payloadOral),
+            body: JSON.stringify(payload),
           });
+
+          let result: any = null;
+          try {
+            result = await response.json();
+          } catch {
+            // Respons non-JSON akan ditangani sebagai kegagalan di bawah.
+          }
+
+          if (!response.ok || result?.success === false) {
+            throw new Error(
+              result?.message ||
+              `Gagal menyimpan nilai ${component.toLowerCase()} untuk ${student.fullname}.`
+            );
+          }
+        };
+
+        if (oralVal !== undefined && oralVal !== '') {
+          await saveOne(oralVal, 'ORAL');
         }
 
         if (writtenVal !== undefined && writtenVal !== '') {
-          const payloadWritten: any = {
-            studentId: student.id,
-            score: Number(writtenVal),
-            type: activeTarget.targetType === 'TP' ? 'WRITTEN' : `${activeTarget.targetType}_WRITTEN`,
-          };
-          if (activeTarget.targetType === 'TP' && activeTarget.data) payloadWritten.tpId = activeTarget.data.id;
-
-          await fetch('/api/assessment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payloadWritten),
-          });
+          await saveOne(writtenVal, 'WRITTEN');
         }
       }
 
-      setMessage('success:Semua nilai kelas berhasil disimpan.');
       await loadData();
+      setMessage('success:Semua nilai berhasil disimpan dan data asesmen telah diperbarui.');
       setTimeout(() => {
         setMessage('');
         setActiveTarget(null);
       }, 1500);
     } catch (err: any) {
-      setMessage(`error:${err.message}`);
+      console.error('Gagal menyimpan nilai:', err);
+      setMessage(`error:${err?.message || 'Terjadi kesalahan saat menyimpan nilai.'}`);
+      await loadData();
     } finally {
       setLoading(false);
     }
@@ -396,6 +455,7 @@ export default function AssessmentPage() {
                 <h3 className="text-xs font-bold mt-0.5">{activeTarget.title}</h3>
               </div>
               <button 
+                disabled={loading}
                 onClick={() => setActiveTarget(null)}
                 className="text-white/80 hover:text-white text-xs font-bold bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition shrink-0"
               >
@@ -427,6 +487,8 @@ export default function AssessmentPage() {
                             type="number"
                             min="0"
                             max="100"
+                            step="1"
+                            step="1"
                             value={scoresMap[`${s.id}-ORAL`] ?? ''}
                             onChange={(e) => handleScoreChange(s.id, 'ORAL', e.target.value)}
                             placeholder="0-100"
@@ -438,6 +500,8 @@ export default function AssessmentPage() {
                             type="number"
                             min="0"
                             max="100"
+                            step="1"
+                            step="1"
                             value={scoresMap[`${s.id}-WRITTEN`] ?? ''}
                             onChange={(e) => handleScoreChange(s.id, 'WRITTEN', e.target.value)}
                             placeholder="0-100"
@@ -456,6 +520,7 @@ export default function AssessmentPage() {
               <button
                 type="button"
                 onClick={() => setActiveTarget(null)}
+                disabled={loading}
                 className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition"
               >
                 Batal
