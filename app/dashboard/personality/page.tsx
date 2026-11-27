@@ -42,6 +42,14 @@ type PersonalityRecord = {
   indhiplat?: string | null;
 };
 
+type ApiStudent = {
+  id: number | string;
+  fullname?: string | null;
+  nisn?: string | null;
+  gender?: string | null;
+  class_name?: string | null;
+};
+
 const predikats = [
   '-',
   'Mumtaz (ممتاز)',
@@ -84,6 +92,84 @@ const defaultPersonality: PersonalityValue = {
   indhiplat: '-',
 };
 
+function getArrayData<T>(
+  data: unknown,
+  nestedKeys: string[],
+): T[] {
+  if (Array.isArray(data)) {
+    return data as T[];
+  }
+
+  if (
+    data &&
+    typeof data === 'object'
+  ) {
+    const response = data as Record<string, unknown>;
+
+    for (const key of nestedKeys) {
+      if (Array.isArray(response[key])) {
+        return response[key] as T[];
+      }
+    }
+  }
+
+  return [];
+}
+
+function normalizeClassroom(
+  item: unknown,
+  index: number,
+): ClassRoom | null {
+  if (
+    !item ||
+    typeof item !== 'object'
+  ) {
+    return null;
+  }
+
+  const classroom = item as Record<string, unknown>;
+  const name = String(classroom.name ?? '').trim();
+
+  if (!name) {
+    return null;
+  }
+
+  return {
+    id: Number(classroom.id) || index + 1,
+    name,
+    level: String(classroom.level ?? ''),
+    grade: Number(classroom.grade) || undefined,
+  };
+}
+
+function normalizeStudent(
+  item: ApiStudent,
+): Student | null {
+  const id = Number(item.id);
+  const fullname = String(item.fullname ?? '').trim();
+  const className = String(item.class_name ?? '').trim();
+
+  if (
+    !Number.isInteger(id) ||
+    id <= 0 ||
+    !fullname
+  ) {
+    return null;
+  }
+
+  return {
+    id,
+    fullname,
+    nisn: item.nisn
+      ? String(item.nisn)
+      : undefined,
+    gender: item.gender
+      ? String(item.gender)
+      : undefined,
+    class_name: className,
+  };
+}
+
 export default function PersonalityPage() {
   const [classes, setClasses] = useState<ClassRoom[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -108,6 +194,7 @@ export default function PersonalityPage() {
     const loadClasses = async () => {
       try {
         setLoadingClasses(true);
+        setMessage('');
 
         const res = await fetch('/api/classes', {
           cache: 'no-store',
@@ -117,11 +204,20 @@ export default function PersonalityPage() {
           throw new Error('Gagal mengambil data kelas.');
         }
 
-        const data = await res.json();
+        const data: unknown = await res.json();
 
-        let classList: ClassRoom[] = Array.isArray(data)
-          ? data
-          : data?.data || [];
+        const rawClasses = getArrayData<unknown>(
+          data,
+          ['data', 'classes'],
+        );
+
+        let classList: ClassRoom[] = rawClasses
+          .map((item, index) =>
+            normalizeClassroom(item, index),
+          )
+          .filter(
+            (item): item is ClassRoom => item !== null,
+          );
 
         // FALLBACK: AMBIL KELAS DARI DATA SANTRI
 
@@ -134,32 +230,41 @@ export default function PersonalityPage() {
             throw new Error('Gagal mengambil data santri.');
           }
 
-          const studentData = await studentRes.json();
+          const studentData: unknown = await studentRes.json();
 
-          const studentsArr = Array.isArray(studentData)
-            ? studentData
-            : studentData?.students || studentData?.data || [];
-
-          const uniqueClasses = Array.from(
-            new Set(
-              studentsArr
-                .map((student: Student) =>
-                  String(student.class_name ?? '').trim(),
-                )
-                .filter(Boolean),
-            ),
-          ).sort((a, b) =>
-            a.localeCompare(b, undefined, {
-              numeric: true,
-            }),
+          const studentsArr = getArrayData<ApiStudent>(
+            studentData,
+            ['students', 'data'],
           );
 
-          classList = uniqueClasses.map((className, index) => ({
-            id: index + 1,
-            name: className,
-            level: '-',
-            grade: 1,
-          }));
+          // Tentukan nama kelas dengan tipe string secara eksplisit.
+          const classNames: string[] = Array.from(
+            new Set<string>(
+              studentsArr
+                .map((student: ApiStudent): string =>
+                  String(student.class_name ?? '').trim(),
+                )
+                .filter(
+                  (name: string): boolean => name.length > 0,
+                ),
+            ),
+          ).sort(
+            (a: string, b: string) =>
+              a.localeCompare(b, 'id', {
+                numeric: true,
+                sensitivity: 'base',
+              }),
+          );
+
+          // Konversi daftar nama menjadi format ClassRoom.
+          classList = classNames.map(
+            (className: string, index: number): ClassRoom => ({
+              id: index + 1,
+              name: className,
+              level: '-',
+              grade: 1,
+            }),
+          );
         }
 
         if (active) {
@@ -169,6 +274,8 @@ export default function PersonalityPage() {
         console.error('Error loading classes:', error);
 
         if (active) {
+          setClasses([]);
+
           setMessage(
             error instanceof Error
               ? error.message
@@ -230,38 +337,51 @@ export default function PersonalityPage() {
           throw new Error('Gagal memuat data kepribadian.');
         }
 
-        const [allStudentsData, persData] = await Promise.all([
+        const [allStudentsData, persData]: [
+          unknown,
+          unknown,
+        ] = await Promise.all([
           studentsRes.json(),
           personalityRes.json(),
         ]);
 
-        const allStudents = Array.isArray(allStudentsData)
-          ? allStudentsData
-          : allStudentsData?.students || allStudentsData?.data || [];
+        const allStudents = getArrayData<ApiStudent>(
+          allStudentsData,
+          ['students', 'data'],
+        );
 
-        const filtered: Student[] = Array.isArray(allStudents)
-          ? allStudents.filter(
-              (student: Student) =>
-                student.class_name === selectedClass,
-            )
-          : [];
+        const filtered: Student[] = allStudents
+          .map(normalizeStudent)
+          .filter(
+            (student): student is Student =>
+              student !== null &&
+              student.class_name === selectedClass,
+          );
 
-        const persList = Array.isArray(persData)
-          ? persData
-          : persData?.data || [];
+        const persList = getArrayData<PersonalityRecord>(
+          persData,
+          ['data', 'records'],
+        );
 
         const map: Record<number, PersonalityValue> = {};
 
-        if (Array.isArray(persList)) {
-          persList.forEach((item: PersonalityRecord) => {
-            map[item.studentId] = {
-              suluk: item.suluk || '-',
-              muwadhotah: item.muwadhotah || '-',
-              nadzofah: item.nadzofah || '-',
-              indhiplat: item.indhiplat || '-',
-            };
-          });
-        }
+        persList.forEach((item) => {
+          const studentId = Number(item.studentId);
+
+          if (
+            !Number.isInteger(studentId) ||
+            studentId <= 0
+          ) {
+            return;
+          }
+
+          map[studentId] = {
+            suluk: item.suluk || '-',
+            muwadhotah: item.muwadhotah || '-',
+            nadzofah: item.nadzofah || '-',
+            indhiplat: item.indhiplat || '-',
+          };
+        });
 
         if (active) {
           setStudents(filtered);
@@ -321,10 +441,16 @@ export default function PersonalityPage() {
   // SAVE
   // =========================================================
 
-  const handleSave = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSave = async (
+    e: FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
 
-    if (!selectedClass || students.length === 0 || loading) {
+    if (
+      !selectedClass ||
+      students.length === 0 ||
+      loading
+    ) {
       return;
     }
 
@@ -337,7 +463,8 @@ export default function PersonalityPage() {
         suluk: personalityData[student.id]?.suluk || '-',
         muwadhotah:
           personalityData[student.id]?.muwadhotah || '-',
-        nadzofah: personalityData[student.id]?.nadzofah || '-',
+        nadzofah:
+          personalityData[student.id]?.nadzofah || '-',
         indhiplat:
           personalityData[student.id]?.indhiplat || '-',
       }));
@@ -384,7 +511,9 @@ export default function PersonalityPage() {
   // =========================================================
 
   const selectedClassData = useMemo(
-    () => classes.find((item) => item.name === selectedClass),
+    () => classes.find(
+      (item) => item.name === selectedClass,
+    ),
     [classes, selectedClass],
   );
 
@@ -406,18 +535,23 @@ export default function PersonalityPage() {
     }).length;
   }, [students, personalityData]);
 
-  const totalAssessments = students.length * personalityFields.length;
+  const totalAssessments =
+    students.length * personalityFields.length;
 
   const filledAssessments = useMemo(() => {
     return students.reduce((total, student) => {
       const values = personalityData[student.id];
 
-      if (!values) return total;
+      if (!values) {
+        return total;
+      }
 
       return (
         total +
         personalityFields.filter(
-          (field) => values[field.key] && values[field.key] !== '-',
+          (field) =>
+            values[field.key] &&
+            values[field.key] !== '-',
         ).length
       );
     }, 0);
@@ -452,7 +586,11 @@ export default function PersonalityPage() {
   };
 
   const isSuccess = message.startsWith('success:');
-  const displayMessage = message.replace(/^(success:|error:)/, '');
+
+  const displayMessage = message.replace(
+    /^(success:|error:)/,
+    '',
+  );
 
   // =========================================================
   // RENDER
@@ -527,13 +665,17 @@ export default function PersonalityPage() {
               className="h-9 w-full rounded-sm border border-[#8c8f94] bg-white px-2.5 text-[13px] text-[#1d2327] outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="">
-                {loadingClasses ? 'Memuat kelas...' : '-- Pilih Kelas --'}
+                {loadingClasses
+                  ? 'Memuat kelas...'
+                  : '-- Pilih Kelas --'}
               </option>
 
               {classes.map((cls) => (
                 <option key={cls.id} value={cls.name}>
                   Kelas {cls.name}
-                  {cls.level && cls.level !== '-' ? ` • ${cls.level}` : ''}
+                  {cls.level && cls.level !== '-'
+                    ? ` • ${cls.level}`
+                    : ''}
                 </option>
               ))}
             </select>
@@ -562,6 +704,7 @@ export default function PersonalityPage() {
               <p className="text-[12px] text-[#646970]">
                 Jumlah Santri
               </p>
+
               <p className="text-[20px] font-semibold leading-tight text-[#1d2327]">
                 {students.length}
               </p>
@@ -577,6 +720,7 @@ export default function PersonalityPage() {
               <p className="text-[12px] text-[#646970]">
                 Santri Dinilai Lengkap
               </p>
+
               <p className="text-[20px] font-semibold leading-tight text-[#1d2327]">
                 {evaluatedStudents}
               </p>
@@ -592,8 +736,10 @@ export default function PersonalityPage() {
               <p className="text-[12px] text-[#646970]">
                 Aspek Terisi
               </p>
+
               <p className="text-[20px] font-semibold leading-tight text-[#1d2327]">
                 {filledAssessments}
+
                 <span className="ml-1 text-[12px] font-normal text-[#646970]">
                   / {totalAssessments}
                 </span>
@@ -744,7 +890,8 @@ export default function PersonalityPage() {
                 <tbody>
                   {students.map((student, index) => {
                     const values =
-                      personalityData[student.id] || defaultPersonality;
+                      personalityData[student.id] ||
+                      defaultPersonality;
 
                     return (
                       <tr
@@ -779,7 +926,8 @@ export default function PersonalityPage() {
                         </td>
 
                         {personalityFields.map((field) => {
-                          const value = values[field.key] || '-';
+                          const value =
+                            values[field.key] || '-';
 
                           return (
                             <td
