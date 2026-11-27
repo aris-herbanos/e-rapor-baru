@@ -45,7 +45,7 @@ type Category = {
 
 const menus: MenuItem[] = [
   {
-    title: 'Guru & Ustadz',
+    title: 'Guru / Ustadz',
     href: '/dashboard/teachers',
     icon: Users,
     category: 'Data Master',

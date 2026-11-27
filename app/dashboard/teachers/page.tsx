@@ -438,14 +438,14 @@ export default function TeachersPage() {
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[23px] font-normal leading-tight text-[#1d2327]">
-            Guru &amp; Ustadz
+            Guru 
           </h1>
           <p className="mt-1 text-[12px] text-[#646970]">
             Kelola data tenaga pengajar dan akses akun guru.
           </p>
           <div className="mt-2 text-[11px] text-[#646970]">
             Dashboard <span className="mx-1">›</span> Data Master <span className="mx-1">›</span>{' '}
-            <span className="text-[#1d2327]">Guru &amp; Ustadz</span>
+            <span className="text-[#1d2327]">Guru</span>
           </div>
         </div>
 
