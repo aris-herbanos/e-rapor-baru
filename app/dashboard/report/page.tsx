@@ -1,12 +1,12 @@
+
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   BookOpen,
   ChevronDown,
   Loader2,
   Printer,
-  ShieldCheck,
   UserRound,
   RefreshCw,
 } from 'lucide-react';
@@ -27,9 +27,18 @@ type ScoreRecord = {
   id: number;
   score: number | string | null;
   type: string;
+  subjectName?: string | null;
+  subjectId?: number | null;
   tpCode?: string | null;
   tpDescription?: string | null;
-  subjectName: string;
+  subject?: { name?: string | null } | null;
+  tp?: {
+    code?: string | null;
+    description?: string | null;
+    cp?: {
+      subject?: { name?: string | null } | null;
+    } | null;
+  } | null;
 };
 
 type PersonalityRecord = {
@@ -66,11 +75,16 @@ type ReportData = Student & {
   rank?: number | null;
 };
 
+type SubjectItem = {
+  arabic: string;
+  name: string;
+};
+
 /* ============================================================
-   SUBJECTS & PERSONALITY (DIPISAH SMP & SMA)
+   SUBJECTS
 ============================================================ */
 
-const ORAL_SUBJECTS_SMP = [
+const ORAL_SUBJECTS_SMP: SubjectItem[] = [
   { arabic: 'تجويد', name: 'Tajwid' },
   { arabic: 'تحفيظ القرآن / تحسين', name: 'Tahfidz / Tahsin' },
   { arabic: 'المراجعة', name: "Muroja'ah" },
@@ -79,7 +93,7 @@ const ORAL_SUBJECTS_SMP = [
   { arabic: 'الخطابة', name: 'Pidato' },
 ];
 
-const WRITTEN_SUBJECTS_SMP = [
+const WRITTEN_SUBJECTS_SMP: SubjectItem[] = [
   { arabic: 'الحديث', name: 'Hadis' },
   { arabic: 'التربية الدينية الإسلامية', name: 'Pendidikan Agama Islam' },
   { arabic: 'الفقه', name: 'Fiqih' },
@@ -91,7 +105,7 @@ const WRITTEN_SUBJECTS_SMP = [
   { arabic: 'الإملاء والخط', name: 'Imla dan Khot' },
 ];
 
-const ORAL_SUBJECTS_SMA = [
+const ORAL_SUBJECTS_SMA: SubjectItem[] = [
   { arabic: 'تجويد', name: 'Tajwid' },
   { arabic: 'تحفيظ القرآن / تحسين', name: 'Tahfidz / Tahsin' },
   { arabic: 'المراجعة المتقدمة', name: 'Muroja’ah Lanjutan' },
@@ -100,7 +114,7 @@ const ORAL_SUBJECTS_SMA = [
   { arabic: 'الخطابة والمناظرة', name: 'Pidato & Debat' },
 ];
 
-const WRITTEN_SUBJECTS_SMA = [
+const WRITTEN_SUBJECTS_SMA: SubjectItem[] = [
   { arabic: 'علوم القرآن', name: 'Ulumul Quran' },
   { arabic: 'مصطلح الحديث', name: 'Mustholah Hadis' },
   { arabic: 'أصول الفقه', name: 'Ushul Fiqih' },
@@ -126,59 +140,160 @@ function normalizeText(value: unknown): string {
     .trim()
     .toLowerCase()
     .replace(/[’‘`]/g, "'")
-    .replace(/\s+/g, ' ');
-}
-
-function normalizeScore(value: unknown): number {
-  const numberValue = Number(value);
-  if (!Number.isFinite(numberValue)) return 0;
-  return Math.round(numberValue);
-}
-
-function normalizeType(value: unknown): string {
-  return normalizeText(value)
+    .replace(/[ًٌٍَُِّْ]/g, '')
     .replace(/[_-]/g, ' ')
     .replace(/\s+/g, ' ');
 }
 
-function typeMatches(databaseType: unknown, requestedType: 'ORAL' | 'WRITTEN'): boolean {
+function normalizeScore(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) return null;
+
+  return Math.max(0, Math.min(100, numberValue));
+}
+
+function normalizeType(value: unknown): string {
+  return normalizeText(value);
+}
+
+function typeMatches(
+  databaseType: unknown,
+  requestedType: 'ORAL' | 'WRITTEN'
+): boolean {
   const type = normalizeType(databaseType);
 
-  if (requestedType === 'ORAL') {
-    return ['oral', 'lisan', 'ujian lisan', 'praktik', 'praktek'].some(
-      (item) => type === item || type.includes(item)
-    );
-  }
+  if (!type) return false;
 
-  return ['written', 'tertulis', 'ujian tertulis', 'tulis'].some(
-    (item) => type === item || type.includes(item)
+  const oralKeywords = [
+    'oral',
+    'lisan',
+    'ujian lisan',
+    'praktik',
+    'praktek',
+    'speaking',
+    'hafalan',
+  ];
+
+  const writtenKeywords = [
+    'written',
+    'tertulis',
+    'ujian tertulis',
+    'tulis',
+    'writing',
+  ];
+
+  const keywords = requestedType === 'ORAL'
+    ? oralKeywords
+    : writtenKeywords;
+
+  return keywords.some((keyword) => {
+    return type === keyword || type.includes(keyword);
+  });
+}
+
+function getDatabaseSubjectName(record: ScoreRecord): string {
+  return (
+    record.subjectName ||
+    record.subject?.name ||
+    record.tp?.cp?.subject?.name ||
+    ''
   );
 }
 
-function subjectMatches(databaseSubject: unknown, requestedSubject: unknown): boolean {
-  const db = normalizeText(databaseSubject);
-  const requested = normalizeText(requestedSubject);
-
-  if (!db || !requested) return false;
-  if (db === requested || db.includes(requested) || requested.includes(db)) return true;
+function canonicalSubject(value: unknown): string {
+  const name = normalizeText(value);
 
   const aliases: Record<string, string[]> = {
-    tajwid: ['ilmu tajwid'],
-    'tahfidz / tahsin': ['tahfidz', 'tahsin', 'tahfidz al quran', 'tahfiz', 'tahfizh'],
-    "muroja'ah": ['murojaah', "muroja'ah", 'murajaah', "muraja'ah"],
-    fiqih: ['fikih', 'fiqh', 'fiqih islam'],
-    hadis: ['hadits', 'al hadits', 'al hadis'],
-    'bahasa arab': ['arab', 'bahasa arab'],
-    'nahwu / sorof': ['nahwu', 'shorof', 'sorof', 'nahwu sorof', 'nahwu sharaf'],
-    mahfudzot: ['mahfuzhat', 'mahfuzot', 'mahfudzat'],
-    'siroh nabawiyah': ['sirah nabawiyah', 'siroh', 'sejarah nabi'],
-    'imla dan khot': ['imla', 'imla dan khat', 'khot', 'khat'],
+    tajwid: ['tajwid', 'ilmu tajwid'],
+    'tahfidz tahsin': [
+      'tahfidz tahsin',
+      'tahfidz',
+      'tahsin',
+      'tahfidz al quran',
+      'tahfiz',
+      'tahfizh',
+      'tahfidzul quran',
+    ],
+    "muroja'ah": [
+      "muroja'ah",
+      'murojaah',
+      'murajaah',
+      "muraja'ah",
+      'murojaah lanjutan',
+      'muroja ah lanjutan',
+    ],
+    fiqih: ['fiqih', 'fikih', 'fiqh', 'fiqih islam', 'fiqih muqoron'],
+    hadis: ['hadis', 'hadits', 'al hadis', 'al hadits', 'mustholah hadis'],
+    'bahasa arab': ['bahasa arab', 'arab', 'muhadatsah'],
+    'nahwu sorof': [
+      'nahwu sorof',
+      'nahwu shorof',
+      'nahwu sharaf',
+      'nahwu',
+      'sorof',
+      'shorof',
+    ],
+    mahfudzot: ['mahfudzot', 'mahfuzhat', 'mahfuzot', 'mahfudzat'],
+    'siroh nabawiyah': [
+      'siroh nabawiyah',
+      'sirah nabawiyah',
+      'siroh',
+      'sirah',
+      'sejarah nabi',
+    ],
+    'imla dan khot': [
+      'imla dan khot',
+      'imla dan khat',
+      'imla',
+      'khot',
+      'khat',
+    ],
+    'pendidikan agama islam': [
+      'pendidikan agama islam',
+      'pai',
+      'agama islam',
+    ],
+    'tsa qafah islamiyah': [
+      'tsa qafah islamiyah',
+      'tsaqofah islamiyah',
+      'tsaqafah islamiyah',
+    ],
+    'ulumul quran': ['ulumul quran', 'ulum al quran'],
+    'ushul fiqih': ['ushul fiqih', 'ushul fikih', 'ushul fiqh'],
+    'tarikh islam': ['tarikh islam', 'sejarah islam'],
+    'balaghoh adab': ['balaghoh adab', 'balaghah adab', 'balaghoh', 'adab'],
+    'tauhid aqidah': ['tauhid aqidah', 'tauhid', 'aqidah', 'akidah'],
+    'pidato debat': ['pidato debat', 'pidato', 'khitobah', 'khutbah'],
   };
 
-  const requestedAliases = aliases[requested] ?? [];
-  return requestedAliases.some(
-    (alias) => db === alias || db.includes(alias) || alias.includes(db)
-  );
+  for (const [canonical, variants] of Object.entries(aliases)) {
+    if (variants.some((variant) => name === normalizeText(variant))) {
+      return canonical;
+    }
+  }
+
+  return name;
+}
+
+function subjectMatches(
+  databaseSubject: unknown,
+  requestedSubject: unknown
+): boolean {
+  const db = canonicalSubject(databaseSubject);
+  const requested = canonicalSubject(requestedSubject);
+
+  if (!db || !requested) return false;
+  if (db === requested) return true;
+
+  // Pencocokan parsial hanya untuk nama yang cukup panjang.
+  if (db.length >= 5 && requested.length >= 5) {
+    return db.includes(requested) || requested.includes(db);
+  }
+
+  return false;
 }
 
 function isSMALevel(className: string): boolean {
@@ -189,6 +304,7 @@ function isSMALevel(className: string): boolean {
   if (compact.includes('sma') || compact.includes('ulya')) return true;
 
   const tokens = compact.split(/[^a-z0-9]+/).filter(Boolean);
+
   return tokens.some((token) => ['x', 'xi', 'xii'].includes(token));
 }
 
@@ -197,13 +313,14 @@ function getPersonalityValue(
   aspectName: string,
   aspectArabic: string
 ): string {
-  if (!personality || personality.length === 0) return '-';
+  if (!personality?.length) return '-';
+
+  const targetName = normalizeText(aspectName);
+  const targetArabic = normalizeText(aspectArabic);
 
   const found = personality.find((item) => {
     const itemName = normalizeText(item.name);
     const itemArabic = normalizeText(item.arabic);
-    const targetName = normalizeText(aspectName);
-    const targetArabic = normalizeText(aspectArabic);
 
     return (
       itemName === targetName ||
@@ -213,11 +330,15 @@ function getPersonalityValue(
     );
   });
 
-  if (!found || !found.value || !String(found.value).trim()) return '-';
+  if (!found?.value || !String(found.value).trim()) return '-';
+
   return String(found.value).trim();
 }
 
-function getMerdekaCompetencyDescriptions(subjectName: string, score: number) {
+function getMerdekaCompetencyDescriptions(
+  subjectName: string,
+  score: number
+) {
   if (score <= 0) {
     return {
       achieved: `Kompetensi pada mata pelajaran ${subjectName} belum memiliki nilai.`,
@@ -252,7 +373,10 @@ function getMerdekaCompetencyDescriptions(subjectName: string, score: number) {
   };
 }
 
-function getPersonalityMerdekaDescription(aspectName: string, value: string) {
+function getPersonalityMerdekaDescription(
+  aspectName: string,
+  value: string
+) {
   const val = normalizeText(value);
 
   if (!val || val === '-') {
@@ -262,23 +386,32 @@ function getPersonalityMerdekaDescription(aspectName: string, value: string) {
     };
   }
 
-  if (val.includes('sangat baik') || val.includes('mumtaz')) {
+  if (
+    val.includes('sangat baik') ||
+    val.includes('mumtaz')
+  ) {
     return {
       achieved: `Peserta didik menunjukkan sikap ${aspectName.toLowerCase()} yang sangat terpuji, konsisten menjadi teladan yang baik di lingkungan ma'had.`,
       needsImprovement: `Pertahankan keteladanan yang sangat baik ini dan teruskan pembiasaan positif dalam keseharian.`,
     };
-  } else if (val.includes('baik') || val.includes('jayyid')) {
+  }
+
+  if (val.includes('baik') || val.includes('jayyid')) {
     return {
       achieved: `Peserta didik menunjukkan sikap ${aspectName.toLowerCase()} yang baik serta dapat mematuhi tata tertib dan norma yang berlaku di pondok pesantren.`,
       needsImprovement: `Pertahankan kedisiplinan dan terus tingkatkan konsistensi sikap terpuji dalam kehidupan sehari-hari.`,
     };
-  } else {
-    return {
-      achieved: `Peserta didik menunjukkan predikat ${value} pada aspek ${aspectName} dalam keseharian di lingkungan pondok pesantren.`,
-      needsImprovement: `Perlu bimbingan lanjutan dan pengawasan intensif dalam pembentukan karakter ${aspectName.toLowerCase()}.`,
-    };
   }
+
+  return {
+    achieved: `Peserta didik menunjukkan predikat ${value} pada aspek ${aspectName} dalam keseharian di lingkungan pondok pesantren.`,
+    needsImprovement: `Perlu bimbingan lanjutan dan pengawasan intensif dalam pembentukan karakter ${aspectName.toLowerCase()}.`,
+  };
 }
+
+/* ============================================================
+   COMPONENTS
+============================================================ */
 
 function ReportSection({
   number,
@@ -311,6 +444,76 @@ function ReportSection({
   );
 }
 
+function ScoreTable({
+  subjects,
+  getScore,
+  category,
+  compact = false,
+}: {
+  subjects: SubjectItem[];
+  getScore: (subjectName: string, category: 'ORAL' | 'WRITTEN') => number;
+  category: 'ORAL' | 'WRITTEN';
+  compact?: boolean;
+}) {
+  return (
+    <table className="report-table w-full border-collapse border border-slate-300 bg-white text-[9px]">
+      <thead>
+        <tr className="bg-[#f1f6f3] text-center font-bold text-slate-700">
+          <th className="w-[6%] border border-slate-300 py-1.5">No</th>
+          <th className="w-[27%] border border-slate-300 py-1.5 text-center">
+            Mata Pelajaran / المواد
+          </th>
+          <th className="w-[12%] border border-slate-300 py-1.5">
+            Nilai Akhir
+          </th>
+          <th className="w-[55%] border border-slate-300 px-2.5 py-1.5 text-left">
+            Capaian Kompetensi
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {subjects.map((subject, index) => {
+          const score = getScore(subject.name, category);
+          const description = getMerdekaCompetencyDescriptions(
+            subject.name,
+            score
+          );
+
+          return (
+            <tr key={`${category}-${subject.name}`} className="report-row">
+              <td className="border border-slate-300 py-1.5 text-center align-top text-slate-500">
+                {index + 1}
+              </td>
+              <td className="border border-slate-300 px-2 py-1.5 text-center align-top">
+                <div className="font-medium leading-tight text-slate-800">
+                  {subject.name}
+                </div>
+                <div
+                  dir="rtl"
+                  className={`arabic mt-0.5 font-semibold leading-tight text-slate-500 ${
+                    compact ? 'text-[9.5px]' : 'text-[10.5px]'
+                  }`}
+                >
+                  {subject.arabic}
+                </div>
+              </td>
+              <td className="border border-slate-300 py-1.5 text-center align-top font-bold text-[#477b69]">
+                {score > 0 ? score : '-'}
+              </td>
+              <td className="border border-slate-300 px-2.5 py-1.5 align-top leading-[1.3] text-slate-700">
+                <div>{description.achieved}</div>
+                <div className="mt-0.5 text-[8px] leading-[1.3] text-slate-500">
+                  {description.needsImprovement}
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 /* ============================================================
    PAGE
 ============================================================ */
@@ -325,43 +528,65 @@ export default function ReportPage() {
   const [loadingReport, setLoadingReport] = useState(false);
   const [error, setError] = useState('');
 
+  // Mencegah respons request lama menimpa data santri yang baru dipilih.
+  const requestIdRef = useRef(0);
+
+  /* ============================================================
+     LOAD STUDENTS
+  ============================================================ */
+
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
 
     async function loadStudents() {
       try {
         setLoadingStudents(true);
         setError('');
 
-        const response = await fetch('/api/students', { cache: 'no-store' });
-        if (!response.ok) throw new Error('Gagal mengambil data santri.');
+        const response = await fetch('/api/students', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error('Gagal mengambil data santri.');
+        }
 
         const data = await response.json();
+
         const list = Array.isArray(data)
           ? data
           : Array.isArray(data?.students)
-          ? data.students
-          : Array.isArray(data?.data)
-          ? data.data
-          : [];
+            ? data.students
+            : Array.isArray(data?.data)
+              ? data.data
+              : [];
 
-        if (mounted) setStudents(list);
+        setStudents(list);
       } catch (err) {
-        if (mounted) {
-          setStudents([]);
-          setError(err instanceof Error ? err.message : 'Gagal mengambil data santri.');
-        }
+        if (err instanceof Error && err.name === 'AbortError') return;
+
+        setStudents([]);
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Gagal mengambil data santri.'
+        );
       } finally {
-        if (mounted) setLoadingStudents(false);
+        if (!controller.signal.aborted) {
+          setLoadingStudents(false);
+        }
       }
     }
 
     loadStudents();
 
-    return () => {
-      mounted = false;
-    };
+    return () => controller.abort();
   }, []);
+
+  /* ============================================================
+     CLASS FILTER
+  ============================================================ */
 
   const classes = useMemo(() => {
     const unique = Array.from(
@@ -373,14 +598,24 @@ export default function ReportPage() {
     );
 
     return unique.sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+      a.localeCompare(b, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      })
     );
   }, [students]);
 
   const filteredStudents = useMemo(() => {
     if (!classFilter) return students;
-    return students.filter((student) => String(student.class_name) === String(classFilter));
+
+    return students.filter(
+      (student) => String(student.class_name) === String(classFilter)
+    );
   }, [students, classFilter]);
+
+  /* ============================================================
+     FETCH REPORT
+  ============================================================ */
 
   const fetchReport = async (selectedId?: string) => {
     const id = selectedId !== undefined ? selectedId : studentId;
@@ -390,9 +625,12 @@ export default function ReportPage() {
       return;
     }
 
+    const currentRequest = ++requestIdRef.current;
+
     try {
       setLoadingReport(true);
       setError('');
+      setReportData(null);
 
       const response = await fetch(
         `/api/report?studentId=${encodeURIComponent(id)}&_=${Date.now()}`,
@@ -415,29 +653,68 @@ export default function ReportPage() {
         throw new Error('Data rapor santri tidak ditemukan.');
       }
 
-      setReportData(data.report);
+      // Abaikan hasil request yang sudah tidak relevan.
+      if (currentRequest !== requestIdRef.current) return;
+
+      const report = data.report;
+
+      // Normalisasi data agar halaman tidak error jika API mengirim null.
+      const normalizedReport: ReportData = {
+        ...report,
+        scoreRecords: Array.isArray(report.scoreRecords)
+          ? report.scoreRecords
+          : [],
+        personality: Array.isArray(report.personality)
+          ? report.personality
+          : [],
+        attendance: report.attendance ?? {
+          sakit: 0,
+          izin: 0,
+          alpa: 0,
+        },
+      };
+
+      setReportData(normalizedReport);
     } catch (err) {
+      if (currentRequest !== requestIdRef.current) return;
+
       setReportData(null);
-      setError(err instanceof Error ? err.message : 'Gagal memuat data rapor.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Gagal memuat data rapor.'
+      );
     } finally {
-      setLoadingReport(false);
+      if (currentRequest === requestIdRef.current) {
+        setLoadingReport(false);
+      }
     }
   };
+
+  /* ============================================================
+     HANDLERS
+  ============================================================ */
 
   const handleStudentChange = (value: string) => {
     setStudentId(value);
     setError('');
+
     if (!value) {
+      requestIdRef.current++;
       setReportData(null);
+      setLoadingReport(false);
       return;
     }
+
     fetchReport(value);
   };
 
   const handleClassChange = (value: string) => {
+    requestIdRef.current++;
     setClassFilter(value);
     setStudentId('');
     setReportData(null);
+    setLoadingReport(false);
     setError('');
   };
 
@@ -446,24 +723,62 @@ export default function ReportPage() {
     window.print();
   };
 
-  const getScoreNumber = (subjectName: string, categoryType: 'ORAL' | 'WRITTEN'): number => {
-    if (!reportData?.scoreRecords || reportData.scoreRecords.length === 0) return 0;
+  /* ============================================================
+     GET SCORE
+     Mengambil semua nilai yang cocok lalu menghitung rata-rata.
+  ============================================================ */
 
-    const found = reportData.scoreRecords.find(
-      (scoreItem) =>
-        typeMatches(scoreItem.type, categoryType) &&
-        subjectMatches(scoreItem.subjectName, subjectName)
+  const getScoreNumber = (
+    subjectName: string,
+    categoryType: 'ORAL' | 'WRITTEN'
+  ): number => {
+    const records = reportData?.scoreRecords ?? [];
+
+    const matchingScores = records
+      .filter((item) => {
+        const databaseSubject = getDatabaseSubjectName(item);
+
+        return (
+          typeMatches(item.type, categoryType) &&
+          subjectMatches(databaseSubject, subjectName)
+        );
+      })
+      .map((item) => normalizeScore(item.score))
+      .filter((score): score is number => score !== null);
+
+    if (matchingScores.length === 0) return 0;
+
+    const total = matchingScores.reduce(
+      (sum, score) => sum + score,
+      0
     );
 
-    return normalizeScore(found?.score);
+    return Math.round(total / matchingScores.length);
   };
 
-  const attendance: Attendance = reportData?.attendance ?? { sakit: 0, izin: 0, alpa: 0 };
+  /* ============================================================
+     REPORT VARIABLES
+  ============================================================ */
+
+  const attendance: Attendance = reportData?.attendance ?? {
+    sakit: 0,
+    izin: 0,
+    alpa: 0,
+  };
+
   const personality = reportData?.personality ?? [];
 
-  const isSMA = reportData ? isSMALevel(reportData.class_name) : false;
-  const activeOralSubjects = isSMA ? ORAL_SUBJECTS_SMA : ORAL_SUBJECTS_SMP;
-  const activeWrittenSubjects = isSMA ? WRITTEN_SUBJECTS_SMA : WRITTEN_SUBJECTS_SMP;
+  const isSMA = reportData
+    ? isSMALevel(reportData.class_name)
+    : false;
+
+  const activeOralSubjects = isSMA
+    ? ORAL_SUBJECTS_SMA
+    : ORAL_SUBJECTS_SMP;
+
+  const activeWrittenSubjects = isSMA
+    ? WRITTEN_SUBJECTS_SMA
+    : WRITTEN_SUBJECTS_SMP;
 
   const schoolName =
     reportData?.schoolName ||
@@ -486,12 +801,14 @@ export default function ReportPage() {
     'Pimpinan Pesantren';
 
   const normalizedSemester = normalizeText(semester);
+
   const isEvenSemester =
     normalizedSemester === 'genap' ||
     normalizedSemester === '2' ||
     normalizedSemester.includes('semester 2');
 
   const semesterLabel = isEvenSemester ? 'Genap' : 'Ganjil';
+
   const semesterArabic = isEvenSemester
     ? 'الفصل الدراسي الثاني'
     : 'الفصل الدراسي الأول';
@@ -502,6 +819,10 @@ export default function ReportPage() {
     year: 'numeric',
   }).format(new Date());
 
+  /* ============================================================
+     RENDER
+  ============================================================ */
+
   return (
     <>
       {/* CONTROL PANEL */}
@@ -510,11 +831,20 @@ export default function ReportPage() {
           <div className="mb-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                <BookOpen size={20} strokeWidth={1.6} className="text-emerald-100" />
+                <BookOpen
+                  size={20}
+                  strokeWidth={1.6}
+                  className="text-emerald-100"
+                />
               </div>
+
               <div>
-                <h1 className="text-[15px] font-semibold tracking-tight">Rapor Santri</h1>
-                <p className="mt-0.5 text-[10px] text-emerald-100/60">Sistem Penilaian &amp; Kurikulum Merdeka (Otomatis Tingkat SMP / SMA)</p>
+                <h1 className="text-[15px] font-semibold tracking-tight">
+                  Rapor Santri
+                </h1>
+                <p className="mt-0.5 text-[10px] text-emerald-100/60">
+                  Sistem Penilaian &amp; Kurikulum Merdeka (Otomatis Tingkat SMP / SMA)
+                </p>
               </div>
             </div>
           </div>
@@ -522,7 +852,10 @@ export default function ReportPage() {
           <div className="rounded-xl border border-white/10 bg-white/[0.06] p-3">
             <div className="grid gap-3 lg:grid-cols-[180px_minmax(0,1fr)_auto_auto]">
               <div>
-                <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-wider text-emerald-100/70">Kelas</label>
+                <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-wider text-emerald-100/70">
+                  Kelas
+                </label>
+
                 <div className="relative">
                   <select
                     value={classFilter}
@@ -530,18 +863,34 @@ export default function ReportPage() {
                     className="h-10 w-full appearance-none rounded-lg border border-white/10 bg-[#0f4035] px-3 pr-9 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-300/10"
                   >
                     <option value="">Semua Kelas</option>
+
                     {classes.map((className) => (
-                      <option key={className} value={className}>Kelas {className}</option>
+                      <option key={className} value={className}>
+                        {/^kelas\s/i.test(className)
+                          ? className
+                          : `Kelas ${className}`}
+                      </option>
                     ))}
                   </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-100/40" />
+
+                  <ChevronDown
+                    size={14}
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-100/40"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-wider text-emerald-100/70">Santri</label>
+                <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-wider text-emerald-100/70">
+                  Santri
+                </label>
+
                 <div className="relative">
-                  <UserRound size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-100/40" />
+                  <UserRound
+                    size={14}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-100/40"
+                  />
+
                   <select
                     value={studentId}
                     onChange={(event) => handleStudentChange(event.target.value)}
@@ -549,13 +898,24 @@ export default function ReportPage() {
                     className="h-10 w-full appearance-none rounded-lg border border-white/10 bg-[#0f4035] px-9 pr-9 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-300/10 disabled:opacity-50"
                   >
                     <option value="">
-                      {loadingStudents ? 'Memuat santri...' : filteredStudents.length === 0 ? 'Tidak ada santri' : 'Pilih santri'}
+                      {loadingStudents
+                        ? 'Memuat santri...'
+                        : filteredStudents.length === 0
+                          ? 'Tidak ada santri'
+                          : 'Pilih santri'}
                     </option>
+
                     {filteredStudents.map((student) => (
-                      <option key={student.id} value={student.id}>{student.fullname}</option>
+                      <option key={student.id} value={student.id}>
+                        {student.fullname}
+                      </option>
                     ))}
                   </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-100/40" />
+
+                  <ChevronDown
+                    size={14}
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-100/40"
+                  />
                 </div>
               </div>
 
@@ -566,9 +926,15 @@ export default function ReportPage() {
                 className="h-10 self-end rounded-lg bg-[#6b9b88] px-5 text-xs font-bold text-white transition hover:bg-[#78a995] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {loadingReport ? (
-                  <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" />Memuat...</span>
+                  <span className="flex items-center gap-2">
+                    <Loader2 size={14} className="animate-spin" />
+                    Memuat...
+                  </span>
                 ) : (
-                  <span className="flex items-center gap-2"><RefreshCw size={14} />Muat Ulang</span>
+                  <span className="flex items-center gap-2">
+                    <RefreshCw size={14} />
+                    Muat Ulang
+                  </span>
                 )}
               </button>
 
@@ -578,187 +944,265 @@ export default function ReportPage() {
                 disabled={!reportData}
                 className="h-10 self-end rounded-lg border border-amber-200/20 bg-amber-100/10 px-5 text-xs font-bold text-amber-100 transition hover:bg-amber-100/15 disabled:cursor-not-allowed disabled:opacity-30"
               >
-                <span className="flex items-center gap-2"><Printer size={14} />Cetak F4 / PDF</span>
+                <span className="flex items-center gap-2">
+                  <Printer size={14} />
+                  Cetak F4 / PDF
+                </span>
               </button>
             </div>
 
             {error && (
-              <div className="mt-3 rounded-lg border border-red-200/10 bg-red-300/10 px-3 py-2 text-xs text-red-100">{error}</div>
+              <div className="mt-3 rounded-lg border border-red-200/10 bg-red-300/10 px-3 py-2 text-xs text-red-100">
+                {error}
+              </div>
             )}
           </div>
         </div>
       </section>
 
+      {/* EMPTY STATE */}
       {!reportData && !loadingReport && (
         <div className="print:hidden flex min-h-[calc(100vh-190px)] items-center justify-center bg-[#f5f7f6] px-5">
           <div className="max-w-md text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-100 bg-white text-emerald-700 shadow-sm">
               <BookOpen size={27} strokeWidth={1.5} />
             </div>
-            <h2 className="text-base font-semibold tracking-tight text-slate-800">Pilih Santri untuk Melihat Rapor</h2>
-            <p className="mt-2 text-xs leading-6 text-slate-400">Pilih kelas dan nama santri pada panel di atas untuk menampilkan laporan hasil belajar secara lengkap.</p>
+
+            <h2 className="text-base font-semibold tracking-tight text-slate-800">
+              Pilih Santri untuk Melihat Rapor
+            </h2>
+
+            <p className="mt-2 text-xs leading-6 text-slate-400">
+              Pilih kelas dan nama santri pada panel di atas untuk menampilkan
+              laporan hasil belajar secara lengkap.
+            </p>
           </div>
         </div>
       )}
 
+      {/* LOADING */}
       {loadingReport && (
         <div className="print:hidden flex min-h-[calc(100vh-190px)] items-center justify-center bg-[#f5f7f6]">
           <div className="text-center">
-            <Loader2 size={28} className="mx-auto animate-spin text-emerald-700" />
-            <p className="mt-3 text-xs font-medium text-slate-500">Menyiapkan rapor santri...</p>
+            <Loader2
+              size={28}
+              className="mx-auto animate-spin text-emerald-700"
+            />
+            <p className="mt-3 text-xs font-medium text-slate-500">
+              Menyiapkan rapor santri...
+            </p>
           </div>
         </div>
       )}
 
+      {/* REPORT DOCUMENT */}
       {reportData && !loadingReport && (
         <main className="report-screen bg-[#dfe5e2] px-3 py-6 print:bg-white print:p-0">
           <div className="report-document mx-auto w-[215.9mm] bg-white text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.14)] print:w-[215.9mm] print:shadow-none">
-            
+
             {/* HEADER */}
             <header className="report-header relative border-b border-slate-200 px-[10mm] pb-2.5 pt-[4mm] text-center">
               <div className="absolute left-[10mm] top-[4mm] flex h-[19mm] w-[19mm] items-center justify-center">
-                <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="h-full w-full object-contain"
+                />
               </div>
+
               <div className="mx-auto max-w-[520px] px-[18mm]">
-                <div dir="rtl" className="arabic mb-0.5 text-[13px] font-bold text-slate-600">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
-                <div className="text-[8px] font-bold tracking-[0.15em] text-slate-500">مَعْهَدُ أُولِي الْأَلْبَابِ الإِسْلَامِي</div>
+                <div
+                  dir="rtl"
+                  className="arabic mb-0.5 text-[13px] font-bold text-slate-600"
+                >
+                  بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+                </div>
+
+                <div className="text-[8px] font-bold tracking-[0.15em] text-slate-500">
+                  مَعْهَدُ أُولِي الْأَلْبَابِ الإِسْلَامِي
+                </div>
+
                 <h2 className="mt-0.5 text-[17px] font-black leading-tight tracking-tight text-[#315f50]">
                   {schoolName}
                 </h2>
-                <p className="mt-0.5 text-[8px] text-slate-400">Duyu Baru - Waibu - Jayapura</p>
+
+                <p className="mt-0.5 text-[8px] text-slate-400">
+                  Doyo Baru - Waibu - Jayapura
+                </p>
               </div>
+
               <div className="mt-1.5 border-t border-slate-100 pt-1 text-center">
-                <div className="arabic text-[11px] font-semibold text-slate-600">السنة الدراسية / Tahun Ajaran: {academicYear}</div>
+                <div className="arabic text-[11px] font-semibold text-slate-600">
+                  السنة الدراسية / Tahun Ajaran: {academicYear}
+                </div>
               </div>
             </header>
 
             {/* TITLE */}
             <div className="report-block mx-[10mm] my-2.5 border-y border-[#9db9ad]/60 bg-[#f4f8f6] px-3 py-1.5 text-center">
-              <div dir="rtl" className="arabic text-[12px] font-bold leading-5 text-[#315f50]">
-                كَشْفُ دَرَجَاتِ الطَّالِبِ <span className="mx-2 text-[#b29b65]">•</span> {semesterArabic}
+              <div
+                dir="rtl"
+                className="arabic text-[12px] font-bold leading-5 text-[#315f50]"
+              >
+                كَشْفُ دَرَجَاتِ الطَّالِبِ{' '}
+                <span className="mx-2 text-[#b29b65]">•</span>
+                {semesterArabic}
               </div>
+
               <div className="text-[11px] font-bold uppercase tracking-wide text-slate-800">
                 LAPORAN HASIL BELAJAR SANTRI TINGKAT {isSMA ? 'SMA' : 'SMP'}
               </div>
-              <div className="text-[7.5px] font-medium tracking-[0.12em] text-slate-500">SEMESTER {semesterLabel.toUpperCase()} • TAHUN AJARAN {academicYear}</div>
+
+              <div className="text-[7.5px] font-medium tracking-[0.12em] text-slate-500">
+                SEMESTER {semesterLabel.toUpperCase()} • TAHUN AJARAN {academicYear}
+              </div>
             </div>
 
             {/* STUDENT INFO */}
             <section className="report-block mx-[10mm] mb-2.5 rounded-lg border border-slate-200 bg-[#fafbfa] p-2.5">
               <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-[10px]">
                 <div className="flex items-center justify-between border-b border-slate-200/70 pb-1">
-                  <span className="font-semibold text-slate-600">Nama Santri <span dir="rtl" className="arabic ml-1 text-[12px] font-semibold">/ اسم الطالب</span></span>
-                  <span className="max-w-[55%] truncate font-bold text-slate-900">{reportData.fullname}</span>
+                  <span className="font-semibold text-slate-600">
+                    Nama Santri{' '}
+                    <span dir="rtl" className="arabic ml-1 text-[12px] font-semibold">
+                      / اسم الطالب
+                    </span>
+                  </span>
+                  <span className="max-w-[55%] truncate font-bold text-slate-900">
+                    {reportData.fullname}
+                  </span>
                 </div>
+
                 <div className="flex items-center justify-between border-b border-slate-200/70 pb-1">
-                  <span className="font-semibold text-slate-600">NISN <span dir="rtl" className="arabic ml-1 text-[12px] font-semibold">/ رقم القيد</span></span>
-                  <span className="font-semibold text-slate-800">{reportData.nisn || '-'}</span>
+                  <span className="font-semibold text-slate-600">
+                    NISN{' '}
+                    <span dir="rtl" className="arabic ml-1 text-[12px] font-semibold">
+                      / رقم القيد
+                    </span>
+                  </span>
+                  <span className="font-semibold text-slate-800">
+                    {reportData.nisn || '-'}
+                  </span>
                 </div>
+
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-600">Kelas <span dir="rtl" className="arabic ml-1 text-[12px] font-semibold">/ الفصل</span></span>
-                  <span className="font-bold text-[#477b69]">{reportData.class_name || '-'} (Tingkat {isSMA ? 'SMA' : 'SMP'})</span>
+                  <span className="font-semibold text-slate-600">
+                    Kelas{' '}
+                    <span dir="rtl" className="arabic ml-1 text-[12px] font-semibold">
+                      / الفصل
+                    </span>
+                  </span>
+                  <span className="font-bold text-[#477b69]">
+                    {reportData.class_name || '-'} (Tingkat {isSMA ? 'SMA' : 'SMP'})
+                  </span>
                 </div>
+
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-600">Tahun Ajaran</span>
-                  <span className="font-semibold text-slate-800">{academicYear} • {semesterLabel}</span>
+                  <span className="font-semibold text-slate-600">
+                    Tahun Ajaran
+                  </span>
+                  <span className="font-semibold text-slate-800">
+                    {academicYear} • {semesterLabel}
+                  </span>
                 </div>
               </div>
             </section>
 
             {/* UJIAN LISAN */}
-            <ReportSection number="03" title="Ujian Lisan dan Praktik" arabic="الامتحان الشفوي والتطبيقي">
-              <table className="report-table w-full border-collapse border border-slate-300 bg-white text-[9.5px]">
-                <thead>
-                  <tr className="bg-[#f1f6f3] text-center font-bold text-slate-700">
-                    <th className="w-[6%] border border-slate-300 py-1.5">No</th>
-                    <th className="w-[27%] border border-slate-300 py-1.5 text-center">Mata Pelajaran / المواد</th>
-                    <th className="w-[12%] border border-slate-300 py-1.5">Nilai Akhir</th>
-                    <th className="w-[55%] border border-slate-300 px-2.5 py-1.5 text-left">Capaian Kompetensi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeOralSubjects.map((subject, index) => {
-                    const score = getScoreNumber(subject.name, 'ORAL');
-                    const description = getMerdekaCompetencyDescriptions(subject.name, score);
-                    return (
-                      <tr key={`oral-${subject.name}`} className="report-row">
-                        <td className="border border-slate-300 py-1.5 text-center align-top text-slate-500">{index + 1}</td>
-                        <td className="border border-slate-300 px-2 py-1.5 text-center align-top">
-                          <div className="font-medium leading-tight text-slate-800">{subject.name}</div>
-                          <div dir="rtl" className="arabic mt-0.5 text-[10.5px] font-semibold leading-tight text-slate-500">{subject.arabic}</div>
-                        </td>
-                        <td className="border border-slate-300 py-1.5 text-center align-top font-bold text-[#477b69]">{score > 0 ? score : '-'}</td>
-                        <td className="border border-slate-300 px-2.5 py-1.5 align-top leading-[1.3] text-slate-700">
-                          <div>{description.achieved}</div>
-                          <div className="mt-0.5 text-[8.5px] leading-[1.3] text-slate-500">{description.needsImprovement}</div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <ReportSection
+              number="03"
+              title="Ujian Lisan dan Praktik"
+              arabic="الامتحان الشفوي والتطبيقي"
+            >
+              <ScoreTable
+                subjects={activeOralSubjects}
+                getScore={getScoreNumber}
+                category="ORAL"
+              />
             </ReportSection>
 
             {/* UJIAN TERTULIS */}
-            <ReportSection number="04" title="Ujian Tertulis" arabic="الامتحان التحريري">
-              <table className="report-table w-full border-collapse border border-slate-300 bg-white text-[9px]">
-                <thead>
-                  <tr className="bg-[#f1f6f3] text-center font-bold text-slate-700">
-                    <th className="w-[6%] border border-slate-300 py-1.5">No</th>
-                    <th className="w-[27%] border border-slate-300 py-1.5 text-center">Mata Pelajaran / المواد</th>
-                    <th className="w-[12%] border border-slate-300 py-1.5">Nilai Akhir</th>
-                    <th className="w-[55%] border border-slate-300 px-2.5 py-1.5 text-left">Capaian Kompetensi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeWrittenSubjects.map((subject, index) => {
-                    const score = getScoreNumber(subject.name, 'WRITTEN');
-                    const description = getMerdekaCompetencyDescriptions(subject.name, score);
-                    return (
-                      <tr key={`written-${subject.name}`} className="report-row">
-                        <td className="border border-slate-300 py-1 text-center align-top text-slate-500">{index + 1}</td>
-                        <td className="border border-slate-300 px-1.5 py-1 text-center align-top">
-                          <div className="font-medium leading-tight text-slate-800">{subject.name}</div>
-                          <div dir="rtl" className="arabic mt-0.5 text-[9.5px] font-semibold leading-tight text-slate-500">{subject.arabic}</div>
-                        </td>
-                        <td className="border border-slate-300 py-1 text-center align-top font-bold text-[#477b69]">{score > 0 ? score : '-'}</td>
-                        <td className="border border-slate-300 px-2.5 py-1 align-top leading-[1.25] text-slate-700">
-                          <div>{description.achieved}</div>
-                          <div className="mt-0.5 text-[8px] leading-[1.25] text-slate-500">{description.needsImprovement}</div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <ReportSection
+              number="04"
+              title="Ujian Tertulis"
+              arabic="الامتحان التحريري"
+            >
+              <ScoreTable
+                subjects={activeWrittenSubjects}
+                getScore={getScoreNumber}
+                category="WRITTEN"
+                compact
+              />
             </ReportSection>
 
             {/* KEPRIBADIAN SANTRI */}
-            <ReportSection number="05" title="Kepribadian Santri" arabic="شخصية الطالب / الطالبة">
+            <ReportSection
+              number="05"
+              title="Kepribadian Santri"
+              arabic="شخصية الطالب / الطالبة"
+            >
               <table className="report-table w-full border-collapse border border-slate-300 bg-white text-[9px]">
                 <thead>
                   <tr className="bg-[#f1f6f3] text-center font-bold text-slate-700">
                     <th className="w-[6%] border border-slate-300 py-1.5">No</th>
-                    <th className="w-[27%] border border-slate-300 py-1.5 text-center">Aspek / الصفة</th>
-                    <th className="w-[12%] border border-slate-300 py-1.5">Predikat</th>
-                    <th className="w-[55%] border border-slate-300 px-2.5 py-1.5 text-left">Capaian Kompetensi</th>
+                    <th className="w-[27%] border border-slate-300 py-1.5 text-center">
+                      Aspek / الصفة
+                    </th>
+                    <th className="w-[12%] border border-slate-300 py-1.5">
+                      Predikat
+                    </th>
+                    <th className="w-[55%] border border-slate-300 px-2.5 py-1.5 text-left">
+                      Capaian Kompetensi
+                    </th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {PERSONALITY_ASPECTS.map((item, index) => {
-                    const value = getPersonalityValue(personality, item.name, item.arabic);
-                    const desc = getPersonalityMerdekaDescription(item.name, value);
+                    const value = getPersonalityValue(
+                      personality,
+                      item.name,
+                      item.arabic
+                    );
+
+                    const desc = getPersonalityMerdekaDescription(
+                      item.name,
+                      value
+                    );
+
                     return (
                       <tr key={`personality-${item.name}`} className="report-row">
-                        <td className="border border-slate-300 py-1 text-center align-top text-slate-500">{index + 1}</td>
-                        <td className="border border-slate-300 px-1.5 py-1 text-center align-top">
-                          <div className="font-medium leading-tight text-slate-800">{item.name}</div>
-                          <div dir="rtl" className="arabic mt-0.5 text-[9.5px] font-semibold leading-tight text-slate-500">{item.arabic}</div>
+                        <td className="border border-slate-300 py-1 text-center align-top text-slate-500">
+                          {index + 1}
                         </td>
-                        <td className={`border border-slate-300 py-1 text-center align-top font-bold ${value === '-' ? 'text-slate-400' : 'text-[#477b69]'}`}>{value}</td>
+
+                        <td className="border border-slate-300 px-1.5 py-1 text-center align-top">
+                          <div className="font-medium leading-tight text-slate-800">
+                            {item.name}
+                          </div>
+                          <div
+                            dir="rtl"
+                            className="arabic mt-0.5 text-[9.5px] font-semibold leading-tight text-slate-500"
+                          >
+                            {item.arabic}
+                          </div>
+                        </td>
+
+                        <td
+                          className={`border border-slate-300 py-1 text-center align-top font-bold ${
+                            value === '-'
+                              ? 'text-slate-400'
+                              : 'text-[#477b69]'
+                          }`}
+                        >
+                          {value}
+                        </td>
+
                         <td className="border border-slate-300 px-2.5 py-1 align-top leading-[1.25] text-slate-700">
                           <div>{desc.achieved}</div>
-                          <div className="mt-0.5 text-[8px] leading-[1.25] text-slate-500">{desc.needsImprovement}</div>
+                          <div className="mt-0.5 text-[8px] leading-[1.25] text-slate-500">
+                            {desc.needsImprovement}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -771,22 +1215,41 @@ export default function ReportPage() {
             <div className="mx-[10mm] mb-4 grid grid-cols-2 gap-3">
               <section className="report-block">
                 <div className="mb-1 flex items-center justify-between border-b-2 border-[#315f50] pb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-800">Ketidakhadiran</span>
-                  <span dir="rtl" className="arabic text-[10px] font-semibold text-slate-600">الغياب</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-800">
+                    Ketidakhadiran
+                  </span>
+                  <span dir="rtl" className="arabic text-[10px] font-semibold text-slate-600">
+                    الغياب
+                  </span>
                 </div>
+
                 <table className="w-full border-collapse border border-slate-300 bg-white text-[9.5px]">
                   <tbody>
                     <tr>
-                      <td className="border border-slate-300 px-2 py-1 text-slate-600">Sakit (مرض)</td>
-                      <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-800">{attendance.sakit} hari</td>
+                      <td className="border border-slate-300 px-2 py-1 text-slate-600">
+                        Sakit (مرض)
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-800">
+                        {attendance.sakit} hari
+                      </td>
                     </tr>
+
                     <tr>
-                      <td className="border border-slate-300 px-2 py-1 text-slate-600">Izin (إذن)</td>
-                      <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-800">{attendance.izin} hari</td>
+                      <td className="border border-slate-300 px-2 py-1 text-slate-600">
+                        Izin (إذن)
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-800">
+                        {attendance.izin} hari
+                      </td>
                     </tr>
+
                     <tr>
-                      <td className="border border-slate-300 px-2 py-1 text-slate-600">Alpa / Tanpa Keterangan (غائب)</td>
-                      <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-800">{attendance.alpa} hari</td>
+                      <td className="border border-slate-300 px-2 py-1 text-slate-600">
+                        Alpa / Tanpa Keterangan (غائب)
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-800">
+                        {attendance.alpa} hari
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -794,14 +1257,22 @@ export default function ReportPage() {
 
               <section className="report-block">
                 <div className="mb-1 flex items-center justify-between border-b-2 border-[#315f50] pb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-800">Catatan Wali Kelas</span>
-                  <span dir="rtl" className="arabic text-[10px] font-semibold text-slate-600">ملاحظات مربي الفصل</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-800">
+                    Catatan Wali Kelas
+                  </span>
+                  <span dir="rtl" className="arabic text-[10px] font-semibold text-slate-600">
+                    ملاحظات مربي الفصل
+                  </span>
                 </div>
-                <div className="h-[74px] rounded border border-slate-300 bg-white p-2 text-[9px] leading-relaxed text-slate-700 overflow-y-auto">
+
+                <div className="h-[74px] overflow-y-auto rounded border border-slate-300 bg-white p-2 text-[9px] leading-relaxed text-slate-700">
                   {reportData.homeroomNote ? (
                     reportData.homeroomNote
                   ) : (
-                    <span className="italic text-slate-400">Terus tingkatkan prestasi belajar dan jaga kedisiplinan selama berada di lingkungan pondok pesantren.</span>
+                    <span className="italic text-slate-400">
+                      Terus tingkatkan prestasi belajar dan jaga kedisiplinan
+                      selama berada di lingkungan pondok pesantren.
+                    </span>
                   )}
                 </div>
               </section>
@@ -812,27 +1283,40 @@ export default function ReportPage() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="mb-1 text-slate-600">Mengetahui,</div>
-                  <div className="font-bold text-slate-800">Orang Tua / Wali Murid</div>
-                  <div className="h-14"></div>
-                  <div className="border-b border-slate-400 pb-0.5 font-bold text-slate-800">( ........................................ )</div>
+                  <div className="font-bold text-slate-800">
+                    Orang Tua / Wali Murid
+                  </div>
+                  <div className="h-14" />
+                  <div className="border-b border-slate-400 pb-0.5 font-bold text-slate-800">
+                    ( ........................................ )
+                  </div>
                 </div>
 
                 <div>
                   <div className="mb-1 text-slate-600">Wali Kelas</div>
-                  <div className="font-bold text-slate-800">مربي الفصل</div>
-                  <div className="h-14"></div>
-                  <div className="border-b border-slate-400 pb-0.5 font-bold text-slate-800">________________________</div>
+                  <div className="font-bold text-slate-800">
+                    مربي الفصل
+                  </div>
+                  <div className="h-14" />
+                  <div className="border-b border-slate-400 pb-0.5 font-bold text-slate-800">
+                    ________________________
+                  </div>
                 </div>
 
                 <div>
-                  <div className="mb-1 text-slate-600">Duyu Baru, {formattedPrintDate}</div>
-                  <div className="font-bold text-slate-800">{principalName}</div>
-                  <div className="h-14"></div>
-                  <div className="border-b border-slate-400 pb-0.5 font-bold text-slate-800">Pimpinan Pesantren</div>
+                  <div className="mb-1 text-slate-600">
+                    Doyo Baru, {formattedPrintDate}
+                  </div>
+                  <div className="font-bold text-slate-800">
+                    {principalName}
+                  </div>
+                  <div className="h-14" />
+                  <div className="border-b border-slate-400 pb-0.5 font-bold text-slate-800">
+                    Pimpinan Pesantren
+                  </div>
                 </div>
               </div>
             </section>
-
           </div>
         </main>
       )}
