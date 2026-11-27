@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   BookOpen,
@@ -28,6 +28,7 @@ type Teacher = {
 type Subject = {
   id: number;
   name: string;
+  level?: string | null;
 };
 
 type Assignment = {
@@ -38,6 +39,19 @@ type Assignment = {
   teacher?: { id?: number; fullname?: string | null } | null;
   subject?: { id?: number; name?: string | null } | null;
 };
+
+const availableClasses = [
+  '7A', '7B',
+  '8A', '8B',
+  '9A', '9B',
+  '10A', '10B',
+  '11A', '11B',
+  '12A', '12B',
+];
+
+/* =========================================================
+   HELPER
+========================================================= */
 
 function normalizeArray<T>(
   data: unknown,
@@ -62,10 +76,31 @@ function normalizeArray<T>(
   return [];
 }
 
+function normalizeSubjectName(name: string): string {
+  return String(name || '')
+    .normalize('NFKC')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('id-ID');
+}
+
+function getLevelFromClass(classValue: string): 'SMP' | 'SMA' {
+  const match = String(classValue || '').match(/\d+/);
+  const grade = match ? Number(match[0]) : 7;
+
+  return grade >= 10 ? 'SMA' : 'SMP';
+}
+
+function getClassLabel(classValue: string): string {
+  return /^kelas\s/i.test(classValue)
+    ? classValue
+    : `Kelas ${classValue}`;
+}
+
 async function getApiError(
   response: Response,
   fallback: string
-) {
+): Promise<string> {
   try {
     const data = await response.json();
     return data?.message || data?.error || fallback;
@@ -74,14 +109,9 @@ async function getApiError(
   }
 }
 
-const availableClasses = [
-  '7A', '7B',
-  '8A', '8B',
-  '9A', '9B',
-  '10A', '10B',
-  '11A', '11B',
-  '12A', '12B',
-];
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function AssignmentsPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -93,93 +123,184 @@ export default function AssignmentsPage() {
   const [className, setClassName] = useState('7A');
 
   const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState<
-    'success' | 'error'
-  >('success');
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
 
   const [loading, setLoading] = useState(true);
+  const [subjectLoading, setSubjectLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState('');
 
-  // =========================================================
-  // LOAD DATA
-  // =========================================================
+  const activeLevel = getLevelFromClass(className);
 
-  const fetchData = async () => {
+  /* =======================================================
+     LOAD SUBJECTS SESUAI JENJANG KELAS
+  ======================================================= */
+
+  const fetchSubjects = useCallback(async (level: 'SMP' | 'SMA') => {
+    try {
+      setSubjectLoading(true);
+      setSubjectId('');
+
+      const response = await fetch(
+        `/api/subjects?level=${level}`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          await getApiError(
+            response,
+            `Gagal memuat mata pelajaran ${level}.`
+          )
+        );
+      }
+
+      const result = await response.json();
+
+      const subjectData = normalizeArray<Subject>(
+        result,
+        ['subjects', 'subject']
+      );
+
+      // Filter tambahan untuk memastikan jenjang sesuai.
+      const correctLevel = subjectData.filter((subject) => {
+        if (!subject.level) return true;
+
+        return String(subject.level).toUpperCase() === level;
+      });
+
+      // Hilangkan nama mapel yang sama dalam jenjang yang sama.
+      // ID pertama dipertahankan agar relasi penugasan tetap valid.
+      const uniqueSubjects = new Map<string, Subject>();
+
+      for (const subject of correctLevel) {
+        const name = String(subject.name || '').trim();
+
+        if (!name) continue;
+
+        const key = normalizeSubjectName(name);
+
+        if (!uniqueSubjects.has(key)) {
+          uniqueSubjects.set(key, {
+            ...subject,
+            name,
+          });
+        }
+      }
+
+      const finalSubjects = Array.from(uniqueSubjects.values())
+        .sort((a, b) => a.name.localeCompare(b.name, 'id'));
+
+      setSubjects(finalSubjects);
+    } catch (error) {
+      console.error('FETCH SUBJECTS ERROR:', error);
+      setSubjects([]);
+      setMessageType('error');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Gagal memuat mata pelajaran.'
+      );
+    } finally {
+      setSubjectLoading(false);
+    }
+  }, []);
+
+  /* =======================================================
+     LOAD ASSIGNMENTS & TEACHERS
+  ======================================================= */
+
+  const fetchMainData = useCallback(async () => {
     try {
       setLoading(true);
       setMessage('');
 
-      const [resAssig, resTeach, resSubj] = await Promise.all([
+      const [resAssignments, resTeachers] = await Promise.all([
         fetch('/api/assignments', { cache: 'no-store' }),
         fetch('/api/teachers', { cache: 'no-store' }),
-        fetch('/api/subjects', { cache: 'no-store' }),
       ]);
 
-      if (!resAssig.ok) {
+      if (!resAssignments.ok) {
         throw new Error(
           await getApiError(
-            resAssig,
+            resAssignments,
             'Gagal memuat data pembagian tugas.'
           )
         );
       }
 
-      const dataAssig = await resAssig.json();
+      if (!resTeachers.ok) {
+        throw new Error(
+          await getApiError(
+            resTeachers,
+            'Gagal memuat data guru.'
+          )
+        );
+      }
+
+      const assignmentsData = await resAssignments.json();
+      const teachersData = await resTeachers.json();
 
       setAssignments(
         normalizeArray<Assignment>(
-          dataAssig,
+          assignmentsData,
           ['assignments']
         )
       );
 
-      if (resTeach.ok) {
-        const dataTeach = await resTeach.json();
+      setTeachers(
+        normalizeArray<Teacher>(
+          teachersData,
+          ['teachers', 'teacher']
+        )
+      );
+    } catch (error) {
+      console.error('FETCH MAIN DATA ERROR:', error);
 
-        setTeachers(
-          normalizeArray<Teacher>(
-            dataTeach,
-            ['teachers', 'teacher']
-          )
-        );
-      } else {
-        setTeachers([]);
-      }
-
-      if (resSubj.ok) {
-        const dataSubj = await resSubj.json();
-
-        setSubjects(
-          normalizeArray<Subject>(
-            dataSubj,
-            ['subjects', 'subject']
-          )
-        );
-      } else {
-        setSubjects([]);
-      }
-    } catch (error: any) {
       setMessageType('error');
       setMessage(
-        error?.message || 'Gagal memuat data.'
+        error instanceof Error
+          ? error.message
+          : 'Gagal memuat data.'
       );
 
       setAssignments([]);
       setTeachers([]);
-      setSubjects([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
-  // =========================================================
-  // RESET FORM
-  // =========================================================
+  /* =======================================================
+     INITIAL LOAD
+  ======================================================= */
+
+  useEffect(() => {
+    fetchMainData();
+  }, [fetchMainData]);
+
+  /* =======================================================
+     LOAD ULANG MAPEL KETIKA KELAS BERUBAH
+  ======================================================= */
+
+  useEffect(() => {
+    fetchSubjects(activeLevel);
+  }, [activeLevel, fetchSubjects]);
+
+  /* =======================================================
+     REFRESH SEMUA DATA
+  ======================================================= */
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      fetchMainData(),
+      fetchSubjects(activeLevel),
+    ]);
+  };
+
+  /* =======================================================
+     RESET FORM
+  ======================================================= */
 
   const resetForm = () => {
     setTeacherId('');
@@ -187,14 +308,30 @@ export default function AssignmentsPage() {
     setClassName('7A');
   };
 
-  // =========================================================
-  // SAVE ASSIGNMENT
-  // =========================================================
+  /* =======================================================
+     CHANGE CLASS
+  ======================================================= */
+
+  const handleClassChange = (value: string) => {
+    const oldLevel = getLevelFromClass(className);
+    const newLevel = getLevelFromClass(value);
+
+    setClassName(value);
+    setSubjectId('');
+
+    if (oldLevel !== newLevel) {
+      setSubjects([]);
+    }
+  };
+
+  /* =======================================================
+     SAVE ASSIGNMENT
+  ======================================================= */
 
   const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
+    event: React.FormEvent<HTMLFormElement>
   ) => {
-    e.preventDefault();
+    event.preventDefault();
     setMessage('');
 
     if (!teacherId || !subjectId || !className) {
@@ -205,31 +342,41 @@ export default function AssignmentsPage() {
       return;
     }
 
+    const selectedSubject = subjects.find(
+      (subject) => String(subject.id) === subjectId
+    );
+
+    if (!selectedSubject) {
+      setMessageType('error');
+      setMessage(
+        'Mata pelajaran tidak valid. Silakan pilih kembali.'
+      );
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      const res = await fetch('/api/assignments', {
+      const response = await fetch('/api/assignments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          teacherId,
-          subjectId,
+          teacherId: Number(teacherId),
+          subjectId: Number(subjectId),
           className,
         }),
       });
 
-      if (!res.ok) {
+      if (!response.ok) {
         throw new Error(
           await getApiError(
-            res,
+            response,
             'Gagal menyimpan pembagian tugas.'
           )
         );
       }
-
-      await res.json();
 
       setMessageType('success');
       setMessage(
@@ -237,102 +384,96 @@ export default function AssignmentsPage() {
       );
 
       resetForm();
-
-      await fetchData();
-    } catch (error: any) {
+      await fetchMainData();
+    } catch (error) {
       setMessageType('error');
       setMessage(
-        error?.message ||
-          'Terjadi kesalahan saat menyimpan pembagian tugas.'
+        error instanceof Error
+          ? error.message
+          : 'Terjadi kesalahan saat menyimpan pembagian tugas.'
       );
     } finally {
       setSubmitting(false);
     }
   };
 
-  // =========================================================
-  // SEARCH
-  // =========================================================
+  /* =======================================================
+     SEARCH
+  ======================================================= */
 
   const filteredAssignments = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+    const keyword = search.trim().toLocaleLowerCase('id-ID');
 
     if (!keyword) return assignments;
 
-    return assignments.filter((a) => {
-      const teacherName = a.teacher?.fullname || '';
-      const subjectName = a.subject?.name || '';
-      const classNameValue = a.className || '';
+    return assignments.filter((assignment) => {
+      const teacherName = assignment.teacher?.fullname || '';
+      const subjectName = assignment.subject?.name || '';
+      const classValue = assignment.className || '';
 
       return (
-        teacherName.toLowerCase().includes(keyword) ||
-        subjectName.toLowerCase().includes(keyword) ||
-        classNameValue.toLowerCase().includes(keyword)
+        teacherName.toLocaleLowerCase('id-ID').includes(keyword) ||
+        subjectName.toLocaleLowerCase('id-ID').includes(keyword) ||
+        classValue.toLocaleLowerCase('id-ID').includes(keyword)
       );
     });
   }, [assignments, search]);
 
-  // =========================================================
-  // SUMMARY
-  // =========================================================
+  /* =======================================================
+     SUMMARY
+  ======================================================= */
 
   const totalClasses = useMemo(() => {
     return new Set(
       assignments
-        .map((a) => a.className)
+        .map((assignment) => assignment.className)
         .filter(Boolean)
     ).size;
   }, [assignments]);
 
   const selectedTeacher = teachers.find(
-    (t) => String(t.id) === teacherId
+    (teacher) => String(teacher.id) === teacherId
   );
 
   const selectedSubject = subjects.find(
-    (s) => String(s.id) === subjectId
+    (subject) => String(subject.id) === subjectId
   );
 
-  // =========================================================
-  // RENDER
-  // =========================================================
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <div className="space-y-5">
 
-      {/* =====================================================
-          PAGE TITLE
-      ====================================================== */}
+      {/* PAGE TITLE */}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
         <div>
           <h1 className="text-[23px] font-normal text-[#1d2327]">
             Pembagian Tugas Mengajar
           </h1>
 
           <p className="mt-1 text-[13px] text-[#646970]">
-            Atur guru yang mengajar setiap mata pelajaran
-            di masing-masing kelas.
+            Atur guru yang mengajar setiap mata pelajaran di masing-masing kelas.
           </p>
         </div>
 
         <button
-          onClick={fetchData}
-          disabled={loading}
+          type="button"
+          onClick={handleRefresh}
+          disabled={loading || subjectLoading}
           className="inline-flex items-center justify-center gap-2 self-start rounded-[3px] border border-[#8c8f94] bg-white px-3 py-2 text-[13px] text-[#1d2327] hover:bg-[#f6f7f7] disabled:opacity-50"
         >
           <RefreshCw
             size={15}
-            className={loading ? 'animate-spin' : ''}
+            className={loading || subjectLoading ? 'animate-spin' : ''}
           />
           Perbarui Data
         </button>
-
       </div>
 
-      {/* =====================================================
-          MESSAGE
-      ====================================================== */}
+      {/* MESSAGE */}
 
       {message && (
         <div
@@ -359,6 +500,7 @@ export default function AssignmentsPage() {
           </span>
 
           <button
+            type="button"
             onClick={() => setMessage('')}
             className="text-[#646970] hover:text-[#1d2327]"
           >
@@ -367,122 +509,81 @@ export default function AssignmentsPage() {
         </div>
       )}
 
-      {/* =====================================================
-          INFO WIDGET
-      ====================================================== */}
+      {/* INFO WIDGET */}
 
       <div className="overflow-hidden rounded-[4px] border border-[#c3c4c7] bg-white">
-
         <div className="border-b border-[#c3c4c7] bg-[#1d2327] px-5 py-4 text-white">
-
           <div className="flex items-center gap-2">
             <GraduationCap size={20} />
-
             <h2 className="text-[16px] font-medium">
               Panduan Pembagian Tugas
             </h2>
           </div>
 
           <p className="mt-1 text-[13px] text-[#c3c4c7]">
-            Gunakan halaman ini untuk menentukan siapa yang
-            mengajar mata pelajaran di setiap kelas.
+            Gunakan halaman ini untuk menentukan siapa yang mengajar mata pelajaran di setiap kelas.
           </p>
-
         </div>
 
         <div className="grid gap-4 p-4 sm:grid-cols-3">
-
-          {/* STEP 1 */}
-
           <div className="flex gap-3">
-
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2271b1] text-[13px] font-semibold text-white">
               1
             </div>
-
             <div>
               <h3 className="text-[13px] font-medium text-[#1d2327]">
                 Pilih Guru
               </h3>
-
               <p className="mt-1 text-[12px] leading-relaxed text-[#646970]">
                 Tentukan guru atau ustadz yang akan mengajar.
               </p>
             </div>
-
           </div>
 
-          {/* STEP 2 */}
-
           <div className="flex gap-3">
-
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2271b1] text-[13px] font-semibold text-white">
               2
             </div>
-
             <div>
               <h3 className="text-[13px] font-medium text-[#1d2327]">
                 Pilih Mata Pelajaran
               </h3>
-
               <p className="mt-1 text-[12px] leading-relaxed text-[#646970]">
-                Pilih mata pelajaran yang menjadi tanggung
-                jawab guru tersebut.
+                Pilih mapel sesuai jenjang kelas yang dipilih.
               </p>
             </div>
-
           </div>
 
-          {/* STEP 3 */}
-
           <div className="flex gap-3">
-
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2271b1] text-[13px] font-semibold text-white">
               3
             </div>
-
             <div>
               <h3 className="text-[13px] font-medium text-[#1d2327]">
                 Pilih Kelas & Simpan
               </h3>
-
               <p className="mt-1 text-[12px] leading-relaxed text-[#646970]">
-                Tentukan kelas yang diajar, lalu tekan
-                tombol Simpan.
+                Tentukan kelas yang diajar, lalu tekan tombol Simpan.
               </p>
             </div>
-
           </div>
-
         </div>
 
         <div className="flex items-start gap-2 border-t border-[#e2e4e7] bg-[#f6f7f7] px-4 py-3">
-
           <Info
             size={16}
             className="mt-0.5 shrink-0 text-[#2271b1]"
           />
-
           <p className="text-[12px] leading-relaxed text-[#646970]">
-            <strong className="text-[#1d2327]">
-              Contoh:
-            </strong>{' '}
-            Ustadz Ahmad mengajar Bahasa Arab di kelas 7A.
-            Artinya, buat satu penugasan dengan Guru:
-            Ustadz Ahmad, Mata Pelajaran: Bahasa Arab,
-            Kelas: 7A.
+            <strong className="text-[#1d2327]">Informasi:</strong>{' '}
+            Kelas 7–9 otomatis menggunakan daftar mapel SMP, sedangkan kelas 10–12 menggunakan daftar mapel SMA.
           </p>
-
         </div>
-
       </div>
 
-      {/* =====================================================
-          SUMMARY
-      ====================================================== */}
+      {/* SUMMARY */}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-
         <StatCard
           icon={BookOpen}
           label="Total Tugas Mengajar"
@@ -503,61 +604,42 @@ export default function AssignmentsPage() {
           value={totalClasses}
           description="Kelas dengan pengampu"
         />
-
       </div>
 
-      {/* =====================================================
-          MAIN CONTENT
-      ====================================================== */}
+      {/* MAIN CONTENT */}
 
       <div className="grid items-start gap-5 xl:grid-cols-[330px_minmax(0,1fr)]">
 
-        {/* ===================================================
-            FORM
-        ==================================================== */}
+        {/* FORM */}
 
         <div className="overflow-hidden rounded-[4px] border border-[#c3c4c7] bg-white">
-
-          {/* FORM HEADER */}
-
           <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-4 py-3">
-
             <h2 className="text-[14px] font-medium text-[#1d2327]">
               Tambah Tugas Mengajar
             </h2>
-
             <p className="mt-1 text-[12px] text-[#646970]">
               Isi data berikut untuk membuat penugasan baru.
             </p>
-
           </div>
 
-          {/* FORM BODY */}
-
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-4 p-4"
-          >
+          <form onSubmit={handleSubmit} className="space-y-4 p-4">
 
             {/* TEACHER */}
 
             <div>
-
               <label className="mb-1.5 block text-[13px] font-medium text-[#1d2327]">
                 Guru / Ustadz
                 <span className="ml-1 text-[#d63638]">*</span>
               </label>
 
               <div className="relative">
-
                 <select
                   value={teacherId}
-                  onChange={(e) => setTeacherId(e.target.value)}
+                  onChange={(event) => setTeacherId(event.target.value)}
                   required
                   disabled={loading || teachers.length === 0}
                   className="w-full appearance-none rounded-[3px] border border-[#8c8f94] bg-white px-3 py-2.5 pr-9 text-[13px] text-[#1d2327] focus:border-[#2271b1] focus:outline-none focus:ring-1 focus:ring-[#2271b1] disabled:bg-[#f6f7f7]"
                 >
-
                   <option value="">
                     {loading
                       ? 'Sedang memuat guru...'
@@ -566,173 +648,140 @@ export default function AssignmentsPage() {
                         : '— Pilih Guru / Ustadz —'}
                   </option>
 
-                  {teachers.map((t) => (
-                    <option
-                      key={t.id}
-                      value={t.id}
-                    >
-                      {t.fullname}
-                      {t.status === 'Nonaktif'
+                  {teachers.map((teacher) => (
+                    <option key={teacher.id} value={teacher.id}>
+                      {teacher.fullname}
+                      {teacher.status === 'Nonaktif'
                         ? ' (Nonaktif)'
                         : ''}
                     </option>
                   ))}
-
                 </select>
 
                 <ChevronDown
                   size={16}
                   className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#646970]"
                 />
-
               </div>
 
               <p className="mt-1 text-[11px] text-[#646970]">
-                Pilih nama guru yang bertanggung jawab
-                mengajar.
+                Pilih nama guru yang bertanggung jawab mengajar.
               </p>
-
-            </div>
-
-            {/* SUBJECT */}
-
-            <div>
-
-              <label className="mb-1.5 block text-[13px] font-medium text-[#1d2327]">
-                Mata Pelajaran
-                <span className="ml-1 text-[#d63638]">*</span>
-              </label>
-
-              <div className="relative">
-
-                <select
-                  value={subjectId}
-                  onChange={(e) => setSubjectId(e.target.value)}
-                  required
-                  disabled={loading || subjects.length === 0}
-                  className="w-full appearance-none rounded-[3px] border border-[#8c8f94] bg-white px-3 py-2.5 pr-9 text-[13px] text-[#1d2327] focus:border-[#2271b1] focus:outline-none focus:ring-1 focus:ring-[#2271b1] disabled:bg-[#f6f7f7]"
-                >
-
-                  <option value="">
-                    {loading
-                      ? 'Sedang memuat mata pelajaran...'
-                      : subjects.length === 0
-                        ? 'Belum ada mata pelajaran'
-                        : '— Pilih Mata Pelajaran —'}
-                  </option>
-
-                  {subjects.map((s) => (
-                    <option
-                      key={s.id}
-                      value={s.id}
-                    >
-                      {s.name}
-                    </option>
-                  ))}
-
-                </select>
-
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#646970]"
-                />
-
-              </div>
-
-              <p className="mt-1 text-[11px] text-[#646970]">
-                Pilih mapel yang akan diajarkan oleh guru.
-              </p>
-
             </div>
 
             {/* CLASS */}
 
             <div>
-
               <label className="mb-1.5 block text-[13px] font-medium text-[#1d2327]">
                 Kelas yang Diajar
                 <span className="ml-1 text-[#d63638]">*</span>
               </label>
 
               <div className="relative">
-
                 <select
                   value={className}
-                  onChange={(e) => setClassName(e.target.value)}
+                  onChange={(event) => handleClassChange(event.target.value)}
                   required
                   className="w-full appearance-none rounded-[3px] border border-[#8c8f94] bg-white px-3 py-2.5 pr-9 text-[13px] text-[#1d2327] focus:border-[#2271b1] focus:outline-none focus:ring-1 focus:ring-[#2271b1]"
                 >
-
-                  {availableClasses.map((c) => (
-                    <option
-                      key={c}
-                      value={c}
-                    >
-                      Kelas {c}
+                  {availableClasses.map((classValue) => (
+                    <option key={classValue} value={classValue}>
+                      {getClassLabel(classValue)}
                     </option>
                   ))}
-
                 </select>
 
                 <ChevronDown
                   size={16}
                   className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#646970]"
                 />
-
               </div>
 
               <p className="mt-1 text-[11px] text-[#646970]">
-                Tentukan kelas tempat guru mengajar.
+                Pilih kelas terlebih dahulu. Jenjang mapel akan menyesuaikan otomatis.
               </p>
+            </div>
 
+            {/* SUBJECT */}
+
+            <div>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label className="block text-[13px] font-medium text-[#1d2327]">
+                  Mata Pelajaran
+                  <span className="ml-1 text-[#d63638]">*</span>
+                </label>
+
+                <span className="rounded-[3px] bg-[#eaf3fb] px-2 py-1 text-[10px] font-semibold text-[#2271b1]">
+                  Jenjang {activeLevel}
+                </span>
+              </div>
+
+              <div className="relative">
+                <select
+                  value={subjectId}
+                  onChange={(event) => setSubjectId(event.target.value)}
+                  required
+                  disabled={subjectLoading || subjects.length === 0}
+                  className="w-full appearance-none rounded-[3px] border border-[#8c8f94] bg-white px-3 py-2.5 pr-9 text-[13px] text-[#1d2327] focus:border-[#2271b1] focus:outline-none focus:ring-1 focus:ring-[#2271b1] disabled:bg-[#f6f7f7]"
+                >
+                  <option value="">
+                    {subjectLoading
+                      ? `Memuat mapel ${activeLevel}...`
+                      : subjects.length === 0
+                        ? `Belum ada mapel ${activeLevel}`
+                        : '— Pilih Mata Pelajaran —'}
+                  </option>
+
+                  {subjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </option>
+                  ))}
+                </select>
+
+                <ChevronDown
+                  size={16}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#646970]"
+                />
+              </div>
+
+              <p className="mt-1 text-[11px] text-[#646970]">
+                {subjectLoading
+                  ? 'Sedang mengambil daftar mata pelajaran...'
+                  : `${subjects.length} mata pelajaran tersedia untuk jenjang ${activeLevel}.`}
+              </p>
             </div>
 
             {/* PREVIEW */}
 
             {teacherId && subjectId && className && (
-
               <div className="rounded-[3px] border border-[#c3c4c7] bg-[#f6f7f7] p-3">
-
                 <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[#646970]">
                   Ringkasan Penugasan
                 </div>
 
                 <div className="space-y-1 text-[12px] text-[#1d2327]">
-
                   <div>
-                    <span className="text-[#646970]">
-                      Guru:{' '}
-                    </span>
-
-                    <strong>
-                      {selectedTeacher?.fullname || '-'}
-                    </strong>
+                    <span className="text-[#646970]">Guru: </span>
+                    <strong>{selectedTeacher?.fullname || '-'}</strong>
                   </div>
 
                   <div>
-                    <span className="text-[#646970]">
-                      Mapel:{' '}
-                    </span>
-
-                    <strong>
-                      {selectedSubject?.name || '-'}
-                    </strong>
+                    <span className="text-[#646970]">Mapel: </span>
+                    <strong>{selectedSubject?.name || '-'}</strong>
                   </div>
 
                   <div>
-                    <span className="text-[#646970]">
-                      Kelas:{' '}
-                    </span>
-
-                    <strong>
-                      {className}
-                    </strong>
+                    <span className="text-[#646970]">Kelas: </span>
+                    <strong>{className}</strong>
                   </div>
 
+                  <div>
+                    <span className="text-[#646970]">Jenjang: </span>
+                    <strong>{activeLevel}</strong>
+                  </div>
                 </div>
-
               </div>
-
             )}
 
             {/* SUBMIT */}
@@ -742,18 +791,15 @@ export default function AssignmentsPage() {
               disabled={
                 submitting ||
                 loading ||
+                subjectLoading ||
                 teachers.length === 0 ||
                 subjects.length === 0
               }
               className="flex w-full items-center justify-center gap-2 rounded-[3px] border border-[#2271b1] bg-[#2271b1] px-4 py-2.5 text-[13px] font-medium text-white hover:bg-[#135e96] disabled:cursor-not-allowed disabled:opacity-50"
             >
-
               {submitting ? (
                 <>
-                  <Loader2
-                    size={16}
-                    className="animate-spin"
-                  />
+                  <Loader2 size={16} className="animate-spin" />
                   Menyimpan...
                 </>
               ) : (
@@ -762,10 +808,7 @@ export default function AssignmentsPage() {
                   Simpan Tugas Mengajar
                 </>
               )}
-
             </button>
-
-            {/* RESET */}
 
             <button
               type="button"
@@ -775,25 +818,16 @@ export default function AssignmentsPage() {
             >
               Kosongkan Form
             </button>
-
           </form>
-
         </div>
 
-        {/* ===================================================
-            ASSIGNMENT LIST
-        ==================================================== */}
+        {/* ASSIGNMENT LIST */}
 
         <div className="overflow-hidden rounded-[4px] border border-[#c3c4c7] bg-white">
 
-          {/* LIST HEADER */}
-
           <div className="border-b border-[#c3c4c7] bg-[#f6f7f7] px-4 py-3">
-
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
               <div>
-
                 <h2 className="text-[14px] font-medium text-[#1d2327]">
                   Daftar Tugas Mengajar
                 </h2>
@@ -803,13 +837,9 @@ export default function AssignmentsPage() {
                     ? `${assignments.length} tugas mengajar terdaftar`
                     : `Menampilkan ${filteredAssignments.length} dari ${assignments.length} tugas`}
                 </p>
-
               </div>
 
-              {/* SEARCH */}
-
               <div className="relative w-full sm:w-64">
-
                 <Search
                   size={16}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-[#646970]"
@@ -818,43 +848,23 @@ export default function AssignmentsPage() {
                 <input
                   type="search"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(event) => setSearch(event.target.value)}
                   placeholder="Cari guru, mapel, kelas..."
                   className="w-full rounded-[3px] border border-[#8c8f94] bg-white py-2 pl-9 pr-3 text-[13px] text-[#1d2327] focus:border-[#2271b1] focus:outline-none focus:ring-1 focus:ring-[#2271b1]"
                 />
-
               </div>
-
             </div>
-
           </div>
 
-          {/* LOADING */}
-
           {loading ? (
-
             <div className="flex min-h-[260px] items-center justify-center text-[13px] text-[#646970]">
-
-              <Loader2
-                size={18}
-                className="mr-2 animate-spin"
-              />
-
+              <Loader2 size={18} className="mr-2 animate-spin" />
               Sedang memuat data tugas mengajar...
-
             </div>
-
           ) : assignments.length === 0 ? (
-
-            /* EMPTY */
-
             <div className="flex min-h-[260px] flex-col items-center justify-center px-5 text-center">
-
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f0f1]">
-                <BookOpen
-                  size={24}
-                  className="text-[#646970]"
-                />
+                <BookOpen size={24} className="text-[#646970]" />
               </div>
 
               <h3 className="text-[14px] font-medium text-[#1d2327]">
@@ -862,22 +872,12 @@ export default function AssignmentsPage() {
               </h3>
 
               <p className="mt-2 max-w-sm text-[12px] leading-relaxed text-[#646970]">
-                Silakan tambahkan pembagian tugas mengajar
-                melalui formulir di sebelah kiri.
+                Silakan tambahkan pembagian tugas mengajar melalui formulir di sebelah kiri.
               </p>
-
             </div>
-
           ) : filteredAssignments.length === 0 ? (
-
-            /* SEARCH EMPTY */
-
             <div className="flex min-h-[260px] flex-col items-center justify-center px-5 text-center">
-
-              <Search
-                size={30}
-                className="mb-3 text-[#c3c4c7]"
-              />
+              <Search size={30} className="mb-3 text-[#c3c4c7]" />
 
               <h3 className="text-[14px] font-medium text-[#1d2327]">
                 Data Tidak Ditemukan
@@ -888,138 +888,89 @@ export default function AssignmentsPage() {
               </p>
 
               <button
+                type="button"
                 onClick={() => setSearch('')}
                 className="mt-3 text-[13px] text-[#2271b1] hover:underline"
               >
                 Hapus pencarian
               </button>
-
             </div>
-
           ) : (
-
-            /* TABLE */
-
             <div className="overflow-x-auto">
-
               <table className="w-full min-w-[520px] border-collapse text-[13px]">
-
-                {/* TABLE HEAD */}
-
                 <thead>
-
                   <tr className="border-b border-[#c3c4c7] bg-[#f0f0f1] text-left text-[#1d2327]">
-
                     <th className="w-12 px-3 py-3 text-center font-medium">
                       No.
                     </th>
-
                     <th className="px-4 py-3 font-medium">
                       Guru / Ustadz
                     </th>
-
                     <th className="px-4 py-3 font-medium">
                       Mata Pelajaran
                     </th>
-
                     <th className="w-28 px-4 py-3 text-center font-medium">
                       Kelas
                     </th>
-
                   </tr>
-
                 </thead>
 
-                {/* TABLE BODY */}
-
                 <tbody>
-
-                  {filteredAssignments.map((a, idx) => (
-
+                  {filteredAssignments.map((assignment, index) => (
                     <tr
-                      key={a.id}
+                      key={assignment.id}
                       className="border-b border-[#e2e4e7] last:border-b-0 hover:bg-[#f6f7f7]"
                     >
-
-                      {/* NUMBER */}
-
                       <td className="px-3 py-3 text-center text-[#646970]">
-                        {idx + 1}
+                        {index + 1}
                       </td>
 
-                      {/* TEACHER */}
-
                       <td className="px-4 py-3">
-
                         <div className="flex items-center gap-2">
-
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f0f0f1] text-[#2271b1]">
                             <GraduationCap size={16} />
                           </div>
 
                           <span className="font-medium text-[#1d2327]">
-                            {a.teacher?.fullname || 'Nama guru belum tersedia'}
+                            {assignment.teacher?.fullname ||
+                              'Nama guru belum tersedia'}
                           </span>
-
                         </div>
-
                       </td>
-
-                      {/* SUBJECT */}
 
                       <td className="px-4 py-3 text-[#1d2327]">
-                        {a.subject?.name || 'Mata pelajaran belum tersedia'}
+                        {assignment.subject?.name ||
+                          'Mata pelajaran belum tersedia'}
                       </td>
-
-                      {/* CLASS */}
 
                       <td className="px-4 py-3 text-center">
-
                         <span className="inline-flex rounded-[3px] border border-[#c3c4c7] bg-[#f6f7f7] px-2.5 py-1 text-[12px] font-medium text-[#1d2327]">
-                          {a.className || '-'}
+                          {assignment.className || '-'}
                         </span>
-
                       </td>
-
                     </tr>
-
                   ))}
-
                 </tbody>
-
               </table>
-
             </div>
-
           )}
-
-          {/* FOOTER */}
 
           {!loading && assignments.length > 0 && (
-
             <div className="border-t border-[#c3c4c7] bg-[#f6f7f7] px-4 py-3">
-
               <p className="text-[12px] text-[#646970]">
-                Data ini menjadi acuan guru untuk mengisi
-                kehadiran, asesmen, dan rapor pada kelas
-                serta mata pelajaran yang ditugaskan.
+                Data ini menjadi acuan guru untuk mengisi kehadiran, asesmen, dan rapor pada kelas serta mata pelajaran yang ditugaskan.
               </p>
-
             </div>
-
           )}
-
         </div>
-
       </div>
-
     </div>
   );
 }
 
-// ===========================================================
-// STAT CARD
-// ===========================================================
+/* =========================================================
+   STAT CARD
+========================================================= */
 
 function StatCard({
   icon: Icon,
@@ -1027,22 +978,19 @@ function StatCard({
   value,
   description,
 }: {
-  icon: any;
+  icon: React.ElementType;
   label: string;
   value: number;
   description: string;
 }) {
   return (
     <div className="overflow-hidden rounded-[4px] border border-[#c3c4c7] bg-white">
-
       <div className="flex items-center gap-3 p-4">
-
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#f0f0f1] text-[#2271b1]">
           <Icon size={20} />
         </div>
 
         <div className="min-w-0">
-
           <div className="text-[12px] text-[#646970]">
             {label}
           </div>
@@ -1054,11 +1002,8 @@ function StatCard({
           <div className="mt-1 text-[11px] text-[#646970]">
             {description}
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
