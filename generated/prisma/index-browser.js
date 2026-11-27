@@ -168,6 +168,7 @@ exports.Prisma.StudentScalarFieldEnum = {
 exports.Prisma.AssessmentScalarFieldEnum = {
   id: 'id',
   studentId: 'studentId',
+  subjectId: 'subjectId',
   tpId: 'tpId',
   score: 'score',
   type: 'type'
