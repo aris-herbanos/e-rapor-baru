@@ -1,7 +1,23 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, BookOpen, ArrowLeft } from 'lucide-react';
+import {
+  Plus,
+  BookOpen,
+  ArrowLeft,
+  Trash2,
+  Edit3,
+  GraduationCap,
+  School,
+  Search,
+  RefreshCw,
+  X,
+  CheckCircle2,
+  AlertTriangle,
+  ChevronRight,
+  Layers,
+} from 'lucide-react';
 
 // ============================================================================
 // TYPES
@@ -32,9 +48,7 @@ type Subject = {
   level?: 'SMP' | 'SMA';
 };
 
-// ============================================================================
-// FALLBACK MATA PELAJARAN SMP
-// ============================================================================
+type MessageType = 'success' | 'error' | '';
 
 const SUBJECTS_SMP: Subject[] = [
   { id: 1, name: 'Tajwid', level: 'SMP' },
@@ -51,10 +65,6 @@ const SUBJECTS_SMP: Subject[] = [
   { id: 12, name: 'Siroh Nabawiyah', level: 'SMP' },
   { id: 13, name: 'Imla dan Khot', level: 'SMP' },
 ];
-
-// ============================================================================
-// FALLBACK MATA PELAJARAN SMA
-// ============================================================================
 
 const SUBJECTS_SMA: Subject[] = [
   { id: 101, name: 'Tajwid', level: 'SMA' },
@@ -77,16 +87,10 @@ const SUBJECTS_SMA: Subject[] = [
 // ============================================================================
 
 export default function CurriculumPage() {
-  // ==========================================================================
-  // STATE UTAMA
-  // ==========================================================================
-
   const [activeTabLevel, setActiveTabLevel] =
     useState<'SMP' | 'SMA'>('SMP');
 
   const [selectedGrade, setSelectedGrade] = useState<number>(7);
-
-  // Semester sekarang ikut menjadi bagian utama kurikulum
   const [selectedSemester, setSelectedSemester] = useState<number>(1);
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -95,56 +99,51 @@ export default function CurriculumPage() {
   const [selectedSubject, setSelectedSubject] =
     useState<Subject | null>(null);
 
-  // ==========================================================================
-  // STATE FORM CP
-  // ==========================================================================
-
   const [cpDesc, setCpDesc] = useState('');
-
-  // ==========================================================================
-  // STATE FORM TP
-  // ==========================================================================
-
   const [activeCpIdForTp, setActiveCpIdForTp] =
     useState<number | null>(null);
-
   const [tpDesc, setTpDesc] = useState('');
-
-  // ==========================================================================
-  // STATE UI
-  // ==========================================================================
 
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<MessageType>('');
+
+  const [subjectSearch, setSubjectSearch] = useState('');
 
   // ==========================================================================
-  // HELPER
+  // HELPERS
   // ==========================================================================
 
-  function normalizeText(val: unknown) {
-    return String(val || '')
-      .trim()
-      .toLowerCase();
-  }
+  const normalizeText = (value: unknown) => {
+    return String(value || '').trim().toLowerCase();
+  };
+
+  const showMessage = (
+    text: string,
+    type: MessageType = 'success'
+  ) => {
+    setMessage(text);
+    setMessageType(type);
+  };
+
+  const getGradeOptions = () => {
+    return activeTabLevel === 'SMP'
+      ? [7, 8, 9]
+      : [10, 11, 12];
+  };
 
   // ==========================================================================
-  // RESET KELAS & SEMESTER SAAT PINDAH JENJANG
+  // RESET SAAT PINDAH JENJANG
   // ==========================================================================
 
   useEffect(() => {
-    if (activeTabLevel === 'SMP') {
-      setSelectedGrade(7);
-    } else {
-      setSelectedGrade(10);
-    }
-
-    // Setiap pindah jenjang kembali ke Semester 1
+    setSelectedGrade(activeTabLevel === 'SMP' ? 7 : 10);
     setSelectedSemester(1);
-
     setActiveCpIdForTp(null);
     setTpDesc('');
     setCpDesc('');
+    setSubjectSearch('');
   }, [activeTabLevel]);
 
   // ==========================================================================
@@ -159,35 +158,29 @@ export default function CurriculumPage() {
         fetch('/api/curriculum', {
           cache: 'no-store',
         }),
-
         fetch('/api/subjects', {
           cache: 'no-store',
         }),
       ]);
 
-      // ----------------------------------------------------------------------
-      // CURRICULUM
-      // ----------------------------------------------------------------------
-
       const currData = await currRes.json();
+      const subjData = await subjRes.json();
 
-      if (currRes.ok) {
-        const curriculumList = Array.isArray(currData)
-          ? currData
-          : currData?.data || [];
-
-        setCps(
-          Array.isArray(curriculumList)
-            ? curriculumList
-            : []
+      if (!currRes.ok) {
+        throw new Error(
+          currData?.message || 'Gagal memuat data kurikulum.'
         );
       }
 
-      // ----------------------------------------------------------------------
-      // SUBJECTS
-      // ----------------------------------------------------------------------
+      const curriculumList = Array.isArray(currData)
+        ? currData
+        : currData?.data || [];
 
-      const subjData = await subjRes.json();
+      setCps(
+        Array.isArray(curriculumList)
+          ? curriculumList
+          : []
+      );
 
       if (subjRes.ok) {
         const list = Array.isArray(subjData)
@@ -196,10 +189,7 @@ export default function CurriculumPage() {
             subjData?.subjects ||
             [];
 
-        if (
-          Array.isArray(list) &&
-          list.length > 0
-        ) {
+        if (Array.isArray(list) && list.length > 0) {
           setSubjects(list);
         } else {
           setSubjects([
@@ -213,19 +203,17 @@ export default function CurriculumPage() {
           ...SUBJECTS_SMA,
         ]);
       }
-    } catch (err) {
-      console.error(
-        'Gagal memuat data kurikulum:',
-        err
-      );
+    } catch (error) {
+      console.error('FETCH CURRICULUM ERROR:', error);
 
       setSubjects([
         ...SUBJECTS_SMP,
         ...SUBJECTS_SMA,
       ]);
 
-      setMessage(
-        'error:Gagal mengambil data kurikulum dari server.'
+      showMessage(
+        'Gagal mengambil data kurikulum dari server.',
+        'error'
       );
     } finally {
       setLoadingData(false);
@@ -237,209 +225,145 @@ export default function CurriculumPage() {
   }, []);
 
   // ==========================================================================
-  // FILTER MATA PELAJARAN BERDASARKAN JENJANG
+  // FILTER MATA PELAJARAN
   // ==========================================================================
 
-  const filteredSubjectsByLevel =
-    useMemo(() => {
-      return subjects.filter((subj) => {
-        // Kalau API sudah mengirim field level,
-        // gunakan level sebagai acuan utama.
-        if (subj.level) {
-          return subj.level === activeTabLevel;
-        }
-
-        // --------------------------------------------------------------------
-        // FALLBACK
-        // --------------------------------------------------------------------
-        // Digunakan apabila API lama belum mempunyai field level.
-        // --------------------------------------------------------------------
-
-        if (activeTabLevel === 'SMA') {
-          return (
-            subj.name.includes('Lanjutan') ||
-            subj.name.includes('Muqoron') ||
-            subj.name.includes('Ulumul') ||
-            subj.name.includes('Mustholah') ||
-            subj.name.includes('Ushul') ||
-            subj.name.includes('Tarikh') ||
-            subj.name.includes('Balaghoh') ||
-            subj.name.includes('Tauhid')
-          );
-        }
-
-        return (
-          !subj.name.includes('Lanjutan') &&
-          !subj.name.includes('Muqoron') &&
-          !subj.name.includes('Ulumul') &&
-          !subj.name.includes('Mustholah') &&
-          !subj.name.includes('Ushul') &&
-          !subj.name.includes('Tarikh') &&
-          !subj.name.includes('Balaghoh') &&
-          !subj.name.includes('Tauhid')
-        );
-      });
-    }, [subjects, activeTabLevel]);
-
-  // ==========================================================================
-  // FILTER CP
-  // ==========================================================================
-  //
-  // CP sekarang difilter berdasarkan:
-  //
-  // 1. Mata pelajaran
-  // 2. Tingkat kelas
-  // 3. Semester
-  //
-  // CP lama yang belum mempunyai field semester
-  // dianggap sebagai Semester 1.
-  // ==========================================================================
-
-  const currentSubjectCPs =
-    useMemo(() => {
-      if (!selectedSubject) {
-        return [];
+  const filteredSubjectsByLevel = useMemo(() => {
+    return subjects.filter(subj => {
+      if (subj.level) {
+        return subj.level === activeTabLevel;
       }
 
-      return cps.filter((cp) => {
-        // --------------------------------------------------------------------
-        // MATCH SUBJECT
-        // --------------------------------------------------------------------
-
-        const matchSubject =
-          cp.subjectId === selectedSubject.id ||
-          normalizeText(cp.subject?.name) ===
-            normalizeText(
-              selectedSubject.name
-            );
-
-        // --------------------------------------------------------------------
-        // MATCH GRADE
-        // --------------------------------------------------------------------
-
-        const matchGrade =
-          cp.grade === undefined ||
-          cp.grade === null ||
-          Number(cp.grade) ===
-            Number(selectedGrade);
-
-        // --------------------------------------------------------------------
-        // MATCH SEMESTER
-        // --------------------------------------------------------------------
-        //
-        // Data lama tanpa semester dianggap Semester 1.
-        // Dengan cara ini data lama tidak ikut muncul
-        // di Semester 2.
-        // --------------------------------------------------------------------
-
-        const cpSemester =
-          cp.semester === undefined ||
-          cp.semester === null
-            ? 1
-            : Number(cp.semester);
-
-        const matchSemester =
-          cpSemester ===
-          Number(selectedSemester);
-
+      if (activeTabLevel === 'SMA') {
         return (
-          matchSubject &&
-          matchGrade &&
-          matchSemester
+          subj.name.includes('Lanjutan') ||
+          subj.name.includes('Muqoron') ||
+          subj.name.includes('Ulumul') ||
+          subj.name.includes('Mustholah') ||
+          subj.name.includes('Ushul') ||
+          subj.name.includes('Tarikh') ||
+          subj.name.includes('Balaghoh') ||
+          subj.name.includes('Tauhid')
         );
-      });
-    }, [
-      cps,
-      selectedSubject,
-      selectedGrade,
-      selectedSemester,
-    ]);
+      }
+
+      return (
+        !subj.name.includes('Lanjutan') &&
+        !subj.name.includes('Muqoron') &&
+        !subj.name.includes('Ulumul') &&
+        !subj.name.includes('Mustholah') &&
+        !subj.name.includes('Ushul') &&
+        !subj.name.includes('Tarikh') &&
+        !subj.name.includes('Balaghoh') &&
+        !subj.name.includes('Tauhid')
+      );
+    });
+  }, [subjects, activeTabLevel]);
+
+  const visibleSubjects = useMemo(() => {
+    return filteredSubjectsByLevel.filter(subj =>
+      subj.name.toLowerCase().includes(subjectSearch.toLowerCase())
+    );
+  }, [filteredSubjectsByLevel, subjectSearch]);
+
+  // ==========================================================================
+  // FILTER CP BERDASARKAN MAPEL, KELAS, SEMESTER
+  // ==========================================================================
+
+  const currentSubjectCPs = useMemo(() => {
+    if (!selectedSubject) return [];
+
+    return cps.filter(cp => {
+      const matchSubject =
+        cp.subjectId === selectedSubject.id ||
+        normalizeText(cp.subject?.name) ===
+          normalizeText(selectedSubject.name);
+
+      const matchGrade =
+        cp.grade === undefined ||
+        cp.grade === null ||
+        Number(cp.grade) === Number(selectedGrade);
+
+      const cpSemester =
+        cp.semester === undefined || cp.semester === null
+          ? 1
+          : Number(cp.semester);
+
+      const matchSemester =
+        cpSemester === Number(selectedSemester);
+
+      return matchSubject && matchGrade && matchSemester;
+    });
+  }, [
+    cps,
+    selectedSubject,
+    selectedGrade,
+    selectedSemester,
+  ]);
 
   // ==========================================================================
   // SIMPAN CP
   // ==========================================================================
 
   const handleSaveCP = async (
-    e: React.FormEvent
+    e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
 
     if (!selectedSubject) {
-      setMessage(
-        'error:Silakan pilih mata pelajaran terlebih dahulu.'
+      showMessage(
+        'Silakan pilih mata pelajaran terlebih dahulu.',
+        'error'
       );
       return;
     }
 
     if (!cpDesc.trim()) {
-      setMessage(
-        'error:Deskripsi Capaian Pembelajaran belum diisi.'
+      showMessage(
+        'Deskripsi Capaian Pembelajaran belum diisi.',
+        'error'
       );
       return;
     }
 
     setLoading(true);
     setMessage('');
+    setMessageType('');
 
     try {
-      const res = await fetch(
-        '/api/curriculum',
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-
-          body: JSON.stringify({
-            action: 'CREATE_CP',
-
-            subjectId:
-              selectedSubject.id,
-
-            grade:
-              Number(selectedGrade),
-
-            // ================================================================
-            // SEMESTER
-            // ================================================================
-
-            semester:
-              Number(
-                selectedSemester
-              ),
-
-            description:
-              cpDesc.trim(),
-          }),
-        }
-      );
+      const res = await fetch('/api/curriculum', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'CREATE_CP',
+          subjectId: selectedSubject.id,
+          grade: Number(selectedGrade),
+          semester: Number(selectedSemester),
+          description: cpDesc.trim(),
+        }),
+      });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(
-          data?.message ||
-            'Gagal menyimpan CP'
-        );
+        throw new Error(data?.message || 'Gagal menyimpan CP.');
       }
 
-      setMessage(
-        `success:Capaian Pembelajaran Kelas ${selectedGrade} Semester ${selectedSemester} berhasil ditambahkan.`
+      showMessage(
+        `Capaian Pembelajaran Kelas ${selectedGrade} Semester ${selectedSemester} berhasil ditambahkan.`,
+        'success'
       );
 
       setCpDesc('');
-
       await fetchData();
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : 'Terjadi kesalahan saat menyimpan CP.';
-
-      setMessage(
-        `error:${errorMessage}`
+    } catch (error) {
+      showMessage(
+        error instanceof Error
+          ? error.message
+          : 'Terjadi kesalahan saat menyimpan CP.',
+        'error'
       );
     } finally {
       setLoading(false);
@@ -450,63 +374,52 @@ export default function CurriculumPage() {
   // SIMPAN TP
   // ==========================================================================
 
-  const handleSaveTP = async (
-    cpId: number
-  ) => {
+  const handleSaveTP = async (cpId: number) => {
     if (!tpDesc.trim()) {
-      setMessage(
-        'error:Deskripsi Tujuan Pembelajaran belum diisi.'
+      showMessage(
+        'Deskripsi Tujuan Pembelajaran belum diisi.',
+        'error'
       );
       return;
     }
 
     setLoading(true);
     setMessage('');
+    setMessageType('');
 
     try {
-      const res = await fetch(
-        '/api/curriculum',
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-
-          body: JSON.stringify({
-            action: 'CREATE_TP',
-            cpId,
-            description: tpDesc.trim(),
-          }),
-        }
-      );
+      const res = await fetch('/api/curriculum', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'CREATE_TP',
+          cpId,
+          description: tpDesc.trim(),
+        }),
+      });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(
-          data?.message ||
-            'Gagal menyimpan TP'
-        );
+        throw new Error(data?.message || 'Gagal menyimpan TP.');
       }
 
-      setMessage(
-        'success:Tujuan Pembelajaran (TP) berhasil ditambahkan.'
+      showMessage(
+        'Tujuan Pembelajaran (TP) berhasil ditambahkan.',
+        'success'
       );
 
       setTpDesc('');
       setActiveCpIdForTp(null);
-
       await fetchData();
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : 'Terjadi kesalahan saat menyimpan TP.';
-
-      setMessage(
-        `error:${errorMessage}`
+    } catch (error) {
+      showMessage(
+        error instanceof Error
+          ? error.message
+          : 'Terjadi kesalahan saat menyimpan TP.',
+        'error'
       );
     } finally {
       setLoading(false);
@@ -521,795 +434,703 @@ export default function CurriculumPage() {
     id: number,
     type: 'CP' | 'TP'
   ) => {
-    const confirmed = confirm(
+    const confirmed = window.confirm(
       `Apakah Anda yakin ingin menghapus ${type} ini?`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     setMessage('');
+    setMessageType('');
 
     try {
-      const res = await fetch(
-        '/api/curriculum',
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-
-          body: JSON.stringify({
-            action: 'DELETE',
-            type,
-            id,
-          }),
-        }
-      );
+      const res = await fetch('/api/curriculum', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'DELETE',
+          type,
+          id,
+        }),
+      });
 
       const data = await res.json();
 
       if (!res.ok) {
         throw new Error(
-          data?.message ||
-            `Gagal menghapus ${type}`
+          data?.message || `Gagal menghapus ${type}.`
         );
       }
 
-      setMessage(
-        `success:${type} berhasil dihapus.`
-      );
+      showMessage(`${type} berhasil dihapus.`, 'success');
 
-      if (
-        type === 'CP' &&
-        activeCpIdForTp === id
-      ) {
+      if (type === 'CP' && activeCpIdForTp === id) {
         setActiveCpIdForTp(null);
         setTpDesc('');
       }
 
       await fetchData();
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : `Terjadi kesalahan saat menghapus ${type}.`;
-
-      setMessage(
-        `error:${errorMessage}`
+    } catch (error) {
+      showMessage(
+        error instanceof Error
+          ? error.message
+          : `Terjadi kesalahan saat menghapus ${type}.`,
+        'error'
       );
     }
   };
-
-  // ==========================================================================
-  // MESSAGE
-  // ==========================================================================
-
-  const isSuccess =
-    message.startsWith('success:');
-
-  const displayMessage =
-    message.replace(
-      /^(success|error):/,
-      ''
-    );
 
   // ==========================================================================
   // RENDER
   // ==========================================================================
 
   return (
-    <main className="max-w-5xl mx-auto p-4 sm:p-6 lg:py-10 space-y-6">
-      {/* ================================================================== */}
+    <div className="min-h-screen bg-[#f0f0f1] text-[#1d2327]">
+
       {/* HEADER */}
-      {/* ================================================================== */}
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Kurikulum (CP & TP)
-          </h1>
+      <div className="border-b border-[#dcdcde] bg-white">
+        <div className="px-4 py-4 sm:px-6">
 
-          <p className="text-sm text-slate-500">
-            Kelola Capaian Pembelajaran
-            dan Tujuan Pembelajaran
-            berdasarkan jenjang, kelas,
-            dan semester.
-          </p>
-        </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
 
-        {selectedSubject && (
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedSubject(null);
-              setMessage('');
-              setCpDesc('');
-              setTpDesc('');
-              setActiveCpIdForTp(null);
-              setSelectedSemester(1);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition self-start"
-          >
-            <ArrowLeft size={14} />
-
-            Kembali ke Daftar Mapel
-          </button>
-        )}
-      </div>
-
-      {/* ================================================================== */}
-      {/* MESSAGE */}
-      {/* ================================================================== */}
-
-      {message && (
-        <div
-          className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
-            isSuccess
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-              : 'border-red-200 bg-red-50 text-red-700'
-          }`}
-        >
-          <div
-            className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-              isSuccess
-                ? 'bg-emerald-600 text-white'
-                : 'bg-red-500 text-white'
-            }`}
-          >
-            {isSuccess ? '✓' : '!'}
-          </div>
-
-          <div>
-            <div className="text-xs font-bold">
-              {isSuccess
-                ? 'Berhasil'
-                : 'Terjadi Kesalahan'}
-            </div>
-
-            <div className="mt-0.5 text-xs opacity-80">
-              {displayMessage}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================================================================== */}
-      {/* TAHAP 1 - PILIH JENJANG DAN MATA PELAJARAN */}
-      {/* ================================================================== */}
-
-      {!selectedSubject ? (
-        <div className="space-y-4">
-          {/* ============================================================== */}
-          {/* TAB JENJANG */}
-          {/* ============================================================== */}
-
-          <div className="flex rounded-2xl bg-slate-200/70 p-1.5 max-w-xs shadow-inner">
-            <button
-              type="button"
-              onClick={() =>
-                setActiveTabLevel('SMP')
-              }
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition ${
-                activeTabLevel === 'SMP'
-                  ? 'bg-[#064e3b] text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              🎓 Jenjang SMP
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setActiveTabLevel('SMA')
-              }
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition ${
-                activeTabLevel === 'SMA'
-                  ? 'bg-[#064e3b] text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              🎓 Jenjang SMA
-            </button>
-          </div>
-
-          {/* ============================================================== */}
-          {/* DAFTAR MAPEL */}
-          {/* ============================================================== */}
-
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <BookOpen
-                size={16}
-                className="text-emerald-700"
-              />
-
-              Pilih Mata Pelajaran (
-              {activeTabLevel})
-            </h2>
-
-            {loadingData ? (
-              <div className="text-center py-10 text-xs text-slate-400">
-                Memuat mata
-                pelajaran...
-              </div>
-            ) : filteredSubjectsByLevel.length ===
-              0 ? (
-              <div className="text-center py-10 text-xs text-slate-400">
-                Belum ada mata
-                pelajaran untuk
-                jenjang ini.
-              </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-                {filteredSubjectsByLevel.map(
-                  (subj) => (
-                    <button
-                      key={subj.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedSubject(
-                          subj
-                        );
-
-                        setSelectedSemester(
-                          1
-                        );
-
-                        setMessage('');
-                        setCpDesc('');
-                        setTpDesc('');
-                        setActiveCpIdForTp(
-                          null
-                        );
-                      }}
-                      className="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition text-left group shadow-sm"
-                    >
-                      <div>
-                        <div className="text-xs font-bold text-slate-800 group-hover:text-emerald-900">
-                          {subj.name}
-                        </div>
-
-                        <span className="text-[10px] text-slate-400">
-                          Kelola CP & TP (
-                          {activeTabLevel})
-                        </span>
-                      </div>
-
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">
-                        Pilih →
-                      </span>
-                    </button>
-                  )
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        /* ================================================================== */
-        /* TAHAP 2 - KELOLA CP & TP */
-        /* ================================================================== */
-
-        <div className="space-y-6">
-          {/* ============================================================== */}
-          {/* MAPEL + KELAS + SEMESTER */}
-          {/* ============================================================== */}
-
-          <div className="bg-[#064e3b] text-white p-5 rounded-2xl shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <span className="text-[10px] uppercase tracking-widest text-emerald-200 font-semibold">
-                Mata Pelajaran Aktif
-              </span>
-
-              <h2 className="text-lg font-bold">
-                {selectedSubject.name}
-              </h2>
-
-              <div className="text-[11px] text-emerald-200 mt-1">
-                Kelas {selectedGrade} •
-                Semester{' '}
-                {selectedSemester}
-              </div>
-            </div>
-
-            {/* ============================================================ */}
-            {/* PILIHAN KELAS DAN SEMESTER */}
-            {/* ============================================================ */}
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* ---------------------------------------------------------- */}
-              {/* KELAS */}
-              {/* ---------------------------------------------------------- */}
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-emerald-100 font-medium whitespace-nowrap">
-                  Tingkat Kelas:
-                </span>
-
-                <select
-                  value={
-                    selectedGrade
-                  }
-                  onChange={(e) => {
-                    setSelectedGrade(
-                      Number(
-                        e.target.value
-                      )
-                    );
-
-                    setActiveCpIdForTp(
-                      null
-                    );
-
-                    setTpDesc('');
-                    setMessage('');
-                  }}
-                  className="bg-white text-slate-800 text-xs font-bold px-3 py-2 rounded-xl outline-none shadow-sm cursor-pointer"
-                >
-                  {activeTabLevel ===
-                  'SMP' ? (
-                    <>
-                      <option value={7}>
-                        Kelas 7
-                      </option>
-
-                      <option value={8}>
-                        Kelas 8
-                      </option>
-
-                      <option value={9}>
-                        Kelas 9
-                      </option>
-                    </>
-                  ) : (
-                    <>
-                      <option value={10}>
-                        Kelas 10
-                      </option>
-
-                      <option value={11}>
-                        Kelas 11
-                      </option>
-
-                      <option value={12}>
-                        Kelas 12
-                      </option>
-                    </>
-                  )}
-                </select>
+              <div className="mb-1 flex items-center gap-2 text-xs text-[#646970]">
+                <span>Akademik</span>
+                <span>/</span>
+                <span>Kurikulum</span>
               </div>
 
-              {/* ---------------------------------------------------------- */}
-              {/* SEMESTER */}
-              {/* ---------------------------------------------------------- */}
+              <h1 className="text-xl font-semibold tracking-tight">
+                Kurikulum (CP & TP)
+              </h1>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-emerald-100 font-medium whitespace-nowrap">
-                  Semester:
-                </span>
-
-                <select
-                  value={
-                    selectedSemester
-                  }
-                  onChange={(e) => {
-                    setSelectedSemester(
-                      Number(
-                        e.target.value
-                      )
-                    );
-
-                    setActiveCpIdForTp(
-                      null
-                    );
-
-                    setTpDesc('');
-                    setMessage('');
-                  }}
-                  className="bg-white text-slate-800 text-xs font-bold px-3 py-2 rounded-xl outline-none shadow-sm cursor-pointer"
-                >
-                  <option value={1}>
-                    Semester 1
-                  </option>
-
-                  <option value={2}>
-                    Semester 2
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* ============================================================== */}
-          {/* FORM TAMBAH CP */}
-          {/* ============================================================== */}
-
-          <form
-            onSubmit={handleSaveCP}
-            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4"
-          >
-            <div>
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                + Tambah Capaian
-                Pembelajaran (CP)
-              </h3>
-
-              <p className="text-[11px] text-slate-500 mt-1">
-                {selectedSubject.name} •
-                Kelas {selectedGrade} •
-                Semester{' '}
-                {selectedSemester}
+              <p className="mt-1 text-xs text-[#646970]">
+                Kelola Capaian Pembelajaran dan Tujuan Pembelajaran.
               </p>
             </div>
 
-            <div>
-              <textarea
-                value={cpDesc}
-                onChange={(e) =>
-                  setCpDesc(
-                    e.target.value
-                  )
-                }
-                placeholder={`Tuliskan deskripsi CP ${selectedSubject.name} untuk Kelas ${selectedGrade} Semester ${selectedSemester}...`}
-                rows={4}
-                className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 resize-none"
-                required
-              />
+            {selectedSubject && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedSubject(null);
+                  setMessage('');
+                  setMessageType('');
+                  setCpDesc('');
+                  setTpDesc('');
+                  setActiveCpIdForTp(null);
+                  setSelectedSemester(1);
+                }}
+                className="inline-flex h-9 items-center gap-2 rounded border border-[#c3c4c7] bg-white px-3 text-xs font-medium text-[#2c3338] hover:bg-[#f6f7f7]"
+              >
+                <ArrowLeft size={14} />
+                Kembali ke Mata Pelajaran
+              </button>
+            )}
+
+          </div>
+        </div>
+      </div>
+
+      {/* MAIN */}
+
+      <main className="space-y-4 p-4 sm:p-6">
+
+        {/* NOTIFICATION */}
+
+        {message && (
+          <div
+            className={`flex items-center justify-between gap-3 rounded border px-4 py-3 text-xs ${
+              messageType === 'success'
+                ? 'border-[#c3e6cb] bg-[#edfaef] text-[#176b32]'
+                : 'border-[#f0c5c5] bg-[#fcf0f1] text-[#b32d2e]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {messageType === 'success' ? (
+                <CheckCircle2 size={16} />
+              ) : (
+                <AlertTriangle size={16} />
+              )}
+              <span>{message}</span>
             </div>
 
             <button
-              type="submit"
-              disabled={
-                loading ||
-                !cpDesc.trim()
-              }
-              className="px-5 py-2.5 bg-[#064e3b] hover:bg-[#053d2e] text-white text-xs font-bold rounded-xl transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              onClick={() => {
+                setMessage('');
+                setMessageType('');
+              }}
+              aria-label="Tutup notifikasi"
+              className="opacity-70 hover:opacity-100"
             >
-              {loading
-                ? 'Menyimpan...'
-                : `Simpan CP Kelas ${selectedGrade} Semester ${selectedSemester}`}
+              <X size={15} />
             </button>
-          </form>
+          </div>
+        )}
 
-          {/* ============================================================== */}
-          {/* DAFTAR CP & TP */}
-          {/* ============================================================== */}
+        {!selectedSubject ? (
+          /* ============================================================ */
+          /* PILIH MAPEL */
+          /* ============================================================ */
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
-            <div className="border-b pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">
-                  Daftar CP & TP —{' '}
+          <section className="overflow-hidden rounded border border-[#dcdcde] bg-white">
+
+            <div className="border-b border-[#dcdcde] p-4">
+              <h2 className="text-sm font-semibold">
+                Pilih Jenjang dan Mata Pelajaran
+              </h2>
+              <p className="mt-1 text-[11px] text-[#646970]">
+                Pilih jenjang pendidikan terlebih dahulu, kemudian pilih mata pelajaran.
+              </p>
+            </div>
+
+            {/* LEVEL TABS */}
+
+            <div className="flex flex-wrap items-center gap-2 border-b border-[#dcdcde] bg-[#f6f7f7] px-4 py-3">
+
+              <button
+                type="button"
+                onClick={() => setActiveTabLevel('SMP')}
+                className={`inline-flex h-9 items-center gap-2 rounded border px-4 text-xs font-medium ${
+                  activeTabLevel === 'SMP'
+                    ? 'border-[#2271b1] bg-white text-[#135e96] shadow-sm'
+                    : 'border-[#c3c4c7] bg-transparent text-[#50575e] hover:bg-white'
+                }`}
+              >
+                <School size={15} />
+                Jenjang SMP
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTabLevel('SMA')}
+                className={`inline-flex h-9 items-center gap-2 rounded border px-4 text-xs font-medium ${
+                  activeTabLevel === 'SMA'
+                    ? 'border-[#2271b1] bg-white text-[#135e96] shadow-sm'
+                    : 'border-[#c3c4c7] bg-transparent text-[#50575e] hover:bg-white'
+                }`}
+              >
+                <GraduationCap size={15} />
+                Jenjang SMA
+              </button>
+
+              <div className="ml-auto text-[11px] text-[#646970]">
+                {filteredSubjectsByLevel.length} mata pelajaran
+              </div>
+            </div>
+
+            {/* SUBJECT SEARCH */}
+
+            <div className="border-b border-[#dcdcde] bg-white p-3">
+              <div className="relative max-w-md">
+                <Search
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#646970]"
+                />
+                <input
+                  type="search"
+                  value={subjectSearch}
+                  onChange={e => setSubjectSearch(e.target.value)}
+                  placeholder="Cari mata pelajaran..."
+                  className="h-9 w-full rounded border border-[#c3c4c7] bg-white pl-9 pr-3 text-xs outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
+                />
+              </div>
+            </div>
+
+            {/* SUBJECT LIST */}
+
+            <div className="p-4">
+
+              {loadingData ? (
+                <div className="flex items-center justify-center gap-2 py-12 text-xs text-[#646970]">
+                  <RefreshCw size={15} className="animate-spin" />
+                  Memuat mata pelajaran...
+                </div>
+              ) : visibleSubjects.length === 0 ? (
+                <div className="py-12 text-center">
+                  <BookOpen
+                    size={28}
+                    className="mx-auto mb-2 text-[#a7aaad]"
+                  />
+                  <p className="text-sm font-medium text-[#50575e]">
+                    Mata pelajaran tidak ditemukan
+                  </p>
+                  <p className="mt-1 text-xs text-[#646970]">
+                    Coba kata kunci pencarian yang lain.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+
+                  {visibleSubjects.map(subj => (
+                    <button
+                      key={`${subj.level || activeTabLevel}-${subj.id}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSubject(subj);
+                        setSelectedSemester(1);
+                        setMessage('');
+                        setMessageType('');
+                        setCpDesc('');
+                        setTpDesc('');
+                        setActiveCpIdForTp(null);
+                      }}
+                      className="group flex min-w-0 items-center justify-between gap-3 rounded border border-[#dcdcde] bg-white px-3 py-3 text-left transition hover:border-[#2271b1] hover:bg-[#f0f6fc]"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-[#f0f6fc] text-[#2271b1]">
+                          <BookOpen size={16} />
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="truncate text-xs font-semibold text-[#2c3338] group-hover:text-[#135e96]">
+                            {subj.name}
+                          </div>
+                          <div className="mt-1 text-[10px] text-[#646970]">
+                            Kelola CP dan TP
+                          </div>
+                        </div>
+                      </div>
+
+                      <ChevronRight
+                        size={15}
+                        className="shrink-0 text-[#a7aaad] group-hover:text-[#2271b1]"
+                      />
+                    </button>
+                  ))}
+
+                </div>
+              )}
+            </div>
+
+          </section>
+        ) : (
+          /* ============================================================ */
+          /* KELOLA CP & TP */
+          /* ============================================================ */
+
+          <div className="space-y-4">
+
+            {/* SUBJECT INFORMATION */}
+
+            <section className="rounded border border-[#dcdcde] bg-white">
+
+              <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
+
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#f0f6fc] text-[#2271b1]">
+                    <BookOpen size={20} />
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-[#646970]">
+                      Mata Pelajaran
+                    </div>
+
+                    <h2 className="mt-0.5 text-base font-semibold">
+                      {selectedSubject.name}
+                    </h2>
+
+                    <p className="mt-1 text-[11px] text-[#646970]">
+                      Jenjang {activeTabLevel}
+                    </p>
+                  </div>
+                </div>
+
+                {/* GRADE + SEMESTER */}
+
+                <div className="flex flex-wrap gap-3">
+
+                  <div>
+                    <label
+                      htmlFor="selected-grade"
+                      className="mb-1 block text-[10px] font-medium text-[#646970]"
+                    >
+                      Tingkat Kelas
+                    </label>
+
+                    <select
+                      id="selected-grade"
+                      value={selectedGrade}
+                      onChange={e => {
+                        setSelectedGrade(Number(e.target.value));
+                        setActiveCpIdForTp(null);
+                        setTpDesc('');
+                        setMessage('');
+                        setMessageType('');
+                      }}
+                      className="h-9 min-w-28 rounded border border-[#8c8f94] bg-white px-3 text-xs outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
+                    >
+                      {getGradeOptions().map(item => (
+                        <option key={item} value={item}>
+                          Kelas {item}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="selected-semester"
+                      className="mb-1 block text-[10px] font-medium text-[#646970]"
+                    >
+                      Semester
+                    </label>
+
+                    <select
+                      id="selected-semester"
+                      value={selectedSemester}
+                      onChange={e => {
+                        setSelectedSemester(Number(e.target.value));
+                        setActiveCpIdForTp(null);
+                        setTpDesc('');
+                        setMessage('');
+                        setMessageType('');
+                      }}
+                      className="h-9 min-w-32 rounded border border-[#8c8f94] bg-white px-3 text-xs outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
+                    >
+                      <option value={1}>Semester 1</option>
+                      <option value={2}>Semester 2</option>
+                    </select>
+                  </div>
+
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 border-t border-[#dcdcde] bg-[#f6f7f7] px-4 py-2.5 text-[11px] text-[#646970]">
+                <span className="font-semibold text-[#2c3338]">
                   {selectedSubject.name}
-                </h3>
+                </span>
+                <span>·</span>
+                <span>Kelas {selectedGrade}</span>
+                <span>·</span>
+                <span>Semester {selectedSemester}</span>
+              </div>
 
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Kelas {selectedGrade} •
-                  Semester{' '}
-                  {selectedSemester}
+            </section>
+
+            {/* ADD CP */}
+
+            <section className="overflow-hidden rounded border border-[#dcdcde] bg-white">
+
+              <div className="border-b border-[#dcdcde] px-4 py-3">
+                <h3 className="text-sm font-semibold">
+                  Tambah Capaian Pembelajaran (CP)
+                </h3>
+                <p className="mt-1 text-[11px] text-[#646970]">
+                  Masukkan deskripsi CP untuk mata pelajaran, kelas, dan semester yang dipilih.
                 </p>
               </div>
 
-              <span className="text-xs font-normal text-slate-400">
-                {
-                  currentSubjectCPs.length
-                }{' '}
-                CP ditemukan
-              </span>
-            </div>
-
-            {/* ============================================================ */}
-            {/* EMPTY STATE */}
-            {/* ============================================================ */}
-
-            {currentSubjectCPs.length ===
-            0 ? (
-              <div className="text-center py-10 px-4 text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                <BookOpen
-                  size={28}
-                  className="mx-auto mb-3 text-slate-300"
+              <form
+                onSubmit={handleSaveCP}
+                className="space-y-3 p-4"
+              >
+                <textarea
+                  value={cpDesc}
+                  onChange={e => setCpDesc(e.target.value)}
+                  placeholder={`Tuliskan deskripsi CP ${selectedSubject.name} untuk Kelas ${selectedGrade} Semester ${selectedSemester}...`}
+                  rows={3}
+                  required
+                  className="w-full rounded border border-[#8c8f94] bg-white p-3 text-xs leading-5 outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
                 />
 
-                <div className="font-semibold text-slate-500">
-                  Belum ada Capaian
-                  Pembelajaran
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[10px] text-[#646970]">
+                    Pastikan deskripsi CP sudah sesuai.
+                  </span>
+
+                  <button
+                    type="submit"
+                    disabled={loading || !cpDesc.trim()}
+                    className="inline-flex h-9 items-center gap-2 rounded bg-[#2271b1] px-4 text-xs font-medium text-white hover:bg-[#135e96] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loading ? (
+                      <RefreshCw size={14} className="animate-spin" />
+                    ) : (
+                      <Plus size={14} />
+                    )}
+                    {loading ? 'Menyimpan...' : 'Simpan CP'}
+                  </button>
+                </div>
+              </form>
+
+            </section>
+
+            {/* CP LIST */}
+
+            <section className="overflow-hidden rounded border border-[#dcdcde] bg-white">
+
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#dcdcde] px-4 py-3">
+                <div>
+                  <h3 className="text-sm font-semibold">
+                    Daftar Capaian Pembelajaran
+                  </h3>
+                  <p className="mt-1 text-[11px] text-[#646970]">
+                    {selectedSubject.name} · Kelas {selectedGrade} · Semester {selectedSemester}
+                  </p>
                 </div>
 
-                <div className="mt-1">
-                  {selectedSubject.name}{' '}
-                  Kelas {selectedGrade}{' '}
-                  Semester{' '}
-                  {selectedSemester}
-                </div>
-
-                <div className="mt-2 text-[10px]">
-                  Silakan tambahkan CP
-                  melalui form di atas.
-                </div>
+                <span className="rounded bg-[#f0f0f1] px-2.5 py-1 text-[10px] font-medium text-[#50575e]">
+                  {currentSubjectCPs.length} CP
+                </span>
               </div>
-            ) : (
-              /* ========================================================== */
-              /* CP LIST */
-              /* ========================================================== */
 
-              <div className="space-y-4">
-                {currentSubjectCPs.map(
-                  (cp) => {
-                    // ------------------------------------------------------
-                    // Data lama tanpa semester dianggap Semester 1
-                    // ------------------------------------------------------
+              <div className="p-4">
 
-                    const cpSemester =
-                      cp.semester ===
-                        undefined ||
-                      cp.semester === null
-                        ? 1
-                        : Number(
-                            cp.semester
-                          );
+                {loadingData ? (
+                  <div className="flex items-center justify-center gap-2 py-12 text-xs text-[#646970]">
+                    <RefreshCw size={15} className="animate-spin" />
+                    Memuat data kurikulum...
+                  </div>
+                ) : currentSubjectCPs.length === 0 ? (
+                  <div className="rounded border border-dashed border-[#c3c4c7] bg-[#f6f7f7] px-4 py-12 text-center">
+                    <Layers
+                      size={28}
+                      className="mx-auto mb-2 text-[#a7aaad]"
+                    />
 
-                    return (
-                      <div
-                        key={cp.id}
-                        className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3"
-                      >
-                        {/* ================================================= */}
-                        {/* HEADER CP */}
-                        {/* ================================================= */}
+                    <p className="text-sm font-medium text-[#50575e]">
+                      Belum ada Capaian Pembelajaran
+                    </p>
 
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {/* ----------------------------------------- */}
-                              {/* CODE */}
-                              {/* ----------------------------------------- */}
+                    <p className="mt-1 text-xs text-[#646970]">
+                      Silakan tambahkan CP melalui formulir di atas.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
 
-                              <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">
-                                CP:{' '}
-                                {
-                                  cp.code
-                                }
-                              </span>
+                    {currentSubjectCPs.map(cp => {
+                      const cpSemester =
+                        cp.semester === undefined ||
+                        cp.semester === null
+                          ? 1
+                          : Number(cp.semester);
 
-                              {/* ----------------------------------------- */}
-                              {/* KELAS */}
-                              {/* ----------------------------------------- */}
+                      const isTpFormOpen =
+                        activeCpIdForTp === cp.id;
 
-                              <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold">
-                                Kelas{' '}
-                                {cp.grade ||
-                                  selectedGrade}
-                              </span>
+                      return (
+                        <article
+                          key={cp.id}
+                          className="overflow-hidden rounded border border-[#dcdcde]"
+                        >
 
-                              {/* ----------------------------------------- */}
-                              {/* SEMESTER */}
-                              {/* ----------------------------------------- */}
+                          {/* CP HEADER */}
 
-                              <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-semibold">
-                                Semester{' '}
-                                {
-                                  cpSemester
-                                }
-                              </span>
+                          <div className="flex flex-col gap-3 bg-[#f6f7f7] p-3 sm:flex-row sm:items-start sm:justify-between">
+
+                            <div className="min-w-0 flex-1">
+
+                              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                                <span className="rounded bg-[#e5f5ec] px-2 py-1 text-[10px] font-semibold text-[#176b32]">
+                                  CP: {cp.code}
+                                </span>
+
+                                <span className="rounded bg-[#f0f0f1] px-2 py-1 text-[10px] font-medium text-[#50575e]">
+                                  Kelas {cp.grade || selectedGrade}
+                                </span>
+
+                                <span className="rounded bg-[#eaf3f9] px-2 py-1 text-[10px] font-medium text-[#135e96]">
+                                  Semester {cpSemester}
+                                </span>
+                              </div>
+
+                              <p className="whitespace-pre-wrap text-xs leading-5 text-[#2c3338]">
+                                {cp.description}
+                              </p>
                             </div>
-
-                            <p className="text-xs text-slate-800 font-semibold mt-2 leading-relaxed">
-                              {
-                                cp.description
-                              }
-                            </p>
-                          </div>
-
-                          {/* --------------------------------------------- */}
-                          {/* DELETE CP */}
-                          {/* --------------------------------------------- */}
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleDelete(
-                                cp.id,
-                                'CP'
-                              )
-                            }
-                            className="text-[10px] text-red-600 font-bold hover:underline shrink-0"
-                          >
-                            Hapus CP
-                          </button>
-                        </div>
-
-                        {/* ================================================= */}
-                        {/* TP */}
-                        {/* ================================================= */}
-
-                        <div className="pl-4 border-l-2 border-amber-400 space-y-2 pt-1">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                              Tujuan
-                              Pembelajaran
-                              (TP):
-                            </span>
 
                             <button
                               type="button"
-                              onClick={() => {
-                                if (
-                                  activeCpIdForTp ===
-                                  cp.id
-                                ) {
-                                  setActiveCpIdForTp(
-                                    null
-                                  );
-                                } else {
-                                  setActiveCpIdForTp(
-                                    cp.id
-                                  );
-                                }
-
-                                setTpDesc(
-                                  ''
-                                );
-                              }}
-                              className="text-[10px] text-amber-800 font-bold hover:underline flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 shrink-0"
+                              onClick={() => handleDelete(cp.id, 'CP')}
+                              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 self-start rounded border border-[#d63638] px-2.5 text-[10px] font-medium text-[#d63638] hover:bg-[#fcf0f1]"
+                              title="Hapus CP"
                             >
-                              <Plus
-                                size={
-                                  10
-                                }
-                              />
-
-                              Tambah TP
+                              <Trash2 size={13} />
+                              Hapus CP
                             </button>
+
                           </div>
 
-                          {/* ============================================= */}
-                          {/* FORM TP */}
-                          {/* ============================================= */}
+                          {/* TP SECTION */}
 
-                          {activeCpIdForTp ===
-                            cp.id && (
-                            <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-inner space-y-2 my-2">
-                              <input
-                                type="text"
-                                value={
-                                  tpDesc
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  setTpDesc(
-                                    e
-                                      .target
-                                      .value
-                                  )
-                                }
-                                placeholder="Tulis deskripsi Tujuan Pembelajaran (TP)..."
-                                className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                                autoFocus
-                                onKeyDown={(
-                                  e
-                                ) => {
-                                  if (
-                                    e.key ===
-                                    'Enter'
-                                  ) {
-                                    e.preventDefault();
+                          <div className="border-t border-[#dcdcde] p-3">
 
-                                    if (
-                                      tpDesc.trim() &&
-                                      !loading
-                                    ) {
-                                      handleSaveTP(
-                                        cp.id
-                                      );
-                                    }
-                                  }
-                                }}
-                              />
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
 
-                              <div className="flex justify-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveCpIdForTp(
-                                      null
-                                    );
-
-                                    setTpDesc(
-                                      ''
-                                    );
-                                  }}
-                                  className="px-3 h-8 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200"
-                                >
-                                  Batal
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleSaveTP(
-                                      cp.id
-                                    )
-                                  }
-                                  disabled={
-                                    loading ||
-                                    !tpDesc.trim()
-                                  }
-                                  className="px-4 h-8 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {loading
-                                    ? 'Menyimpan...'
-                                    : 'Simpan TP'}
-                                </button>
+                              <div className="flex items-center gap-2">
+                                <div className="h-4 w-1 rounded bg-[#dba617]" />
+                                <h4 className="text-xs font-semibold text-[#2c3338]">
+                                  Tujuan Pembelajaran (TP)
+                                </h4>
+                                <span className="text-[10px] text-[#646970]">
+                                  ({cp.tps?.length || 0})
+                                </span>
                               </div>
-                            </div>
-                          )}
 
-                          {/* ============================================= */}
-                          {/* DAFTAR TP */}
-                          {/* ============================================= */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveCpIdForTp(
+                                    isTpFormOpen ? null : cp.id
+                                  );
+                                  setTpDesc('');
+                                }}
+                                className="inline-flex h-8 items-center gap-1.5 rounded border border-[#c3c4c7] bg-white px-2.5 text-[10px] font-medium text-[#2c3338] hover:bg-[#f6f7f7]"
+                              >
+                                {isTpFormOpen ? (
+                                  <X size={13} />
+                                ) : (
+                                  <Plus size={13} />
+                                )}
+                                {isTpFormOpen ? 'Tutup Form' : 'Tambah TP'}
+                              </button>
 
-                          {!cp.tps ||
-                          cp.tps.length ===
-                            0 ? (
-                            <div className="text-[10px] text-slate-400 italic py-1">
-                              Belum ada TP
-                              untuk CP ini.
                             </div>
-                          ) : (
-                            cp.tps.map(
-                              (tp) => (
-                                <div
-                                  key={
-                                    tp.id
-                                  }
-                                  className="bg-white p-2.5 rounded-lg border border-slate-200 flex items-start justify-between gap-2"
+
+                            {/* FORM TP */}
+
+                            {isTpFormOpen && (
+                              <div className="mb-3 rounded border border-[#dba617] bg-[#fffaf0] p-3">
+
+                                <label
+                                  htmlFor={`tp-description-${cp.id}`}
+                                  className="mb-1.5 block text-[11px] font-semibold text-[#2c3338]"
                                 >
-                                  <div className="min-w-0">
-                                    <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded text-[9px] font-bold mr-2">
-                                      {
-                                        tp.code
-                                      }
-                                    </span>
+                                  Deskripsi Tujuan Pembelajaran
+                                </label>
 
-                                    <span className="text-[11px] text-slate-700 leading-relaxed">
-                                      {
-                                        tp.description
-                                      }
-                                    </span>
-                                  </div>
+                                <textarea
+                                  id={`tp-description-${cp.id}`}
+                                  value={tpDesc}
+                                  onChange={e => setTpDesc(e.target.value)}
+                                  placeholder="Tuliskan deskripsi Tujuan Pembelajaran..."
+                                  rows={2}
+                                  autoFocus
+                                  onKeyDown={e => {
+                                    if (
+                                      e.key === 'Enter' &&
+                                      (e.ctrlKey || e.metaKey)
+                                    ) {
+                                      e.preventDefault();
 
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleDelete(
-                                        tp.id,
-                                        'TP'
-                                      )
+                                      if (tpDesc.trim() && !loading) {
+                                        handleSaveTP(cp.id);
+                                      }
                                     }
-                                    className="text-[9px] text-red-600 font-bold hover:underline shrink-0"
-                                  >
-                                    Hapus
-                                  </button>
+                                  }}
+                                  className="w-full rounded border border-[#c3c4c7] bg-white p-2.5 text-xs leading-5 outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
+                                />
+
+                                <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                                  <span className="text-[10px] text-[#646970]">
+                                    Gunakan Ctrl + Enter untuk menyimpan.
+                                  </span>
+
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveCpIdForTp(null);
+                                        setTpDesc('');
+                                      }}
+                                      className="h-8 rounded border border-[#c3c4c7] bg-white px-3 text-[10px] font-medium text-[#50575e] hover:bg-[#f6f7f7]"
+                                    >
+                                      Batal
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSaveTP(cp.id)}
+                                      disabled={loading || !tpDesc.trim()}
+                                      className="inline-flex h-8 items-center gap-1.5 rounded bg-[#2271b1] px-3 text-[10px] font-medium text-white hover:bg-[#135e96] disabled:opacity-50"
+                                    >
+                                      {loading && (
+                                        <RefreshCw
+                                          size={12}
+                                          className="animate-spin"
+                                        />
+                                      )}
+                                      Simpan TP
+                                    </button>
+                                  </div>
                                 </div>
-                              )
-                            )
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
+
+                              </div>
+                            )}
+
+                            {/* TP LIST */}
+
+                            {!cp.tps || cp.tps.length === 0 ? (
+                              <div className="rounded border border-dashed border-[#dcdcde] bg-[#f9f9f9] px-3 py-4 text-center text-[11px] text-[#646970]">
+                                Belum ada Tujuan Pembelajaran untuk CP ini.
+                              </div>
+                            ) : (
+                              <div className="divide-y divide-[#f0f0f1] rounded border border-[#dcdcde]">
+
+                                {cp.tps.map(tp => (
+                                  <div
+                                    key={tp.id}
+                                    className="flex items-start justify-between gap-3 px-3 py-2.5 hover:bg-[#f6f7f7]"
+                                  >
+                                    <div className="flex min-w-0 items-start gap-2">
+                                      <span className="mt-0.5 shrink-0 rounded bg-[#fff5d6] px-2 py-1 text-[9px] font-semibold text-[#8a5d00]">
+                                        {tp.code}
+                                      </span>
+
+                                      <p className="whitespace-pre-wrap text-[11px] leading-5 text-[#50575e]">
+                                        {tp.description}
+                                      </p>
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDelete(tp.id, 'TP')}
+                                      title="Hapus TP"
+                                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-[#a7aaad] hover:bg-[#fcf0f1] hover:text-[#d63638]"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                ))}
+
+                              </div>
+                            )}
+
+                          </div>
+
+                        </article>
+                      );
+                    })}
+
+                  </div>
                 )}
+
               </div>
-            )}
+
+              {/* FOOTER */}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#dcdcde] bg-[#f6f7f7] px-4 py-2.5 text-[10px] text-[#646970]">
+                <span>
+                  {currentSubjectCPs.length} Capaian Pembelajaran
+                </span>
+                <span>
+                  Kelas {selectedGrade} · Semester {selectedSemester}
+                </span>
+              </div>
+
+            </section>
+
           </div>
-        </div>
-      )}
-    </main>
+        )}
+
+      </main>
+    </div>
   );
 }

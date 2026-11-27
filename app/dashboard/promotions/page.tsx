@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -18,6 +19,8 @@ type Classroom = {
   status: string;
 };
 
+type PromotionStatus = 'NAIK' | 'TINGGAL' | 'LULUS';
+
 export default function PromotionsPage() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -26,7 +29,7 @@ export default function PromotionsPage() {
   const [toClass, setToClass] = useState('');
 
   const [academicYear, setAcademicYear] = useState('2026/2027');
-  const [status, setStatus] = useState<'NAIK' | 'TINGGAL' | 'LULUS'>('NAIK');
+  const [status, setStatus] = useState<PromotionStatus>('NAIK');
   const [note, setNote] = useState('');
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -38,14 +41,14 @@ export default function PromotionsPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  /*
-   * ============================
-   * LOAD KELAS
-   * ============================
-   */
+  // =========================================================
+  // LOAD KELAS
+  // =========================================================
+
   const fetchClassrooms = async () => {
     try {
       setLoadingClasses(true);
+      setError('');
 
       const response = await fetch('/api/classrooms', {
         cache: 'no-store',
@@ -60,24 +63,23 @@ export default function PromotionsPage() {
       }
 
       setClassrooms(
-        Array.isArray(result.data)
-          ? result.data
-          : []
+        Array.isArray(result.data) ? result.data : []
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.message || 'Gagal mengambil daftar kelas.'
+        err instanceof Error
+          ? err.message
+          : 'Gagal mengambil daftar kelas.'
       );
     } finally {
       setLoadingClasses(false);
     }
   };
 
-  /*
-   * ============================
-   * LOAD SISWA
-   * ============================
-   */
+  // =========================================================
+  // LOAD SISWA
+  // =========================================================
+
   const fetchStudents = async (className: string) => {
     if (!className) {
       setStudents([]);
@@ -91,9 +93,7 @@ export default function PromotionsPage() {
       setSelectedIds([]);
 
       const response = await fetch(
-        `/api/promotions?className=${encodeURIComponent(
-          className
-        )}`,
+        `/api/promotions?className=${encodeURIComponent(className)}`,
         {
           cache: 'no-store',
         }
@@ -108,13 +108,13 @@ export default function PromotionsPage() {
       }
 
       setStudents(
-        Array.isArray(result.data)
-          ? result.data
-          : []
+        Array.isArray(result.data) ? result.data : []
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.message || 'Gagal mengambil data siswa.'
+        err instanceof Error
+          ? err.message
+          : 'Gagal mengambil data siswa.'
       );
       setStudents([]);
     } finally {
@@ -130,75 +130,62 @@ export default function PromotionsPage() {
     fetchStudents(fromClass);
   }, [fromClass]);
 
-  /*
-   * ============================
-   * PILIH SEMUA
-   * ============================
-   */
+  // =========================================================
+  // PILIH SEMUA
+  // =========================================================
+
   const allSelected =
     students.length > 0 &&
     selectedIds.length === students.length;
 
-  const handleSelectAll = (
-    checked: boolean
-  ) => {
+  const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedIds(
-        students.map((student) => student.id)
-      );
+      setSelectedIds(students.map((student) => student.id));
     } else {
       setSelectedIds([]);
     }
   };
 
-  /*
-   * ============================
-   * PILIH SISWA
-   * ============================
-   */
-  const handleSelectStudent = (
-    id: number
-  ) => {
+  // =========================================================
+  // PILIH SISWA
+  // =========================================================
+
+  const handleSelectStudent = (id: number) => {
     setSelectedIds((current) =>
       current.includes(id)
-        ? current.filter(
-            (studentId) => studentId !== id
-          )
+        ? current.filter((studentId) => studentId !== id)
         : [...current, id]
     );
   };
 
-  /*
-   * ============================
-   * RESET
-   * ============================
-   */
+  // =========================================================
+  // RESET PILIHAN
+  // =========================================================
+
   const resetSelection = () => {
     setSelectedIds([]);
     setMessage('');
     setError('');
   };
 
-  /*
-   * ============================
-   * PROSES KELULUSAN / KENAIKAN
-   * ============================
-   */
+  // =========================================================
+  // PROSES KENAIKAN / KELULUSAN
+  // =========================================================
+
   const handlePromotion = async () => {
     setMessage('');
     setError('');
 
     if (selectedIds.length === 0) {
-      setError(
-        'Pilih minimal satu siswa terlebih dahulu.'
-      );
+      setError('Pilih minimal satu siswa terlebih dahulu.');
       return;
     }
 
-    if ((status === 'NAIK' || status === 'LULUS') && !toClass) {
-      setError(
-        'Pilih kelas tujuan terlebih dahulu.'
-      );
+    if (
+      (status === 'NAIK' || status === 'LULUS') &&
+      !toClass
+    ) {
+      setError('Pilih kelas tujuan terlebih dahulu.');
       return;
     }
 
@@ -209,9 +196,8 @@ export default function PromotionsPage() {
       return;
     }
 
-    const selectedStudents = students.filter(
-      (student) =>
-        selectedIds.includes(student.id)
+    const selectedStudents = students.filter((student) =>
+      selectedIds.includes(student.id)
     );
 
     const names = selectedStudents
@@ -225,10 +211,13 @@ export default function PromotionsPage() {
         : '';
 
     let destination = 'ke kelas berikutnya';
+
     if (status === 'TINGGAL') {
       destination = 'tetap di kelas masing-masing';
     } else if (status === 'LULUS') {
-      destination = toClass ? `lulus dan lanjut ke kelas ${toClass}` : 'dinyatakan lulus';
+      destination = toClass
+        ? `lulus dan lanjut ke kelas ${toClass}`
+        : 'dinyatakan lulus';
     }
 
     const confirmed = window.confirm(
@@ -240,22 +229,19 @@ export default function PromotionsPage() {
     try {
       setProcessing(true);
 
-      const response = await fetch(
-        '/api/promotions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            studentIds: selectedIds,
-            toClass: toClass,
-            status,
-            academicYear,
-            note,
-          }),
-        }
-      );
+      const response = await fetch('/api/promotions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentIds: selectedIds,
+          toClass: toClass,
+          status,
+          academicYear,
+          note,
+        }),
+      });
 
       const result = await response.json();
 
@@ -267,402 +253,418 @@ export default function PromotionsPage() {
       }
 
       setMessage(
-        result.message ||
-          'Proses berhasil diselesaikan.'
+        result.message || 'Proses berhasil diselesaikan.'
       );
 
       await fetchStudents(fromClass);
       setSelectedIds([]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.message ||
-          'Gagal memproses data.'
+        err instanceof Error
+          ? err.message
+          : 'Gagal memproses data.'
       );
     } finally {
       setProcessing(false);
     }
   };
 
+  // =========================================================
+  // DATA KELAS TUJUAN
+  // =========================================================
+
   const availableTargetClasses = useMemo(() => {
     return classrooms.filter(
-      (classroom) =>
-        classroom.name !== fromClass
+      (classroom) => classroom.name !== fromClass
     );
   }, [classrooms, fromClass]);
 
+  const selectedCount = selectedIds.length;
+
+  const actionLabel =
+    status === 'NAIK'
+      ? `Naikkan ${selectedCount} Siswa`
+      : status === 'TINGGAL'
+        ? `Tetapkan ${selectedCount} Siswa Tinggal Kelas`
+        : `Luluskan & Pindahkan ${selectedCount} Siswa`;
+
   return (
-    <main className="min-h-screen bg-[#f5f8f6] text-slate-800 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <main className="min-h-screen bg-[#f0f0f1] text-[#1d2327] p-3 sm:p-5">
+      <div className="max-w-7xl mx-auto space-y-4">
 
-      {/* HEADER */}
-      <header className="rounded-2xl bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857] px-6 py-7 text-white shadow-lg">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        {/* HEADER */}
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-100">
-              Akademik
-            </span>
-
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mt-2">
+            <h1 className="text-xl sm:text-2xl font-semibold text-[#1d2327]">
               Kenaikan Kelas & Kelulusan
             </h1>
-
-            <p className="text-sm text-emerald-50/80 mt-1">
-              Kelola kenaikan atau kelulusan siswa secara massal.
+            <p className="text-xs sm:text-[13px] text-[#646970] mt-1">
+              Kelola proses kenaikan kelas, tinggal kelas, dan kelulusan siswa.
             </p>
           </div>
 
-          <div className="rounded-xl bg-white/10 px-4 py-3 text-right">
-            <div className="text-[10px] uppercase tracking-wider text-emerald-100">
-              Tahun Pelajaran
-            </div>
-
-            <div className="font-bold text-lg">
+          <div className="text-xs text-[#646970]">
+            <span className="font-medium">Tahun Pelajaran:</span>{' '}
+            <span className="font-semibold text-[#1d2327]">
               {academicYear}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* MESSAGE */}
-      {message && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-          ✓ {message}
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
-          {error}
-        </div>
-      )}
-
-      {/* FILTER */}
-      <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-          {/* TAHUN */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Tahun Pelajaran
-            </label>
-
-            <input
-              type="text"
-              value={academicYear}
-              onChange={(e) =>
-                setAcademicYear(e.target.value)
-              }
-              placeholder="2026/2027"
-              className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-            />
-          </div>
-
-          {/* KELAS ASAL */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Kelas Asal
-            </label>
-
-            <select
-              value={fromClass}
-              onChange={(e) =>
-                setFromClass(e.target.value)
-              }
-              disabled={loadingClasses}
-              className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-            >
-              <option value="">
-                -- Pilih Kelas Asal --
-              </option>
-
-              {classrooms.map((classroom) => (
-                <option
-                  key={classroom.id}
-                  value={classroom.name}
-                >
-                  {classroom.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* KELAS TUJUAN */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Kelas Tujuan {status === 'LULUS' && '(Lanjut ke SMA/Lainnya)'}
-            </label>
-
-            <select
-              value={toClass}
-              onChange={(e) =>
-                setToClass(e.target.value)
-              }
-              disabled={
-                !fromClass ||
-                loadingClasses ||
-                status === 'TINGGAL'
-              }
-              className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50 disabled:text-slate-400"
-            >
-              <option value="">
-                -- Pilih Kelas Tujuan --
-              </option>
-
-              {availableTargetClasses.map(
-                (classroom) => (
-                  <option
-                    key={classroom.id}
-                    value={classroom.name}
-                  >
-                    {classroom.name}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
-
-          {/* STATUS */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              Status Keputusan
-            </label>
-
-            <select
-              value={status}
-              onChange={(e) =>
-                setStatus(
-                  e.target.value as
-                    | 'NAIK'
-                    | 'TINGGAL'
-                    | 'LULUS'
-                )
-              }
-              className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-            >
-              <option value="NAIK">Naik Kelas</option>
-              <option value="TINGGAL">Tinggal Kelas</option>
-              <option value="LULUS">Lulus</option>
-            </select>
-          </div>
-
-        </div>
-
-        {/* CATATAN */}
-        <div className="mt-4">
-          <label className="block text-xs font-bold text-slate-700 mb-1.5">
-            Catatan
-            <span className="font-normal text-slate-400">
-              {' '}
-              (opsional)
             </span>
-          </label>
-
-          <textarea
-            value={note}
-            onChange={(e) =>
-              setNote(e.target.value)
-            }
-            rows={2}
-            placeholder="Contoh: Dinyatakan lulus dan melanjutkan ke tingkat SMA."
-            className="w-full p-3 rounded-xl border border-slate-200 text-sm outline-none resize-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-          />
-        </div>
-
-      </section>
-
-      {/* DAFTAR SISWA */}
-      <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 justify-between sm:items-center">
-          <div>
-            <h2 className="font-bold text-slate-800">
-              Daftar Siswa
-            </h2>
-
-            <p className="text-xs text-slate-400 mt-0.5">
-              {fromClass
-                ? `Siswa kelas ${fromClass}`
-                : 'Pilih kelas asal terlebih dahulu'}
-            </p>
           </div>
+        </header>
 
-          <div className="flex items-center gap-2">
-            {selectedIds.length > 0 && (
-              <span className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
-                {selectedIds.length} siswa dipilih
-              </span>
-            )}
-
-            {selectedIds.length > 0 && (
-              <button
-                type="button"
-                onClick={resetSelection}
-                className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-              >
-                Batal Pilih
-              </button>
-            )}
-          </div>
-        </div>
-
-        {!fromClass ? (
-          <div className="p-14 text-center">
-            <div className="text-4xl mb-3">🎓</div>
-            <p className="font-semibold text-slate-600">
-              Pilih kelas asal
-            </p>
-            <p className="text-xs text-slate-400 mt-1">
-              Daftar siswa akan muncul setelah kelas dipilih.
-            </p>
-          </div>
-        ) : loadingStudents ? (
-          <div className="p-14 text-center text-sm text-slate-400">
-            Memuat data siswa...
-          </div>
-        ) : students.length === 0 ? (
-          <div className="p-14 text-center">
-            <div className="text-4xl mb-3">📚</div>
-            <p className="font-semibold text-slate-600">
-              Belum ada siswa
-            </p>
-            <p className="text-xs text-slate-400 mt-1">
-              Tidak ditemukan siswa pada kelas ini.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-600">
-                  <th className="p-3 w-12 text-center">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={(e) =>
-                        handleSelectAll(
-                          e.target.checked
-                        )
-                      }
-                      className="rounded text-emerald-600"
-                    />
-                  </th>
-                  <th className="p-3 text-left">No.</th>
-                  <th className="p-3 text-left">NISN</th>
-                  <th className="p-3 text-left">Nama Lengkap</th>
-                  <th className="p-3 text-left">L/P</th>
-                  <th className="p-3 text-left">Kelas</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-100">
-                {students.map(
-                  (student, index) => {
-                    const checked =
-                      selectedIds.includes(
-                        student.id
-                      );
-
-                    return (
-                      <tr
-                        key={student.id}
-                        className={`transition ${
-                          checked
-                            ? 'bg-emerald-50/60'
-                            : 'hover:bg-slate-50'
-                        }`}
-                      >
-                        <td className="p-3 text-center">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() =>
-                              handleSelectStudent(
-                                student.id
-                              )
-                            }
-                            className="rounded text-emerald-600"
-                          />
-                        </td>
-
-                        <td className="p-3 text-slate-400">
-                          {index + 1}
-                        </td>
-
-                        <td className="p-3 font-mono text-xs text-slate-500">
-                          {student.nisn}
-                        </td>
-
-                        <td className="p-3">
-                          <div className="font-semibold text-slate-800">
-                            {student.fullname}
-                          </div>
-                        </td>
-
-                        <td className="p-3">
-                          {student.gender}
-                        </td>
-
-                        <td className="p-3">
-                          <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                            {student.class_name}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )}
-              </tbody>
-            </table>
+        {/* NOTIFIKASI */}
+        {message && (
+          <div className="border-l-4 border-[#00a32a] bg-white px-3 py-3 shadow-sm text-[13px] text-[#1d5e2b]">
+            <span className="font-semibold">Berhasil:</span>{' '}
+            {message}
           </div>
         )}
-      </section>
 
-      {/* ACTION */}
-      {students.length > 0 && (
-        <section className="sticky bottom-4">
-          <div className="rounded-2xl bg-white border border-slate-200 shadow-xl p-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {error && (
+          <div className="border-l-4 border-[#d63638] bg-white px-3 py-3 shadow-sm text-[13px] text-[#b32d2e]">
+            <span className="font-semibold">Perhatian:</span>{' '}
+            {error}
+          </div>
+        )}
+
+        {/* FORM PENGATURAN */}
+        <section className="bg-white border border-[#dcdcde] shadow-sm">
+          <div className="px-4 py-3 border-b border-[#dcdcde]">
+            <h2 className="text-sm font-semibold">
+              Pengaturan Proses
+            </h2>
+          </div>
+
+          <div className="p-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+              {/* TAHUN PELAJARAN */}
               <div>
-                <div className="text-xs text-slate-400">
-                  Siswa yang akan diproses
-                </div>
+                <label className="block text-xs font-semibold mb-1.5">
+                  Tahun Pelajaran
+                </label>
 
-                <div className="text-lg font-bold text-slate-800">
-                  {selectedIds.length}{' '}
-                  <span className="text-sm font-normal text-slate-400">
-                    siswa
+                <input
+                  type="text"
+                  value={academicYear}
+                  onChange={(e) => setAcademicYear(e.target.value)}
+                  placeholder="2026/2027"
+                  className="w-full h-9 px-2.5 border border-[#8c8f94] rounded-sm text-[13px] outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
+                />
+              </div>
+
+              {/* KELAS ASAL */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5">
+                  Kelas Asal
+                </label>
+
+                <select
+                  value={fromClass}
+                  onChange={(e) => {
+                    setFromClass(e.target.value);
+                    setToClass('');
+                    setMessage('');
+                    setError('');
+                  }}
+                  disabled={loadingClasses}
+                  className="w-full h-9 px-2.5 border border-[#8c8f94] rounded-sm bg-white text-[13px] outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1] disabled:bg-[#f6f7f7]"
+                >
+                  <option value="">
+                    {loadingClasses
+                      ? 'Memuat kelas...'
+                      : '-- Pilih Kelas Asal --'}
+                  </option>
+
+                  {classrooms.map((classroom) => (
+                    <option
+                      key={classroom.id}
+                      value={classroom.name}
+                    >
+                      {classroom.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* KELAS TUJUAN */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5">
+                  Kelas Tujuan
+                  {status === 'LULUS' && (
+                    <span className="font-normal text-[#646970]">
+                      {' '}(SMA/Lainnya)
+                    </span>
+                  )}
+                </label>
+
+                <select
+                  value={toClass}
+                  onChange={(e) => setToClass(e.target.value)}
+                  disabled={
+                    !fromClass ||
+                    loadingClasses ||
+                    status === 'TINGGAL'
+                  }
+                  className="w-full h-9 px-2.5 border border-[#8c8f94] rounded-sm bg-white text-[13px] outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1] disabled:bg-[#f6f7f7] disabled:text-[#a7aaad]"
+                >
+                  <option value="">
+                    -- Pilih Kelas Tujuan --
+                  </option>
+
+                  {availableTargetClasses.map((classroom) => (
+                    <option
+                      key={classroom.id}
+                      value={classroom.name}
+                    >
+                      {classroom.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* STATUS */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5">
+                  Status Keputusan
+                </label>
+
+                <select
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value as PromotionStatus);
+                    setMessage('');
+                    setError('');
+                  }}
+                  className="w-full h-9 px-2.5 border border-[#8c8f94] rounded-sm bg-white text-[13px] outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
+                >
+                  <option value="NAIK">Naik Kelas</option>
+                  <option value="TINGGAL">Tinggal Kelas</option>
+                  <option value="LULUS">Lulus</option>
+                </select>
+              </div>
+            </div>
+
+            {/* CATATAN */}
+            <div>
+              <label className="block text-xs font-semibold mb-1.5">
+                Catatan{' '}
+                <span className="font-normal text-[#646970]">
+                  (Opsional)
+                </span>
+              </label>
+
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={2}
+                placeholder="Contoh: Dinyatakan lulus dan melanjutkan ke tingkat SMA."
+                className="w-full max-w-3xl p-2.5 border border-[#8c8f94] rounded-sm text-[13px] outline-none resize-y focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#646970]">
+              <span>
+                {status === 'NAIK'
+                  ? 'Siswa terpilih akan dipindahkan ke kelas tujuan.'
+                  : status === 'TINGGAL'
+                    ? 'Siswa terpilih akan tetap berada di kelas asal.'
+                    : 'Siswa terpilih akan diproses sebagai siswa lulus.'}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* DAFTAR SISWA */}
+        <section className="bg-white border border-[#dcdcde] shadow-sm">
+          <div className="px-4 py-3 border-b border-[#dcdcde] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">
+                Daftar Siswa
+              </h2>
+              <p className="text-xs text-[#646970] mt-0.5">
+                {fromClass
+                  ? `Menampilkan siswa kelas ${fromClass}`
+                  : 'Pilih kelas asal untuk menampilkan siswa.'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {selectedCount > 0 && (
+                <>
+                  <span className="text-xs font-semibold text-[#2271b1]">
+                    {selectedCount} siswa dipilih
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={resetSelection}
+                    className="text-xs text-[#2271b1] hover:text-[#135e96] underline"
+                  >
+                    Batal pilih
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {!fromClass ? (
+            <div className="py-12 px-4 text-center">
+              <p className="text-sm font-medium text-[#50575e]">
+                Pilih kelas asal
+              </p>
+              <p className="text-xs text-[#646970] mt-1">
+                Daftar siswa akan ditampilkan setelah kelas dipilih.
+              </p>
+            </div>
+          ) : loadingStudents ? (
+            <div className="py-12 text-center">
+              <p className="text-[13px] text-[#646970]">
+                Memuat data siswa...
+              </p>
+            </div>
+          ) : students.length === 0 ? (
+            <div className="py-12 px-4 text-center">
+              <p className="text-sm font-medium text-[#50575e]">
+                Belum ada siswa
+              </p>
+              <p className="text-xs text-[#646970] mt-1">
+                Tidak ditemukan siswa pada kelas ini.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[13px] border-collapse">
+                  <thead>
+                    <tr className="bg-[#f6f7f7] text-[#50575e] border-b border-[#dcdcde]">
+                      <th className="px-3 py-2.5 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={(e) =>
+                            handleSelectAll(e.target.checked)
+                          }
+                          aria-label="Pilih semua siswa"
+                          className="accent-[#2271b1] cursor-pointer"
+                        />
+                      </th>
+                      <th className="px-3 py-2.5 w-12 text-left font-semibold">
+                        No.
+                      </th>
+                      <th className="px-3 py-2.5 text-left font-semibold">
+                        NISN
+                      </th>
+                      <th className="px-3 py-2.5 text-left font-semibold">
+                        Nama Lengkap
+                      </th>
+                      <th className="px-3 py-2.5 text-left font-semibold">
+                        L/P
+                      </th>
+                      <th className="px-3 py-2.5 text-left font-semibold">
+                        Kelas
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {students.map((student, index) => {
+                      const checked = selectedIds.includes(student.id);
+
+                      return (
+                        <tr
+                          key={student.id}
+                          className={`border-b border-[#f0f0f1] last:border-0 ${
+                            checked
+                              ? 'bg-[#f0f6fc]'
+                              : 'hover:bg-[#f6f7f7]'
+                          }`}
+                        >
+                          <td className="px-3 py-2.5 text-center">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                handleSelectStudent(student.id)
+                              }
+                              aria-label={`Pilih ${student.fullname}`}
+                              className="accent-[#2271b1] cursor-pointer"
+                            />
+                          </td>
+
+                          <td className="px-3 py-2.5 text-[#646970]">
+                            {index + 1}
+                          </td>
+
+                          <td className="px-3 py-2.5 font-mono text-xs text-[#646970]">
+                            {student.nisn || '-'}
+                          </td>
+
+                          <td className="px-3 py-2.5 font-medium text-[#1d2327]">
+                            {student.fullname}
+                          </td>
+
+                          <td className="px-3 py-2.5 text-[#50575e]">
+                            {student.gender || '-'}
+                          </td>
+
+                          <td className="px-3 py-2.5 text-[#50575e]">
+                            {student.class_name}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="px-4 py-2.5 border-t border-[#dcdcde] bg-[#f6f7f7] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <span className="text-xs text-[#646970]">
+                  Total {students.length} siswa
+                </span>
+                <span className="text-xs text-[#646970]">
+                  {selectedCount} siswa dipilih
+                </span>
+              </div>
+            </>
+          )}
+        </section>
+
+        {/* PANEL AKSI */}
+        {students.length > 0 && (
+          <section className="bg-white border border-[#dcdcde] shadow-sm">
+            <div className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="text-xs text-[#646970]">
+                  Jumlah siswa yang akan diproses
+                </div>
+                <div className="text-lg font-semibold text-[#1d2327] mt-0.5">
+                  {selectedCount}{' '}
+                  <span className="text-xs font-normal text-[#646970]">
+                    dari {students.length} siswa
                   </span>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  type="button"
-                  onClick={handlePromotion}
-                  disabled={
-                    processing ||
-                    selectedIds.length === 0
-                  }
-                  className={`h-11 px-6 rounded-xl text-sm font-bold text-white shadow transition disabled:opacity-50 ${
-                    status === 'NAIK'
-                      ? 'bg-emerald-700 hover:bg-emerald-800'
-                      : status === 'TINGGAL'
-                      ? 'bg-amber-600 hover:bg-amber-700'
-                      : 'bg-indigo-600 hover:bg-indigo-700'
-                  }`}
-                >
-                  {processing
-                    ? 'Memproses...'
-                    : status === 'NAIK'
-                    ? `Naikkan ${selectedIds.length} Siswa`
-                    : status === 'TINGGAL'
-                    ? `Tetapkan ${selectedIds.length} Siswa Tinggal Kelas`
-                    : `Luluskan & Pindahkan ${selectedIds.length} Siswa`}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handlePromotion}
+                disabled={processing || selectedCount === 0}
+                className="inline-flex items-center justify-center gap-2 min-h-9 px-4 py-2 bg-[#2271b1] hover:bg-[#135e96] text-white text-[13px] font-medium rounded-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {processing ? (
+                  <>
+                    <span className="inline-block w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  actionLabel
+                )}
+              </button>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
+      </div>
     </main>
   );
 }

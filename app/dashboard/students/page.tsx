@@ -1,6 +1,8 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 
 type Student = {
   id: number;
@@ -14,14 +16,21 @@ type Student = {
 
 const ITEMS_PER_PAGE = 10;
 
+const inputClass =
+  'h-8 w-full rounded-sm border border-[#8c8f94] bg-white px-2 text-[13px] text-[#2c3338] outline-none focus:border-[#2271b1] focus:shadow-[0_0_0_1px_#2271b1]';
+
+const primaryButton =
+  'inline-flex h-8 items-center justify-center gap-1.5 rounded-sm border border-[#2271b1] bg-[#2271b1] px-3 text-[12px] font-medium text-white hover:bg-[#135e96] disabled:cursor-not-allowed disabled:opacity-60';
+
+const secondaryButton =
+  'inline-flex h-8 items-center justify-center gap-1.5 rounded-sm border border-[#c3c4c7] bg-white px-3 text-[12px] font-medium text-[#2c3338] hover:border-[#8c8f94] hover:bg-[#f6f7f7] disabled:cursor-not-allowed disabled:opacity-60';
+
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
-  // =========================
-  // MODAL & FORM STATE
-  // =========================
+  // MODAL & FORM
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nisn, setNisn] = useState('');
   const [fullname, setFullname] = useState('');
@@ -29,29 +38,20 @@ export default function StudentsPage() {
   const [className, setClassName] = useState('');
   const [gender, setGender] = useState('L');
   const [address, setAddress] = useState('');
-
   const [editingId, setEditingId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // =========================
   // BULK SELECTION
-  // =========================
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
 
-  // =========================
   // CSV
-  // =========================
   const [uploading, setUploading] = useState(false);
 
-  // =========================
   // PAGINATION
-  // =========================
   const [currentPage, setCurrentPage] = useState(1);
 
-  // =========================
   // FETCH STUDENTS
-  // =========================
   const fetchStudents = async () => {
     try {
       setLoading(true);
@@ -87,9 +87,7 @@ export default function StudentsPage() {
     fetchStudents();
   }, []);
 
-  // =========================
   // PAGINATION
-  // =========================
   const totalPages = Math.max(
     1,
     Math.ceil(students.length / ITEMS_PER_PAGE)
@@ -108,24 +106,17 @@ export default function StudentsPage() {
   }, [currentPage, totalPages]);
 
   const goToPage = (page: number) => {
-    if (page < 1 || page > totalPages) {
-      return;
-    }
+    if (page < 1 || page > totalPages) return;
 
     setCurrentPage(page);
 
-    const tableElement = document.getElementById('student-table');
-    if (tableElement) {
-      tableElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
+    document.getElementById('student-table')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
   };
 
-  // =========================
-  // OPEN/CLOSE MODAL
-  // =========================
+  // OPEN / CLOSE MODAL
   const openAddModal = () => {
     setEditingId(null);
     setNisn('');
@@ -153,16 +144,17 @@ export default function StudentsPage() {
     setEditingId(null);
   };
 
-  // =========================
   // SUBMIT FORM
-  // =========================
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage('');
     setSubmitting(true);
 
     try {
-      const url = editingId ? `/api/students/${editingId}` : '/api/students';
+      const url = editingId
+        ? `/api/students/${editingId}`
+        : '/api/students';
+
       const method = editingId ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -201,13 +193,9 @@ export default function StudentsPage() {
     }
   };
 
-  // =========================
-  // DELETE
-  // =========================
+  // DELETE SINGLE
   const handleDelete = async (id: number) => {
-    if (!confirm('Yakin ingin menghapus santri ini?')) {
-      return;
-    }
+    if (!confirm('Yakin ingin menghapus santri ini?')) return;
 
     try {
       setMessage('');
@@ -229,41 +217,39 @@ export default function StudentsPage() {
     }
   };
 
-  // =========================
   // SELECT ALL CURRENT PAGE
-  // =========================
   const currentPageIds = currentStudents.map((student) => student.id);
 
   const allCurrentSelected =
     currentPageIds.length > 0 &&
     currentPageIds.every((id) => selectedIds.includes(id));
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelectAll = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       setSelectedIds((prev) => {
         const merged = new Set([...prev, ...currentPageIds]);
         return Array.from(merged);
       });
     } else {
-      setSelectedIds((prev) => prev.filter((id) => !currentPageIds.includes(id)));
+      setSelectedIds((prev) =>
+        prev.filter((id) => !currentPageIds.includes(id))
+      );
     }
   };
 
   const handleSelectOne = (id: number) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id)
+        ? prev.filter((item) => item !== id)
+        : [...prev, id]
     );
   };
 
-  // =========================
   // BULK DELETE
-  // =========================
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
 
-    if (!confirm(`Hapus ${selectedIds.length} santri terpilih?`)) {
-      return;
-    }
+    if (!confirm(`Hapus ${selectedIds.length} santri terpilih?`)) return;
 
     try {
       setDeletingBulk(true);
@@ -293,73 +279,66 @@ export default function StudentsPage() {
     }
   };
 
-  // =========================
-// DOWNLOAD CSV TEMPLATE
-// =========================
-const downloadTemplate = () => {
-  const rows = [
-    [
-      'nisn',
-      'fullname',
-      'birth_info',
-      'class_name',
-      'gender',
-      'address',
-    ],
-    [
-      '3123456789',
-      'Ahmad Fauzi',
-      'Purwokerto, 12 Januari 2012',
-      '7A',
-      'L',
-      'Jl. Masjid No. 1, Purwokerto',
-    ],
-    [
-      '3123456790',
-      'Fatimah Zahra',
-      'Jakarta, 5 Mei 2012',
-      '7A',
-      'P',
-      'Jl. Merdeka No. 45, Jakarta',
-    ],
-  ];
+  // DOWNLOAD CSV TEMPLATE
+  const downloadTemplate = () => {
+    const rows = [
+      [
+        'nisn',
+        'fullname',
+        'birth_info',
+        'class_name',
+        'gender',
+        'address',
+      ],
+      [
+        '3123456789',
+        'Ahmad Fauzi',
+        'Purwokerto, 12 Januari 2012',
+        '7A',
+        'L',
+        'Jl. Masjid No. 1, Purwokerto',
+      ],
+      [
+        '3123456790',
+        'Fatimah Zahra',
+        'Jakarta, 5 Mei 2012',
+        '7A',
+        'P',
+        'Jl. Merdeka No. 45, Jakarta',
+      ],
+    ];
 
-  const escapeCsv = (value: string) => {
-    return `"${String(value).replace(/"/g, '""')}"`;
+    const escapeCsv = (value: string) => {
+      return `"${String(value).replace(/"/g, '""')}"`;
+    };
+
+    const csvContent =
+      '\uFEFF' +
+      rows
+        .map((row) => row.map(escapeCsv).join(';'))
+        .join('\r\n');
+
+    const blob = new Blob([csvContent], {
+      type: 'text/csv;charset=utf-8;',
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = 'template_import_santri.csv';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 100);
   };
 
-  // Menggunakan titik koma (;) sebagai pemisah standar Excel Indonesia
-  const csvContent =
-    '\uFEFF' +
-    rows
-      .map((row) =>
-        row.map(escapeCsv).join(';')
-      )
-      .join('\r\n');
-
-  const blob = new Blob([csvContent], {
-    type: 'text/csv;charset=utf-8;',
-  });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-
-  link.href = url;
-  link.download = 'template_import_santri.csv';
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 100);
-};
-
-  // =========================
   // IMPORT CSV
-  // =========================
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -368,8 +347,12 @@ const downloadTemplate = () => {
     reader.onload = async (event) => {
       try {
         setUploading(true);
+
         const text = event.target?.result as string;
-        const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        const lines = text
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean);
 
         if (lines.length < 2) {
           throw new Error('File CSV kosong atau format tidak valid.');
@@ -378,8 +361,14 @@ const downloadTemplate = () => {
         const parsedStudents: any[] = [];
 
         for (let i = 1; i < lines.length; i++) {
-          const row = lines[i].split(';').length > 1 ? lines[i].split(';') : lines[i].split(',');
-          const cleanedRow = row.map((value) => value.trim().replace(/^["']|["']$/g, ''));
+          const row =
+            lines[i].split(';').length > 1
+              ? lines[i].split(';')
+              : lines[i].split(',');
+
+          const cleanedRow = row.map((value) =>
+            value.trim().replace(/^["']|["']$/g, '')
+          );
 
           if (cleanedRow.length >= 6) {
             parsedStudents.push({
@@ -399,7 +388,9 @@ const downloadTemplate = () => {
 
         const res = await fetch('/api/students/bulk', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ students: parsedStudents }),
         });
 
@@ -409,7 +400,10 @@ const downloadTemplate = () => {
           throw new Error(data?.message || 'Gagal mengimpor data.');
         }
 
-        setMessage(data?.message || 'Sukses! Data santri berhasil diimpor.');
+        setMessage(
+          data?.message || 'Sukses! Data santri berhasil diimpor.'
+        );
+
         await fetchStudents();
       } catch (err: any) {
         setMessage(err?.message || 'Gagal membaca file CSV.');
@@ -422,129 +416,146 @@ const downloadTemplate = () => {
     reader.readAsText(file);
   };
 
-  // =========================
   // STATISTICS
-  // =========================
   const maleCount = students.filter((s) => s.gender === 'L').length;
   const femaleCount = students.filter((s) => s.gender === 'P').length;
 
   return (
-    <main className="min-h-screen bg-[#f6f8f7] text-slate-800">
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#f0f0f1] px-3 py-5 text-[#1d2327] sm:px-5">
+      <div className="mx-auto max-w-[1400px]">
 
-        {/* ================= HEADER ================= */}
-        <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#047857] px-5 py-5 text-white shadow-[0_10px_30px_rgba(6,95,70,0.15)] sm:px-6">
-          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
-                <UsersIcon />
-              </div>
-              <div>
-                <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
-                  Data Master
-                </div>
-                <h1 className="mt-0.5 text-xl font-bold tracking-tight">
-                  Manajemen Santri
-                </h1>
-                <p className="mt-0.5 text-[11px] text-emerald-50/75">
-                  Kelola data santri secara cepat dan terstruktur.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={openAddModal}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3.5 text-[11px] font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
-              >
-                <PlusIcon />
-                + Tambah Santri
-              </button>
-
-              <button
-                type="button"
-                onClick={downloadTemplate}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-[11px] font-semibold text-white transition hover:bg-white/20"
-              >
-                <DownloadIcon />
-                Template CSV
-              </button>
-
-              <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg bg-amber-500 px-3 text-[11px] font-bold text-white shadow-sm transition hover:bg-amber-600">
-                <UploadIcon />
-                {uploading ? 'Mengimpor...' : 'Impor CSV'}
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                  className="hidden"
-                />
-              </label>
-            </div>
+        {/* HEADER */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-[21px] font-normal leading-tight text-[#1d2327]">
+              Manajemen Santri
+            </h1>
+            <p className="mt-1 text-[12px] text-[#646970]">
+              Kelola data induk santri, informasi pribadi, dan data kelas.
+            </p>
           </div>
-        </header>
 
-        {/* ================= STAT ================= */}
-        <section className="mt-4 grid grid-cols-3 gap-2.5">
-          <MiniStat label="Total Santri" value={students.length} icon={<UsersIcon />} />
-          <MiniStat label="Laki-laki" value={maleCount} icon={<MaleIcon />} />
-          <MiniStat label="Perempuan" value={femaleCount} icon={<FemaleIcon />} />
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={downloadTemplate}
+              className={secondaryButton}
+            >
+              <DownloadIcon />
+              Template CSV
+            </button>
+
+            <label className={`${secondaryButton} cursor-pointer`}>
+              <UploadIcon />
+              {uploading ? 'Mengimpor...' : 'Impor CSV'}
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                className="hidden"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={openAddModal}
+              className={primaryButton}
+            >
+              <PlusIcon />
+              Tambah Santri
+            </button>
+          </div>
+        </div>
+
+        {/* STATISTICS */}
+        <section className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <MiniStat
+            label="Total Santri"
+            value={students.length}
+            icon={<UsersIcon />}
+          />
+          <MiniStat
+            label="Laki-laki"
+            value={maleCount}
+            icon={<MaleIcon />}
+          />
+          <MiniStat
+            label="Perempuan"
+            value={femaleCount}
+            icon={<FemaleIcon />}
+          />
         </section>
 
-        {/* ================= MESSAGE ================= */}
+        {/* MESSAGE */}
         {message && (
           <div
-            className={`mt-4 flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs ${
+            className={`mb-4 border-l-4 bg-white px-3 py-2.5 text-[12px] shadow-sm ${
               message.startsWith('Sukses')
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-red-200 bg-red-50 text-red-700'
+                ? 'border-l-[#00a32a] text-[#146c2e]'
+                : 'border-l-[#d63638] text-[#b32d2e]'
             }`}
           >
-            {message.startsWith('Sukses') ? <CheckIcon /> : <AlertIcon />}
-            <span>{message}</span>
+            <div className="flex items-center gap-2">
+              {message.startsWith('Sukses') ? (
+                <CheckIcon />
+              ) : (
+                <AlertIcon />
+              )}
+              <span>{message}</span>
+            </div>
           </div>
         )}
 
-        {/* ================= TABLE SECTION ================= */}
+        {/* TABLE */}
         <section
           id="student-table"
-          className="mt-4 min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_5px_20px_rgba(15,23,42,0.04)]"
+          className="min-w-0 border border-[#c3c4c7] bg-white shadow-sm"
         >
-          <div className="border-b border-slate-100 px-4 py-3.5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-xs font-bold text-slate-800">Daftar Santri</h2>
-                <p className="mt-0.5 text-[10px] text-slate-400">
-                  {students.length > 0 ? (
-                    <>
-                      Menampilkan{' '}
-                      <span className="font-semibold text-slate-600">{startIndex + 1}</span> –{' '}
-                      <span className="font-semibold text-slate-600">
-                        {Math.min(startIndex + currentStudents.length, students.length)}
-                      </span>{' '}
-                      dari <span className="font-semibold text-slate-600">{students.length}</span> santri
-                    </>
-                  ) : (
-                    'Belum ada data santri'
-                  )}
-                </p>
-              </div>
+          <div className="flex flex-col gap-2 border-b border-[#dcdcde] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-[14px] font-semibold text-[#1d2327]">
+                Daftar Santri
+              </h2>
+              <p className="mt-0.5 text-[11px] text-[#646970]">
+                {students.length > 0 ? (
+                  <>
+                    Menampilkan{' '}
+                    <strong className="font-semibold text-[#2c3338]">
+                      {startIndex + 1}–{Math.min(
+                        startIndex + currentStudents.length,
+                        students.length
+                      )}
+                    </strong>{' '}
+                    dari{' '}
+                    <strong className="font-semibold text-[#2c3338]">
+                      {students.length}
+                    </strong>{' '}
+                    santri
+                  </>
+                ) : (
+                  'Belum ada data santri'
+                )}
+              </p>
+            </div>
 
-              <div className="flex items-center gap-2">
-                {selectedIds.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              {selectedIds.length > 0 && (
+                <>
+                  <span className="text-[11px] text-[#646970]">
+                    {selectedIds.length} dipilih
+                  </span>
                   <button
                     type="button"
                     onClick={handleBulkDelete}
                     disabled={deletingBulk}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-red-600 px-3 text-[10px] font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-[#d63638] bg-white px-3 text-[12px] font-medium text-[#d63638] hover:bg-[#fcf0f1] disabled:opacity-60"
                   >
                     <TrashIcon />
-                    {deletingBulk ? 'Menghapus...' : `Hapus (${selectedIds.length})`}
+                    {deletingBulk ? 'Menghapus...' : 'Hapus Terpilih'}
                   </button>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -554,86 +565,122 @@ const downloadTemplate = () => {
             ) : students.length === 0 ? (
               <EmptyState />
             ) : (
-              <table className="w-full min-w-[780px] border-collapse text-xs">
+              <table className="w-full min-w-[850px] border-collapse text-[12px]">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/70 text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                    <th className="w-10 px-3 py-2.5 text-center">
+                  <tr className="bg-[#f6f7f7] text-left text-[11px] font-semibold text-[#2c3338]">
+                    <th className="w-10 border-b border-[#c3c4c7] px-3 py-2 text-center">
                       <input
                         type="checkbox"
                         checked={allCurrentSelected}
                         onChange={handleSelectAll}
-                        className="h-3.5 w-3.5 cursor-pointer rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        aria-label="Pilih semua santri pada halaman ini"
+                        className="h-4 w-4 cursor-pointer accent-[#2271b1]"
                       />
                     </th>
-                    <th className="w-12 px-2 py-2.5 text-left">No</th>
-                    <th className="px-3 py-2.5 text-left">Santri</th>
-                    <th className="px-3 py-2.5 text-left">Kelas</th>
-                    <th className="px-3 py-2.5 text-left">L/P</th>
-                    <th className="px-3 py-2.5 text-left">Tanggal Lahir</th>
-                    <th className="px-3 py-2.5 text-left">Alamat</th>
-                    <th className="px-3 py-2.5 text-right">Aksi</th>
+                    <th className="w-12 border-b border-[#c3c4c7] px-2 py-2">
+                      No.
+                    </th>
+                    <th className="border-b border-[#c3c4c7] px-3 py-2">
+                      Santri
+                    </th>
+                    <th className="border-b border-[#c3c4c7] px-3 py-2">
+                      Kelas
+                    </th>
+                    <th className="border-b border-[#c3c4c7] px-3 py-2">
+                      L/P
+                    </th>
+                    <th className="border-b border-[#c3c4c7] px-3 py-2">
+                      Tempat, Tanggal Lahir
+                    </th>
+                    <th className="border-b border-[#c3c4c7] px-3 py-2">
+                      Alamat
+                    </th>
+                    <th className="w-28 border-b border-[#c3c4c7] px-3 py-2 text-right">
+                      Aksi
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+
+                <tbody>
                   {currentStudents.map((student, index) => {
                     const isChecked = selectedIds.includes(student.id);
+
                     return (
                       <tr
                         key={student.id}
-                        className={`group transition ${
-                          isChecked ? 'bg-emerald-50/50' : 'hover:bg-slate-50/70'
+                        className={`${
+                          isChecked
+                            ? 'bg-[#f0f6fc]'
+                            : 'hover:bg-[#f6f7f7]'
                         }`}
                       >
-                        <td className="px-3 py-2.5 text-center">
+                        <td className="border-b border-[#dcdcde] px-3 py-2 text-center">
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => handleSelectOne(student.id)}
-                            className="h-3.5 w-3.5 cursor-pointer rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            aria-label={`Pilih ${student.fullname}`}
+                            className="h-4 w-4 cursor-pointer accent-[#2271b1]"
                           />
                         </td>
-                        <td className="px-2 py-2.5 font-semibold text-slate-300">
+
+                        <td className="border-b border-[#dcdcde] px-2 py-2 text-[#646970]">
                           {startIndex + index + 1}
                         </td>
-                        <td className="px-3 py-2.5">
-                          <div className="font-semibold text-slate-800">{student.fullname}</div>
-                          <div className="mt-0.5 text-[9px] text-slate-400">NISN {student.nisn}</div>
+
+                        <td className="border-b border-[#dcdcde] px-3 py-2">
+                          <div className="font-semibold text-[#2271b1]">
+                            {student.fullname}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-[#646970]">
+                            NISN: {student.nisn}
+                          </div>
                         </td>
-                        <td className="px-3 py-2.5">
-                          <span className="inline-flex rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">
+
+                        <td className="border-b border-[#dcdcde] px-3 py-2">
+                          <span className="inline-block border border-[#dcdcde] bg-[#f6f7f7] px-2 py-0.5 text-[11px] font-medium text-[#2c3338]">
                             {student.class_name}
                           </span>
                         </td>
-                        <td className="px-3 py-2.5">
+
+                        <td className="border-b border-[#dcdcde] px-3 py-2">
                           <span
-                            className={`inline-flex h-6 w-6 items-center justify-center rounded-md text-[9px] font-bold ${
+                            className={`font-medium ${
                               student.gender === 'L'
-                                ? 'bg-blue-50 text-blue-600'
-                                : 'bg-pink-50 text-pink-600'
+                                ? 'text-[#2271b1]'
+                                : 'text-[#d63678]'
                             }`}
                           >
-                            {student.gender}
+                            {student.gender === 'L'
+                              ? 'Laki-laki'
+                              : student.gender === 'P'
+                                ? 'Perempuan'
+                                : student.gender}
                           </span>
                         </td>
-                        <td className="px-3 py-2.5 text-[10px] font-medium text-slate-700">
+
+                        <td className="border-b border-[#dcdcde] px-3 py-2 text-[#50575e]">
                           {student.birth_info || '—'}
                         </td>
-                        <td className="max-w-[220px] px-3 py-2.5 truncate text-[10px] text-slate-500">
+
+                        <td className="max-w-[240px] truncate border-b border-[#dcdcde] px-3 py-2 text-[#50575e]">
                           {student.address || '—'}
                         </td>
-                        <td className="px-3 py-2.5 text-right">
-                          <div className="flex justify-end gap-1">
+
+                        <td className="border-b border-[#dcdcde] px-3 py-2">
+                          <div className="flex justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => handleEdit(student)}
-                              className="rounded-md bg-amber-50 px-2 py-1 text-[9px] font-semibold text-amber-700 transition hover:bg-amber-100"
+                              className="text-[11px] font-medium text-[#2271b1] hover:text-[#135e96] hover:underline"
                             >
                               Edit
                             </button>
+                            <span className="text-[#c3c4c7]">|</span>
                             <button
                               type="button"
                               onClick={() => handleDelete(student.id)}
-                              className="rounded-md bg-red-50 px-2 py-1 text-[9px] font-semibold text-red-600 transition hover:bg-red-100"
+                              className="text-[11px] font-medium text-[#b32d2e] hover:text-[#8a2424] hover:underline"
                             >
                               Hapus
                             </button>
@@ -658,102 +705,125 @@ const downloadTemplate = () => {
           )}
         </section>
 
-        {/* ================= MODAL POP-UP FORM ================= */}
+        {/* MODAL */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl transition-all">
-              <div className="flex items-center justify-between border-b border-slate-100 bg-[#064e3b] px-5 py-4 text-white">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-3"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget && !submitting) {
+                closeModal();
+              }
+            }}
+          >
+            <div className="my-auto w-full max-w-[560px] border border-[#c3c4c7] bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b border-[#dcdcde] px-4 py-3">
                 <div>
-                  <h3 className="text-sm font-bold">
+                  <h3 className="text-[15px] font-semibold text-[#1d2327]">
                     {editingId ? 'Edit Data Santri' : 'Tambah Santri Baru'}
                   </h3>
-                  <p className="text-[10px] text-emerald-200">
-                    Lengkapi formulir informasi santri di bawah ini.
+                  <p className="mt-0.5 text-[11px] text-[#646970]">
+                    Lengkapi informasi identitas santri.
                   </p>
                 </div>
+
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-lg bg-white/10 px-2.5 py-1 text-xs font-bold text-white hover:bg-white/20"
+                  disabled={submitting}
+                  aria-label="Tutup formulir"
+                  className="flex h-7 w-7 items-center justify-center text-[20px] text-[#646970] hover:bg-[#f0f0f1] hover:text-[#1d2327] disabled:opacity-50"
                 >
-                  ✕ Tutup
+                  ×
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4 p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="NISN" value={nisn} onChange={setNisn} placeholder="3123456789" />
-                  <div>
-                    <label className="mb-1 block text-[10px] font-semibold text-slate-600">
-                      Kelas (Contoh: 7A, 8B, 11B)
-                    </label>
-                    <input
-                      type="text"
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-3.5 p-4">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field
+                      label="NISN"
+                      value={nisn}
+                      onChange={setNisn}
+                      placeholder="3123456789"
+                    />
+
+                    <Field
+                      label="Kelas"
                       value={className}
-                      onChange={(e) => setClassName(e.target.value)}
-                      required
-                      placeholder="7A"
-                      className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10"
+                      onChange={setClassName}
+                      placeholder="Contoh: 7A"
+                    />
+                  </div>
+
+                  <Field
+                    label="Nama Lengkap"
+                    value={fullname}
+                    onChange={setFullname}
+                    placeholder="Nama lengkap santri"
+                  />
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field
+                      label="Tempat, Tanggal Lahir"
+                      value={birthInfo}
+                      onChange={setBirthInfo}
+                      placeholder="Purwokerto, 12 Januari 2012"
+                      required={false}
+                    />
+
+                    <div>
+                      <label className="mb-1 block text-[12px] font-medium text-[#2c3338]">
+                        Jenis Kelamin
+                      </label>
+                      <select
+                        value={gender}
+                        onChange={(e) => setGender(e.target.value)}
+                        className={inputClass}
+                      >
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[12px] font-medium text-[#2c3338]">
+                      Alamat
+                    </label>
+                    <textarea
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Alamat lengkap santri"
+                      rows={3}
+                      className="w-full resize-y rounded-sm border border-[#8c8f94] bg-white px-2 py-2 text-[13px] text-[#2c3338] outline-none focus:border-[#2271b1] focus:shadow-[0_0_0_1px_#2271b1]"
                     />
                   </div>
                 </div>
 
-                <Field label="Nama Lengkap" value={fullname} onChange={setFullname} placeholder="Nama lengkap santri" />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field
-                    label="Tempat, Tanggal Lahir"
-                    value={birthInfo}
-                    onChange={setBirthInfo}
-                    placeholder="Purwokerto, 12 Januari 2012"
-                    required={false}
-                  />
-                  <div>
-                    <label className="mb-1 block text-[10px] font-semibold text-slate-600">
-                      Jenis Kelamin
-                    </label>
-                    <select
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value)}
-                      className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10"
-                    >
-                      <option value="L">Laki-laki</option>
-                      <option value="P">Perempuan</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-[10px] font-semibold text-slate-600">Alamat</label>
-                  <textarea
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Alamat lengkap santri"
-                    rows={2}
-                    className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <div className="flex flex-wrap justify-end gap-2 border-t border-[#dcdcde] bg-[#f6f7f7] px-4 py-3">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="rounded-lg bg-slate-100 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200"
+                    disabled={submitting}
+                    className={secondaryButton}
                   >
                     Batal
                   </button>
+
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:opacity-60"
+                    className={primaryButton}
                   >
                     {submitting ? (
                       <>
-                        <SpinnerIcon /> Menyimpan...
+                        <SpinnerIcon />
+                        Menyimpan...
                       </>
                     ) : (
                       <>
-                        <CheckIcon /> {editingId ? 'Simpan Perubahan' : 'Tambah Santri'}
+                        <CheckIcon />
+                        {editingId ? 'Simpan Perubahan' : 'Tambah Santri'}
                       </>
                     )}
                   </button>
@@ -763,12 +833,13 @@ const downloadTemplate = () => {
           </div>
         )}
 
-        {/* ================= FOOTER ================= */}
-        <footer className="mt-5 flex flex-col items-center justify-between gap-1 border-t border-slate-200/70 pt-3 text-[9px] text-slate-400 sm:flex-row">
-          <span>Sistem Akademik · Pondok Pesantren Terpadu Ulil Albab</span>
-          <span className="font-serif text-slate-500">العلم نور</span>
+        {/* FOOTER */}
+        <footer className="mt-4 flex flex-col justify-between gap-1 border-t border-[#dcdcde] pt-3 text-[11px] text-[#646970] sm:flex-row">
+          <span>
+            Sistem Akademik · Pondok Pesantren Terpadu Ulul Albab
+          </span>
+          <span className="font-serif">العلم نور</span>
         </footer>
-
       </div>
     </main>
   );
@@ -777,6 +848,7 @@ const downloadTemplate = () => {
 /* =========================================================
    FIELD
 ========================================================= */
+
 function Field({
   label,
   value,
@@ -792,14 +864,16 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-[10px] font-semibold text-slate-600">{label}</label>
+      <label className="mb-1 block text-[12px] font-medium text-[#2c3338]">
+        {label}
+      </label>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
         placeholder={placeholder}
-        className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/10"
+        className={inputClass}
       />
     </div>
   );
@@ -808,6 +882,7 @@ function Field({
 /* =========================================================
    MINI STAT
 ========================================================= */
+
 function MiniStat({
   label,
   value,
@@ -815,16 +890,18 @@ function MiniStat({
 }: {
   label: string;
   value: number;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 py-3 shadow-[0_3px_15px_rgba(15,23,42,0.03)]">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+    <div className="flex items-center gap-3 border border-[#c3c4c7] bg-white px-3 py-3 shadow-sm">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#dcdcde] bg-[#f6f7f7] text-[#2271b1]">
         {icon}
       </div>
-      <div className="min-w-0">
-        <div className="text-sm font-bold leading-none text-slate-800">{value}</div>
-        <div className="mt-1 truncate text-[9px] font-medium text-slate-400">{label}</div>
+      <div>
+        <div className="text-[19px] font-semibold leading-tight text-[#1d2327]">
+          {value}
+        </div>
+        <div className="mt-0.5 text-[11px] text-[#646970]">{label}</div>
       </div>
     </div>
   );
@@ -833,6 +910,7 @@ function MiniStat({
 /* =========================================================
    PAGINATION
 ========================================================= */
+
 function Pagination({
   currentPage,
   totalPages,
@@ -854,42 +932,54 @@ function Pagination({
     }
   } else {
     pages.push(1);
+
     if (currentPage > 3) pages.push('...');
+
     const start = Math.max(2, currentPage - 1);
     const end = Math.min(totalPages - 1, currentPage + 1);
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
+
     if (currentPage < totalPages - 2) pages.push('...');
+
     pages.push(totalPages);
   }
 
-  const firstItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const firstItem =
+    totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+
   const lastItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-col gap-3 border-t border-slate-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-[9px] text-slate-400">
+    <div className="flex flex-col gap-3 border-t border-[#dcdcde] bg-[#f6f7f7] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="text-[11px] text-[#646970]">
         Menampilkan{' '}
-        <span className="font-semibold text-slate-600">{firstItem}</span> –{' '}
-        <span className="font-semibold text-slate-600">{lastItem}</span> dari{' '}
-        <span className="font-semibold text-slate-600">{totalItems}</span> santri
+        <strong className="font-semibold text-[#2c3338]">
+          {firstItem}–{lastItem}
+        </strong>{' '}
+        dari{' '}
+        <strong className="font-semibold text-[#2c3338]">
+          {totalItems}
+        </strong>{' '}
+        santri
       </div>
 
       <div className="flex items-center justify-center gap-1">
-        <button
-          type="button"
+        <PageButton
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          aria-label="Halaman sebelumnya"
-          className="flex h-7 min-w-7 items-center justify-center rounded-md border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          ‹
-        </button>
+          label="‹"
+          ariaLabel="Halaman sebelumnya"
+        />
 
         {pages.map((page, index) =>
           page === '...' ? (
-            <span key={`dots-${index}`} className="flex h-7 w-6 items-center justify-center text-[10px] text-slate-400">
+            <span
+              key={`dots-${index}`}
+              className="flex h-7 min-w-7 items-center justify-center text-[11px] text-[#646970]"
+            >
               …
             </span>
           ) : (
@@ -897,10 +987,10 @@ function Pagination({
               key={page}
               type="button"
               onClick={() => onPageChange(page as number)}
-              className={`flex h-7 min-w-7 items-center justify-center rounded-md px-2 text-[10px] font-semibold transition ${
+              className={`h-7 min-w-7 rounded-sm border px-2 text-[11px] ${
                 currentPage === page
-                  ? 'bg-emerald-700 text-white shadow-sm'
-                  : 'border border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700'
+                  ? 'border-[#2271b1] bg-[#2271b1] font-semibold text-white'
+                  : 'border-[#c3c4c7] bg-white text-[#2c3338] hover:border-[#2271b1] hover:text-[#2271b1]'
               }`}
             >
               {page}
@@ -908,36 +998,60 @@ function Pagination({
           )
         )}
 
-        <button
-          type="button"
+        <PageButton
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          aria-label="Halaman berikutnya"
-          className="flex h-7 min-w-7 items-center justify-center rounded-md border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          ›
-        </button>
+          label="›"
+          ariaLabel="Halaman berikutnya"
+        />
       </div>
     </div>
+  );
+}
+
+function PageButton({
+  disabled,
+  onClick,
+  label,
+  ariaLabel,
+}: {
+  disabled: boolean;
+  onClick: () => void;
+  label: string;
+  ariaLabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="h-7 min-w-7 rounded-sm border border-[#c3c4c7] bg-white px-2 text-[13px] text-[#50575e] hover:border-[#2271b1] hover:text-[#2271b1] disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {label}
+    </button>
   );
 }
 
 /* =========================================================
    LOADING & EMPTY
 ========================================================= */
+
 function LoadingTable() {
   return (
-    <div className="divide-y divide-slate-100">
+    <div className="divide-y divide-[#dcdcde]">
       {[1, 2, 3, 4, 5, 6].map((item) => (
-        <div key={item} className="flex animate-pulse items-center gap-4 px-4 py-3">
-          <div className="h-3 w-3 rounded bg-slate-200" />
-          <div className="h-3 w-8 rounded bg-slate-200" />
+        <div
+          key={item}
+          className="flex animate-pulse items-center gap-4 px-4 py-3"
+        >
+          <div className="h-4 w-4 rounded-sm bg-[#e5e5e5]" />
+          <div className="h-3 w-8 rounded-sm bg-[#e5e5e5]" />
           <div className="flex-1">
-            <div className="h-3 w-40 rounded bg-slate-200" />
-            <div className="mt-1 h-2 w-24 rounded bg-slate-100" />
+            <div className="h-3 w-40 rounded-sm bg-[#e5e5e5]" />
+            <div className="mt-2 h-2 w-24 rounded-sm bg-[#f0f0f1]" />
           </div>
-          <div className="h-5 w-10 rounded bg-slate-100" />
-          <div className="h-5 w-5 rounded bg-slate-100" />
+          <div className="h-5 w-12 rounded-sm bg-[#f0f0f1]" />
         </div>
       ))}
     </div>
@@ -946,13 +1060,16 @@ function LoadingTable() {
 
 function EmptyState() {
   return (
-    <div className="flex min-h-[280px] flex-col items-center justify-center px-6 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+    <div className="flex min-h-[220px] flex-col items-center justify-center px-5 text-center">
+      <div className="flex h-11 w-11 items-center justify-center border border-[#dcdcde] bg-[#f6f7f7] text-[#8c8f94]">
         <UsersIcon />
       </div>
-      <h3 className="mt-3 text-xs font-bold text-slate-700">Belum ada data santri</h3>
-      <p className="mt-1 max-w-xs text-[10px] leading-4 text-slate-400">
-        Tambahkan santri baru melalui tombol "+ Tambah Santri" di atas atau gunakan fitur impor CSV.
+      <h3 className="mt-3 text-[13px] font-semibold text-[#2c3338]">
+        Belum ada data santri
+      </h3>
+      <p className="mt-1 max-w-sm text-[11px] leading-5 text-[#646970]">
+        Tambahkan santri baru melalui tombol Tambah Santri atau gunakan fitur
+        impor CSV.
       </p>
     </div>
   );
@@ -961,6 +1078,7 @@ function EmptyState() {
 /* =========================================================
    ICONS
 ========================================================= */
+
 function UsersIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
@@ -994,14 +1112,6 @@ function PlusIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
       <path strokeLinecap="round" d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-      <path strokeLinecap="round" strokeLinejoin="round" d="m14 6 4 4M5 19l3.5-.7L18.5 8.3a2.1 2.1 0 0 0-3-3L6 15.5 5 19Z" />
     </svg>
   );
 }
@@ -1052,8 +1162,20 @@ function UploadIcon() {
 function SpinnerIcon() {
   return (
     <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeOpacity="0.3"
+        strokeWidth="3"
+      />
+      <path
+        d="M21 12a9 9 0 0 0-9-9"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

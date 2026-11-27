@@ -185,9 +185,8 @@ function typeMatches(
     'writing',
   ];
 
-  const keywords = requestedType === 'ORAL'
-    ? oralKeywords
-    : writtenKeywords;
+  const keywords =
+    requestedType === 'ORAL' ? oralKeywords : writtenKeywords;
 
   return keywords.some((keyword) => {
     return type === keyword || type.includes(keyword);
@@ -288,7 +287,6 @@ function subjectMatches(
   if (!db || !requested) return false;
   if (db === requested) return true;
 
-  // Pencocokan parsial hanya untuk nama yang cukup panjang.
   if (db.length >= 5 && requested.length >= 5) {
     return db.includes(requested) || requested.includes(db);
   }
@@ -435,10 +433,12 @@ function ReportSection({
             {title}
           </h3>
         </div>
+
         <div dir="rtl" className="arabic text-[11px] font-semibold text-slate-600">
           {arabic}
         </div>
       </div>
+
       {children}
     </section>
   );
@@ -471,6 +471,7 @@ function ScoreTable({
           </th>
         </tr>
       </thead>
+
       <tbody>
         {subjects.map((subject, index) => {
           const score = getScore(subject.name, category);
@@ -484,10 +485,12 @@ function ScoreTable({
               <td className="border border-slate-300 py-1.5 text-center align-top text-slate-500">
                 {index + 1}
               </td>
+
               <td className="border border-slate-300 px-2 py-1.5 text-center align-top">
                 <div className="font-medium leading-tight text-slate-800">
                   {subject.name}
                 </div>
+
                 <div
                   dir="rtl"
                   className={`arabic mt-0.5 font-semibold leading-tight text-slate-500 ${
@@ -497,9 +500,11 @@ function ScoreTable({
                   {subject.arabic}
                 </div>
               </td>
+
               <td className="border border-slate-300 py-1.5 text-center align-top font-bold text-[#477b69]">
                 {score > 0 ? score : '-'}
               </td>
+
               <td className="border border-slate-300 px-2.5 py-1.5 align-top leading-[1.3] text-slate-700">
                 <div>{description.achieved}</div>
                 <div className="mt-0.5 text-[8px] leading-[1.3] text-slate-500">
@@ -528,7 +533,6 @@ export default function ReportPage() {
   const [loadingReport, setLoadingReport] = useState(false);
   const [error, setError] = useState('');
 
-  // Mencegah respons request lama menimpa data santri yang baru dipilih.
   const requestIdRef = useRef(0);
 
   /* ============================================================
@@ -653,12 +657,10 @@ export default function ReportPage() {
         throw new Error('Data rapor santri tidak ditemukan.');
       }
 
-      // Abaikan hasil request yang sudah tidak relevan.
       if (currentRequest !== requestIdRef.current) return;
 
       const report = data.report;
 
-      // Normalisasi data agar halaman tidak error jika API mengirim null.
       const normalizedReport: ReportData = {
         ...report,
         scoreRecords: Array.isArray(report.scoreRecords)
@@ -725,7 +727,6 @@ export default function ReportPage() {
 
   /* ============================================================
      GET SCORE
-     Mengambil semua nilai yang cocok lalu menghitung rata-rata.
   ============================================================ */
 
   const getScoreNumber = (
@@ -783,7 +784,7 @@ export default function ReportPage() {
   const schoolName =
     reportData?.schoolName ||
     reportData?.settings?.schoolName ||
-    'Pondok Pesantren Terpadu Ulil Albab';
+    'Pondok Pesantren Terpadu Ulul Albab';
 
   const academicYear =
     reportData?.academicYear ||
@@ -825,48 +826,52 @@ export default function ReportPage() {
 
   return (
     <>
-      {/* CONTROL PANEL */}
-      <section className="control-panel print:hidden border-b border-emerald-900/10 bg-[#174d40] text-white">
-        <div className="mx-auto max-w-[1500px] px-5 py-4 lg:px-8">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                <BookOpen
-                  size={20}
-                  strokeWidth={1.6}
-                  className="text-emerald-100"
-                />
-              </div>
+      {/* CONTROL PANEL - WORDPRESS ADMIN STYLE */}
+      <section className="control-panel print:hidden border-b border-[#dcdcde] bg-[#f0f0f1] text-[#1d2327]">
+        <div className="mx-auto max-w-[1500px] px-3 py-4 sm:px-5 lg:px-8">
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-[#1d2327]">
+                Rapor Santri
+              </h1>
+              <p className="mt-1 text-xs text-[#646970]">
+                Laporan hasil belajar dan perkembangan santri.
+              </p>
+            </div>
 
-              <div>
-                <h1 className="text-[15px] font-semibold tracking-tight">
-                  Rapor Santri
-                </h1>
-                <p className="mt-0.5 text-[10px] text-emerald-100/60">
-                  Sistem Penilaian &amp; Kurikulum Merdeka (Otomatis Tingkat SMP / SMA)
-                </p>
-              </div>
+            <div className="text-xs text-[#646970]">
+              Sistem Penilaian Akademik
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-white/[0.06] p-3">
-            <div className="grid gap-3 lg:grid-cols-[180px_minmax(0,1fr)_auto_auto]">
+          <div className="border border-[#dcdcde] bg-white shadow-sm">
+            <div className="border-b border-[#dcdcde] px-4 py-3">
+              <h2 className="text-sm font-semibold">
+                Pilih Data Rapor
+              </h2>
+            </div>
+
+            <div className="grid gap-3 p-4 lg:grid-cols-[190px_minmax(0,1fr)_auto_auto]">
+              {/* KELAS */}
               <div>
-                <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-wider text-emerald-100/70">
+                <label className="mb-1.5 block text-xs font-semibold text-[#1d2327]">
                   Kelas
                 </label>
 
                 <div className="relative">
                   <select
                     value={classFilter}
-                    onChange={(event) => handleClassChange(event.target.value)}
-                    className="h-10 w-full appearance-none rounded-lg border border-white/10 bg-[#0f4035] px-3 pr-9 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-300/10"
+                    onChange={(event) =>
+                      handleClassChange(event.target.value)
+                    }
+                    disabled={loadingStudents}
+                    className="h-9 w-full appearance-none rounded-sm border border-[#8c8f94] bg-white px-2.5 pr-8 text-[13px] text-[#1d2327] outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1] disabled:bg-[#f6f7f7]"
                   >
                     <option value="">Semua Kelas</option>
 
                     {classes.map((className) => (
                       <option key={className} value={className}>
-                        {/^kelas\s/i.test(className)
+                        {/^\s*kelas\s/i.test(className)
                           ? className
                           : `Kelas ${className}`}
                       </option>
@@ -875,34 +880,37 @@ export default function ReportPage() {
 
                   <ChevronDown
                     size={14}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-100/40"
+                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#646970]"
                   />
                 </div>
               </div>
 
+              {/* SANTRI */}
               <div>
-                <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-wider text-emerald-100/70">
-                  Santri
+                <label className="mb-1.5 block text-xs font-semibold text-[#1d2327]">
+                  Nama Santri
                 </label>
 
                 <div className="relative">
                   <UserRound
                     size={14}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-100/40"
+                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#646970]"
                   />
 
                   <select
                     value={studentId}
-                    onChange={(event) => handleStudentChange(event.target.value)}
+                    onChange={(event) =>
+                      handleStudentChange(event.target.value)
+                    }
                     disabled={loadingStudents}
-                    className="h-10 w-full appearance-none rounded-lg border border-white/10 bg-[#0f4035] px-9 pr-9 text-xs text-white outline-none focus:ring-2 focus:ring-emerald-300/10 disabled:opacity-50"
+                    className="h-9 w-full appearance-none rounded-sm border border-[#8c8f94] bg-white px-8 pr-8 text-[13px] text-[#1d2327] outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1] disabled:bg-[#f6f7f7]"
                   >
                     <option value="">
                       {loadingStudents
                         ? 'Memuat santri...'
                         : filteredStudents.length === 0
                           ? 'Tidak ada santri'
-                          : 'Pilih santri'}
+                          : '-- Pilih Santri --'}
                     </option>
 
                     {filteredStudents.map((student) => (
@@ -914,67 +922,68 @@ export default function ReportPage() {
 
                   <ChevronDown
                     size={14}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-100/40"
+                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#646970]"
                   />
                 </div>
               </div>
 
+              {/* RELOAD */}
               <button
                 type="button"
                 onClick={() => fetchReport()}
                 disabled={loadingReport || !studentId}
-                className="h-10 self-end rounded-lg bg-[#6b9b88] px-5 text-xs font-bold text-white transition hover:bg-[#78a995] disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-9 items-center justify-center gap-2 self-end rounded-sm border border-[#2271b1] bg-white px-3 text-[13px] font-medium text-[#2271b1] transition-colors hover:bg-[#f0f6fc] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loadingReport ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 size={14} className="animate-spin" />
-                    Memuat...
-                  </span>
+                  <Loader2 size={14} className="animate-spin" />
                 ) : (
-                  <span className="flex items-center gap-2">
-                    <RefreshCw size={14} />
-                    Muat Ulang
-                  </span>
+                  <RefreshCw size={14} />
                 )}
+                Muat Ulang
               </button>
 
+              {/* PRINT */}
               <button
                 type="button"
                 onClick={handlePrint}
                 disabled={!reportData}
-                className="h-10 self-end rounded-lg border border-amber-200/20 bg-amber-100/10 px-5 text-xs font-bold text-amber-100 transition hover:bg-amber-100/15 disabled:cursor-not-allowed disabled:opacity-30"
+                className="inline-flex h-9 items-center justify-center gap-2 self-end rounded-sm border border-[#2271b1] bg-[#2271b1] px-3 text-[13px] font-medium text-white transition-colors hover:bg-[#135e96] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span className="flex items-center gap-2">
-                  <Printer size={14} />
-                  Cetak F4 / PDF
-                </span>
+                <Printer size={14} />
+                Cetak F4 / PDF
               </button>
             </div>
 
             {error && (
-              <div className="mt-3 rounded-lg border border-red-200/10 bg-red-300/10 px-3 py-2 text-xs text-red-100">
+              <div className="mx-4 mb-4 border-l-4 border-[#d63638] bg-[#fcf0f1] px-3 py-2.5 text-xs text-[#b32d2e]">
                 {error}
               </div>
             )}
+          </div>
+
+          <div className="mt-2 text-xs text-[#646970]">
+            {loadingStudents
+              ? 'Sedang mengambil data santri...'
+              : `${filteredStudents.length} santri tersedia`}
           </div>
         </div>
       </section>
 
       {/* EMPTY STATE */}
       {!reportData && !loadingReport && (
-        <div className="print:hidden flex min-h-[calc(100vh-190px)] items-center justify-center bg-[#f5f7f6] px-5">
-          <div className="max-w-md text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-100 bg-white text-emerald-700 shadow-sm">
-              <BookOpen size={27} strokeWidth={1.5} />
+        <div className="print:hidden flex min-h-[calc(100vh-190px)] items-center justify-center bg-[#f0f0f1] px-5">
+          <div className="max-w-md border border-[#dcdcde] bg-white px-8 py-10 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#f0f6fc] text-[#2271b1]">
+              <BookOpen size={22} strokeWidth={1.6} />
             </div>
 
-            <h2 className="text-base font-semibold tracking-tight text-slate-800">
+            <h2 className="text-sm font-semibold text-[#1d2327]">
               Pilih Santri untuk Melihat Rapor
             </h2>
 
-            <p className="mt-2 text-xs leading-6 text-slate-400">
-              Pilih kelas dan nama santri pada panel di atas untuk menampilkan
-              laporan hasil belajar secara lengkap.
+            <p className="mt-2 text-xs leading-5 text-[#646970]">
+              Pilih kelas dan nama santri pada panel di atas untuk
+              menampilkan laporan hasil belajar secara lengkap.
             </p>
           </div>
         </div>
@@ -982,13 +991,13 @@ export default function ReportPage() {
 
       {/* LOADING */}
       {loadingReport && (
-        <div className="print:hidden flex min-h-[calc(100vh-190px)] items-center justify-center bg-[#f5f7f6]">
-          <div className="text-center">
+        <div className="print:hidden flex min-h-[calc(100vh-190px)] items-center justify-center bg-[#f0f0f1]">
+          <div className="border border-[#dcdcde] bg-white px-10 py-8 text-center shadow-sm">
             <Loader2
-              size={28}
-              className="mx-auto animate-spin text-emerald-700"
+              size={25}
+              className="mx-auto animate-spin text-[#2271b1]"
             />
-            <p className="mt-3 text-xs font-medium text-slate-500">
+            <p className="mt-3 text-xs font-medium text-[#646970]">
               Menyiapkan rapor santri...
             </p>
           </div>
@@ -998,7 +1007,7 @@ export default function ReportPage() {
       {/* REPORT DOCUMENT */}
       {reportData && !loadingReport && (
         <main className="report-screen bg-[#dfe5e2] px-3 py-6 print:bg-white print:p-0">
-          <div className="report-document mx-auto w-[215.9mm] bg-white text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.14)] print:w-[215.9mm] print:shadow-none">
+          <div className="report-document mx-auto w-[215.9mm] bg-white text-slate-900 shadow-[0_10px_35px_rgba(15,23,42,0.12)] print:w-[215.9mm] print:shadow-none">
 
             {/* HEADER */}
             <header className="report-header relative border-b border-slate-200 px-[10mm] pb-2.5 pt-[4mm] text-center">
@@ -1320,6 +1329,93 @@ export default function ReportPage() {
           </div>
         </main>
       )}
+
+      {/* PRINT STYLES */}
+      <style jsx global>{`
+        .arabic {
+          font-family: 'Amiri', 'Traditional Arabic', serif;
+        }
+
+        @media print {
+          @page {
+            size: 215.9mm 330.2mm;
+            margin: 0;
+          }
+
+          html,
+          body {
+            width: 215.9mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          body * {
+            visibility: hidden;
+          }
+
+          .report-screen,
+          .report-screen * {
+            visibility: visible;
+          }
+
+          .report-screen {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 215.9mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+          }
+
+          .report-document {
+            width: 215.9mm !important;
+            min-height: 330.2mm;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+          }
+
+          .report-block {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .report-table {
+            break-inside: auto;
+          }
+
+          .report-row {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .report-header {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          table {
+            border-collapse: collapse !important;
+          }
+
+          thead {
+            display: table-header-group;
+          }
+
+          tfoot {
+            display: table-footer-group;
+          }
+
+          img {
+            print-color-adjust: exact !important;
+            -webkit-print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
     </>
   );
 }

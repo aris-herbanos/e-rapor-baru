@@ -1,13 +1,13 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import {
   BookOpen,
   CheckCircle2,
-  ChevronDown,
+  Search,
   Edit3,
   GraduationCap,
-  Layers3,
   Plus,
   Save,
   School,
@@ -15,6 +15,8 @@ import {
   Users,
   X,
   AlertTriangle,
+  Layers3,
+  RefreshCw,
 } from 'lucide-react';
 
 type ClassRoom = {
@@ -31,32 +33,23 @@ export default function ClassesPage() {
   const [classes, setClasses] = useState<ClassRoom[]>([]);
 
   const [name, setName] = useState('');
-  const [level, setLevel] = useState('SMP');
   const [grade, setGrade] = useState('7');
-
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  const [search, setSearch] = useState('');
+  const [filterLevel, setFilterLevel] = useState('Semua');
+
   const [message, setMessage] = useState('');
-  const [messageType, setMessageType] =
-    useState<MessageType>('');
+  const [messageType, setMessageType] = useState<MessageType>('');
 
   const [loading, setLoading] = useState(false);
-  const [deletingId, setDeletingId] =
-    useState<number | null>(null);
-  const [deletingAll, setDeletingAll] =
-    useState(false);
+  const [fetching, setFetching] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
 
-  /* ============================================================
-     JENJANG
-  ============================================================ */
-
-  const getLevelByGrade = (gradeValue: number) => {
-    return gradeValue >= 10 ? 'SMA' : 'SMP';
+  const getLevelByGrade = (value: number) => {
+    return value >= 10 ? 'SMA' : 'SMP';
   };
-
-  /* ============================================================
-     MESSAGE
-  ============================================================ */
 
   const showMessage = (
     text: string,
@@ -64,18 +57,11 @@ export default function ClassesPage() {
   ) => {
     setMessage(text);
     setMessageType(type);
-
-    window.setTimeout(() => {
-      setMessage('');
-      setMessageType('');
-    }, 4000);
   };
 
-  /* ============================================================
-     FETCH
-  ============================================================ */
-
   const fetchClasses = async () => {
+    setFetching(true);
+
     try {
       const res = await fetch('/api/classes', {
         cache: 'no-store',
@@ -84,24 +70,17 @@ export default function ClassesPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(
-          data.message || 'Gagal memuat kelas'
-        );
+        throw new Error(data.message || 'Gagal memuat kelas.');
       }
 
       if (Array.isArray(data)) {
         setClasses(data);
       }
     } catch (error) {
-      console.error(
-        'FETCH CLASSES ERROR:',
-        error
-      );
-
-      showMessage(
-        'Gagal memuat daftar kelas.',
-        'error'
-      );
+      console.error('FETCH CLASSES ERROR:', error);
+      showMessage('Gagal memuat daftar kelas.', 'error');
+    } finally {
+      setFetching(false);
     }
   };
 
@@ -109,44 +88,16 @@ export default function ClassesPage() {
     fetchClasses();
   }, []);
 
-  /* ============================================================
-     GRADE CHANGE
-  ============================================================ */
-
-  const handleGradeChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const selectedGrade = Number(e.target.value);
-
-    setGrade(e.target.value);
-    setLevel(
-      getLevelByGrade(selectedGrade)
-    );
-  };
-
-  /* ============================================================
-     RESET
-  ============================================================ */
-
   const resetForm = () => {
     setName('');
-    setLevel('SMP');
     setGrade('7');
     setEditingId(null);
   };
-
-  /* ============================================================
-     EDIT
-  ============================================================ */
 
   const handleEdit = (item: ClassRoom) => {
     setEditingId(item.id);
     setName(item.name);
     setGrade(String(item.grade));
-    setLevel(
-      getLevelByGrade(item.grade)
-    );
-
     setMessage('');
     setMessageType('');
 
@@ -156,25 +107,14 @@ export default function ClassesPage() {
     });
   };
 
-  /* ============================================================
-     SUBMIT CREATE / UPDATE
-  ============================================================ */
-
-  const handleSubmit = async (
-    e: React.FormEvent
-  ) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const trimmedName =
-      name.trim().toUpperCase();
-
+    const trimmedName = name.trim().toUpperCase();
     const numericGrade = Number(grade);
 
     if (!trimmedName) {
-      showMessage(
-        'Nama kelas wajib diisi.',
-        'error'
-      );
+      showMessage('Nama kelas wajib diisi.', 'error');
       return;
     }
 
@@ -183,15 +123,9 @@ export default function ClassesPage() {
       numericGrade < 7 ||
       numericGrade > 12
     ) {
-      showMessage(
-        'Tingkat kelas harus antara 7 sampai 12.',
-        'error'
-      );
+      showMessage('Tingkat kelas harus antara 7 sampai 12.', 'error');
       return;
     }
-
-    const correctLevel =
-      getLevelByGrade(numericGrade);
 
     setLoading(true);
 
@@ -200,18 +134,14 @@ export default function ClassesPage() {
         ? `/api/classes/${editingId}`
         : '/api/classes';
 
-      const method = editingId
-        ? 'PUT'
-        : 'POST';
-
       const res = await fetch(url, {
-        method,
+        method: editingId ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name: trimmedName,
-          level: correctLevel,
+          level: getLevelByGrade(numericGrade),
           grade: numericGrade,
         }),
       });
@@ -222,30 +152,27 @@ export default function ClassesPage() {
         throw new Error(
           data.message ||
             (editingId
-              ? 'Gagal memperbarui kelas'
-              : 'Gagal menyimpan kelas')
+              ? 'Gagal memperbarui kelas.'
+              : 'Gagal menambahkan kelas.')
         );
       }
 
       showMessage(
         editingId
-          ? 'Kelas berhasil diperbarui.'
-          : 'Kelas berhasil ditambahkan.',
+          ? 'Data kelas berhasil diperbarui.'
+          : 'Kelas baru berhasil ditambahkan.',
         'success'
       );
 
       resetForm();
-
       await fetchClasses();
-    } catch (error: any) {
-      console.error(
-        'SAVE CLASS ERROR:',
-        error
-      );
+    } catch (error) {
+      console.error('SAVE CLASS ERROR:', error);
 
       showMessage(
-        error.message ||
-          'Terjadi kesalahan.',
+        error instanceof Error
+          ? error.message
+          : 'Terjadi kesalahan.',
         'error'
       );
     } finally {
@@ -253,58 +180,39 @@ export default function ClassesPage() {
     }
   };
 
-  /* ============================================================
-     DELETE ONE
-  ============================================================ */
-
-  const handleDelete = async (
-    item: ClassRoom
-  ) => {
-    const confirmed =
-      window.confirm(
-        `Hapus kelas "${item.name}"?\n\nData kelas akan dihapus dari sistem.`
-      );
+  const handleDelete = async (item: ClassRoom) => {
+    const confirmed = window.confirm(
+      `Hapus kelas ${item.name}?\n\nPastikan kelas ini tidak sedang digunakan oleh data akademik.`
+    );
 
     if (!confirmed) return;
 
     setDeletingId(item.id);
 
     try {
-      const res = await fetch(
-        `/api/classes/${item.id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const res = await fetch(`/api/classes/${item.id}`, {
+        method: 'DELETE',
+      });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(
-          data.message ||
-            'Gagal menghapus kelas'
-        );
+        throw new Error(data.message || 'Gagal menghapus kelas.');
       }
 
       if (editingId === item.id) {
         resetForm();
       }
 
-      showMessage(
-        `Kelas ${item.name} berhasil dihapus.`,
-        'success'
-      );
-
+      showMessage(`Kelas ${item.name} berhasil dihapus.`, 'success');
       await fetchClasses();
-    } catch (error: any) {
-      console.error(
-        'DELETE CLASS ERROR:',
-        error
-      );
+    } catch (error) {
+      console.error('DELETE CLASS ERROR:', error);
 
       showMessage(
-        error.message ||
-          'Gagal menghapus kelas.',
+        error instanceof Error
+          ? error.message
+          : 'Gagal menghapus kelas.',
         'error'
       );
     } finally {
@@ -312,69 +220,50 @@ export default function ClassesPage() {
     }
   };
 
-  /* ============================================================
-     DELETE ALL
-  ============================================================ */
-
   const handleDeleteAll = async () => {
-    if (classes.length === 0) {
-      showMessage(
-        'Tidak ada kelas yang dapat dihapus.',
-        'error'
-      );
+    if (!classes.length) {
+      showMessage('Tidak ada kelas untuk dihapus.', 'error');
       return;
     }
 
-    const confirmed =
-      window.confirm(
-        `PERINGATAN!\n\nAnda akan menghapus SEMUA ${classes.length} kelas.\n\nTindakan ini tidak dapat dibatalkan.\n\nLanjutkan?`
-      );
+    const confirmed = window.confirm(
+      `PERINGATAN!\n\nAnda akan menghapus seluruh ${classes.length} kelas.\n\nTindakan ini tidak dapat dibatalkan. Lanjutkan?`
+    );
 
     if (!confirmed) return;
 
-    const confirmedAgain =
-      window.confirm(
-        'Konfirmasi terakhir:\n\nHapus seluruh data kelas?'
-      );
+    const confirmedAgain = window.confirm(
+      'Konfirmasi terakhir:\n\nApakah Anda benar-benar yakin ingin menghapus seluruh data kelas?'
+    );
 
     if (!confirmedAgain) return;
 
     setDeletingAll(true);
 
     try {
-      const res = await fetch(
-        '/api/classes',
-        {
-          method: 'DELETE',
-        }
-      );
+      const res = await fetch('/api/classes', {
+        method: 'DELETE',
+      });
 
       const data = await res.json();
 
       if (!res.ok) {
         throw new Error(
-          data.message ||
-            'Gagal menghapus seluruh kelas'
+          data.message || 'Gagal menghapus seluruh kelas.'
         );
       }
 
       resetForm();
-
-      showMessage(
-        'Seluruh data kelas berhasil dihapus.',
-        'success'
-      );
+      showMessage('Seluruh data kelas berhasil dihapus.', 'success');
 
       await fetchClasses();
-    } catch (error: any) {
-      console.error(
-        'DELETE ALL CLASSES ERROR:',
-        error
-      );
+    } catch (error) {
+      console.error('DELETE ALL ERROR:', error);
 
       showMessage(
-        error.message ||
-          'Gagal menghapus seluruh kelas.',
+        error instanceof Error
+          ? error.message
+          : 'Gagal menghapus seluruh kelas.',
         'error'
       );
     } finally {
@@ -382,885 +271,615 @@ export default function ClassesPage() {
     }
   };
 
-  /* ============================================================
-     GROUP
-     
-     PENTING:
-     Jangan menggunakan item.level untuk menentukan
-     kelompok karena data lama bisa salah.
-
-     Grade adalah sumber kebenaran:
-     7-9  = SMP
-     10-12 = SMA
-  ============================================================ */
-
   const groupedClasses = useMemo(() => {
     const sorted = [...classes].sort(
       (a, b) =>
-        Number(a.grade) -
-          Number(b.grade) ||
+        Number(a.grade) - Number(b.grade) ||
         a.name.localeCompare(b.name)
     );
 
     return {
       SMP: sorted.filter(
-        (item) =>
-          Number(item.grade) >= 7 &&
-          Number(item.grade) <= 9
+        item => Number(item.grade) >= 7 && Number(item.grade) <= 9
       ),
-
       SMA: sorted.filter(
-        (item) =>
-          Number(item.grade) >= 10 &&
-          Number(item.grade) <= 12
+        item => Number(item.grade) >= 10 && Number(item.grade) <= 12
       ),
     };
   }, [classes]);
 
-  /* ============================================================
-     SUMMARY
-  ============================================================ */
+  const filteredClasses = useMemo(() => {
+    return classes.filter(item => {
+      const matchesSearch =
+        item.name.toLowerCase().includes(search.toLowerCase()) ||
+        String(item.grade).includes(search);
 
-  const activeClasses =
-    classes.filter(
-      (item) =>
-        item.status !== 'Tidak Aktif'
-    ).length;
+      const matchesLevel =
+        filterLevel === 'Semua' ||
+        getLevelByGrade(Number(item.grade)) === filterLevel;
 
-  const totalSMP =
-    groupedClasses.SMP.length;
+      return matchesSearch && matchesLevel;
+    }).sort(
+      (a, b) =>
+        Number(a.grade) - Number(b.grade) ||
+        a.name.localeCompare(b.name)
+    );
+  }, [classes, search, filterLevel]);
 
-  const totalSMA =
-    groupedClasses.SMA.length;
+  const activeClasses = classes.filter(
+    item => item.status !== 'Tidak Aktif'
+  ).length;
 
-  /* ============================================================
-     RENDER
-  ============================================================ */
+  const totalSMP = groupedClasses.SMP.length;
+  const totalSMA = groupedClasses.SMA.length;
 
   return (
-    <div className="min-h-screen bg-[#f7f9f8] text-slate-800">
+    <div className="min-h-screen bg-[#f0f0f1] text-[#1d2327]">
 
-      {/* ======================================================
-          HEADER
-      ====================================================== */}
+      {/* HEADER WORDPRESS */}
 
-      <header className="border-b border-slate-200/80 bg-white">
+      <div className="border-b border-[#dcdcde] bg-white">
+        <div className="px-4 py-4 sm:px-6">
 
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
-
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
-            {/* TITLE */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
 
             <div>
-
-              <div className="mb-2.5 flex items-center gap-2">
-
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                  <School
-                    size={13}
-                    strokeWidth={1.8}
-                  />
-                </span>
-
-                <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-emerald-700">
-                  Data Master
-                </span>
-
-                <span className="text-slate-300">
-                  /
-                </span>
-
-                <span className="text-[9px] font-medium uppercase tracking-[0.16em] text-slate-400">
-                  Struktur Akademik
-                </span>
-
+              <div className="mb-1 flex items-center gap-2 text-xs text-[#646970]">
+                <span>Data Master</span>
+                <span>/</span>
+                <span>Struktur Akademik</span>
               </div>
 
-              <div className="flex items-center gap-3">
+              <h1 className="text-xl font-semibold tracking-tight">
+                Manajemen Kelas
+              </h1>
 
-                <div>
-
-                  <h1 className="text-[23px] font-semibold tracking-tight text-slate-900 sm:text-[27px]">
-                    Manajemen Kelas
-                  </h1>
-
-                  <p className="mt-1 max-w-xl text-xs leading-5 text-slate-500 sm:text-sm">
-                    Kelola struktur kelas santri berdasarkan
-                    jenjang dan tingkat pendidikan.
-                  </p>
-
-                </div>
-
-              </div>
-
+              <p className="mt-1 text-xs text-[#646970]">
+                Tambah, lihat, dan kelola kelas santri.
+              </p>
             </div>
 
-            {/* SUMMARY */}
-
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-slate-100 pt-4 lg:border-0 lg:pt-0">
-
-              {/* TOTAL */}
-
-              <div className="flex items-center gap-2.5">
-
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                  <Layers3 size={15} />
-                </div>
-
-                <div>
-
-                  <div className="text-base font-semibold text-slate-800">
-                    {classes.length}
-                  </div>
-
-                  <div className="text-[8px] font-medium uppercase tracking-[0.14em] text-slate-400">
-                    Total Kelas
-                  </div>
-
-                </div>
-
-              </div>
-
-              <div className="hidden h-8 w-px bg-slate-200 sm:block" />
-
-              {/* SMP */}
-
-              <div className="flex items-center gap-2.5">
-
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
-                  <School size={15} />
-                </div>
-
-                <div>
-
-                  <div className="text-base font-semibold text-slate-800">
-                    {totalSMP}
-                  </div>
-
-                  <div className="text-[8px] font-medium uppercase tracking-[0.14em] text-slate-400">
-                    SMP
-                  </div>
-
-                </div>
-
-              </div>
-
-              <div className="hidden h-8 w-px bg-slate-200 sm:block" />
-
-              {/* SMA */}
-
-              <div className="flex items-center gap-2.5">
-
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
-                  <GraduationCap size={15} />
-                </div>
-
-                <div>
-
-                  <div className="text-base font-semibold text-slate-800">
-                    {totalSMA}
-                  </div>
-
-                  <div className="text-[8px] font-medium uppercase tracking-[0.14em] text-slate-400">
-                    SMA
-                  </div>
-
-                </div>
-
-              </div>
-
-              <div className="hidden h-8 w-px bg-slate-200 sm:block" />
-
-              {/* ACTIVE */}
-
-              <div className="flex items-center gap-2.5">
-
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                  <CheckCircle2 size={15} />
-                </div>
-
-                <div>
-
-                  <div className="text-base font-semibold text-slate-800">
-                    {activeClasses}
-                  </div>
-
-                  <div className="text-[8px] font-medium uppercase tracking-[0.14em] text-slate-400">
-                    Aktif
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
+            <button
+              type="button"
+              onClick={fetchClasses}
+              disabled={fetching}
+              className="inline-flex h-9 items-center gap-2 rounded border border-[#c3c4c7] bg-white px-3 text-xs font-medium text-[#2c3338] hover:bg-[#f6f7f7] disabled:opacity-50"
+            >
+              <RefreshCw
+                size={14}
+                className={fetching ? 'animate-spin' : ''}
+              />
+              Muat Ulang
+            </button>
 
           </div>
+        </div>
+      </div>
+
+      {/* MAIN */}
+
+      <main className="space-y-4 p-4 sm:p-6">
+
+        {/* NOTIFICATION */}
+
+        {message && (
+          <div
+            className={`flex items-center justify-between gap-3 rounded border px-4 py-3 text-sm ${
+              messageType === 'success'
+                ? 'border-[#c3e6cb] bg-[#edfaef] text-[#176b32]'
+                : 'border-[#f0c5c5] bg-[#fcf0f1] text-[#b32d2e]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {messageType === 'success' ? (
+                <CheckCircle2 size={17} />
+              ) : (
+                <AlertTriangle size={17} />
+              )}
+              <span>{message}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMessage('');
+                setMessageType('');
+              }}
+              className="shrink-0 opacity-70 hover:opacity-100"
+              aria-label="Tutup notifikasi"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
+        {/* SUMMARY */}
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+
+          {[
+            {
+              label: 'Total Kelas',
+              value: classes.length,
+              icon: Layers3,
+              color: 'text-[#2271b1]',
+              bg: 'bg-[#eaf3f9]',
+            },
+            {
+              label: 'Jenjang SMP',
+              value: totalSMP,
+              icon: School,
+              color: 'text-emerald-700',
+              bg: 'bg-emerald-50',
+            },
+            {
+              label: 'Jenjang SMA',
+              value: totalSMA,
+              icon: GraduationCap,
+              color: 'text-amber-700',
+              bg: 'bg-amber-50',
+            },
+            {
+              label: 'Kelas Aktif',
+              value: activeClasses,
+              icon: CheckCircle2,
+              color: 'text-emerald-700',
+              bg: 'bg-emerald-50',
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <div
+                key={item.label}
+                className="flex items-center gap-3 rounded border border-[#dcdcde] bg-white p-3"
+              >
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded ${item.bg} ${item.color}`}>
+                  <Icon size={18} />
+                </div>
+
+                <div>
+                  <div className="text-xl font-semibold leading-6">
+                    {item.value}
+                  </div>
+                  <div className="text-[11px] text-[#646970]">
+                    {item.label}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
 
         </div>
 
-      </header>
+        {/* FORM + LIST */}
 
-      {/* ======================================================
-          MAIN
-      ====================================================== */}
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {/* FORM */}
 
-        {/* MESSAGE */}
+          <section className="overflow-hidden rounded border border-[#dcdcde] bg-white">
 
-        {message && (
-
-          <div
-            className={[
-              'mb-5 flex items-center gap-2 border-b px-1 pb-3 text-xs',
-              messageType === 'success'
-                ? 'border-emerald-200 text-emerald-700'
-                : 'border-red-200 text-red-600',
-            ].join(' ')}
-          >
-
-            {messageType === 'success' ? (
-              <CheckCircle2 size={15} />
-            ) : (
-              <AlertTriangle size={15} />
-            )}
-
-            <span>
-              {message}
-            </span>
-
-          </div>
-
-        )}
-
-        {/* ====================================================
-            CONTENT
-        ===================================================== */}
-
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[270px_minmax(0,1fr)]">
-
-          {/* ==================================================
-              FORM
-          =================================================== */}
-
-          <section className="lg:border-r lg:border-slate-200 lg:pr-7">
-
-            <div className="mb-5">
-
-              <div className="flex items-center gap-2">
-
-                {editingId ? (
-                  <Edit3
-                    size={17}
-                    strokeWidth={1.8}
-                    className="text-amber-600"
-                  />
-                ) : (
-                  <Plus
-                    size={17}
-                    strokeWidth={1.8}
-                    className="text-emerald-700"
-                  />
-                )}
-
-                <h2 className="text-sm font-semibold text-slate-900">
-                  {editingId
-                    ? 'Edit Kelas'
-                    : 'Tambah Kelas'}
+            <div className="flex items-center justify-between border-b border-[#dcdcde] px-4 py-3">
+              <div>
+                <h2 className="text-sm font-semibold">
+                  {editingId ? 'Edit Kelas' : 'Tambah Kelas'}
                 </h2>
-
+                <p className="mt-0.5 text-[11px] text-[#646970]">
+                  Isi informasi kelas di bawah.
+                </p>
               </div>
 
-              <p className="mt-1 text-[11px] leading-5 text-slate-400">
-                {editingId
-                  ? 'Perbarui informasi kelas yang dipilih.'
-                  : 'Tambahkan struktur kelas baru ke sistem.'}
-              </p>
-
+              {editingId ? (
+                <Edit3 size={17} className="text-amber-600" />
+              ) : (
+                <Plus size={18} className="text-[#2271b1]" />
+              )}
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-4"
-            >
-
-              {/* NAMA */}
+            <form onSubmit={handleSubmit} className="space-y-4 p-4">
 
               <div>
-
-                <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                <label
+                  htmlFor="class-name"
+                  className="mb-1.5 block text-xs font-medium"
+                >
                   Nama Kelas
                 </label>
 
                 <input
+                  id="class-name"
                   type="text"
                   value={name}
-                  onChange={(e) =>
-                    setName(
-                      e.target.value
-                    )
-                  }
+                  onChange={e => setName(e.target.value)}
                   required
+                  maxLength={30}
                   placeholder="Contoh: 7A"
-                  className="h-10 w-full border-b border-slate-200 bg-transparent px-0 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-emerald-600"
+                  className="h-9 w-full rounded border border-[#8c8f94] bg-white px-3 text-sm outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
                 />
 
+                <p className="mt-1 text-[10px] text-[#646970]">
+                  Contoh penulisan: 7A, 7B, 8A.
+                </p>
               </div>
-
-              {/* TINGKAT */}
 
               <div>
-
-                <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                  Tingkat
+                <label
+                  htmlFor="class-grade"
+                  className="mb-1.5 block text-xs font-medium"
+                >
+                  Tingkat Pendidikan
                 </label>
 
-                <div className="relative">
-
-                  <select
-                    value={grade}
-                    onChange={
-                      handleGradeChange
-                    }
-                    className="h-10 w-full appearance-none border-b border-slate-200 bg-transparent px-0 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-600"
-                  >
-
-                    {[
-                      '7',
-                      '8',
-                      '9',
-                      '10',
-                      '11',
-                      '12',
-                    ].map((item) => (
-
-                      <option
-                        key={item}
-                        value={item}
-                      >
-                        Tingkat {item}
-                      </option>
-
-                    ))}
-
-                  </select>
-
-                  <ChevronDown
-                    size={15}
-                    className="pointer-events-none absolute right-0 top-3 text-slate-400"
-                  />
-
-                </div>
-
+                <select
+                  id="class-grade"
+                  value={grade}
+                  onChange={e => setGrade(e.target.value)}
+                  className="h-9 w-full rounded border border-[#8c8f94] bg-white px-3 text-sm outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
+                >
+                  {['7', '8', '9', '10', '11', '12'].map(item => (
+                    <option key={item} value={item}>
+                      Kelas {item}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* JENJANG */}
-
-              <div>
-
-                <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                  Jenjang
-                </label>
-
-                <div className="flex h-10 items-center justify-between border-b border-slate-200">
-
-                  <span
-                    className={[
-                      'text-sm font-semibold',
-                      level === 'SMA'
-                        ? 'text-amber-700'
-                        : 'text-emerald-700',
-                    ].join(' ')}
-                  >
-                    {level}
-                  </span>
-
-                  <span className="text-[9px] text-slate-400">
-                    Otomatis
-                  </span>
-
+              <div className="rounded border border-[#dcdcde] bg-[#f6f7f7] p-3">
+                <div className="text-[11px] text-[#646970]">
+                  Jenjang pendidikan
                 </div>
 
-              </div>
+                <div className="mt-1 flex items-center gap-2">
+                  {Number(grade) >= 10 ? (
+                    <GraduationCap size={17} className="text-amber-700" />
+                  ) : (
+                    <School size={17} className="text-emerald-700" />
+                  )}
 
-              {/* BUTTON */}
+                  <span className="text-sm font-semibold">
+                    {getLevelByGrade(Number(grade))}
+                  </span>
+
+                  <span className="text-[10px] text-[#646970]">
+                    (Ditentukan otomatis)
+                  </span>
+                </div>
+
+                <p className="mt-2 text-[10px] text-[#646970]">
+                  Kelas 7–9 termasuk SMP. Kelas 10–12 termasuk SMA.
+                </p>
+              </div>
 
               <div className="flex gap-2 pt-1">
-
                 <button
                   type="submit"
-                  disabled={loading}
-                  className={[
-                    'flex h-10 flex-1 items-center justify-center gap-2 rounded-lg text-xs font-semibold text-white shadow-sm transition',
+                  disabled={loading || deletingAll}
+                  className={`inline-flex h-9 flex-1 items-center justify-center gap-2 rounded px-3 text-xs font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
                     editingId
                       ? 'bg-amber-600 hover:bg-amber-700'
-                      : 'bg-[#07543f] hover:bg-[#064633]',
-                    'disabled:cursor-not-allowed disabled:opacity-50',
-                  ].join(' ')}
+                      : 'bg-[#2271b1] hover:bg-[#135e96]'
+                  }`}
                 >
-
-                  {editingId ? (
-                    <Save
-                      size={15}
-                      strokeWidth={2}
-                    />
+                  {loading ? (
+                    <RefreshCw size={14} className="animate-spin" />
+                  ) : editingId ? (
+                    <Save size={14} />
                   ) : (
-                    <Plus
-                      size={15}
-                      strokeWidth={2}
-                    />
+                    <Plus size={14} />
                   )}
 
                   {loading
                     ? 'Menyimpan...'
                     : editingId
-                    ? 'Simpan Perubahan'
-                    : 'Simpan Kelas'}
-
+                      ? 'Simpan Perubahan'
+                      : 'Tambah Kelas'}
                 </button>
 
                 {editingId && (
-
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50"
-                    title="Batal edit"
+                    disabled={loading}
+                    className="inline-flex h-9 items-center justify-center gap-1 rounded border border-[#c3c4c7] px-3 text-xs text-[#50575e] hover:bg-[#f6f7f7]"
                   >
-                    <X size={16} />
+                    <X size={14} />
+                    Batal
                   </button>
-
                 )}
-
               </div>
 
             </form>
 
-            {/* INFO */}
-
-            <div className="mt-7 border-t border-slate-100 pt-5">
-
-              <div className="flex gap-2.5">
-
-                <BookOpen
-                  size={14}
-                  className="mt-0.5 shrink-0 text-emerald-600"
-                />
-
-                <p className="text-[10px] leading-5 text-slate-400">
-                  Sistem menentukan jenjang secara otomatis:
-                  <strong className="text-slate-500">
-                    {' '}7–9 SMP
-                  </strong>{' '}
-                  dan
-                  <strong className="text-slate-500">
-                    {' '}10–12 SMA
-                  </strong>.
-                </p>
-
-              </div>
-
-            </div>
-
           </section>
 
-          {/* ==================================================
-              LIST
-          =================================================== */}
+          {/* CLASS LIST */}
 
-          <section className="min-w-0">
+          <section className="min-w-0 overflow-hidden rounded border border-[#dcdcde] bg-white">
 
             {/* LIST HEADER */}
 
-            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-b border-[#dcdcde] p-4 sm:flex-row sm:items-center sm:justify-between">
 
               <div>
-
-                <div className="flex items-center gap-2">
-
-                  <GraduationCap
-                    size={17}
-                    strokeWidth={1.8}
-                    className="text-emerald-700"
-                  />
-
-                  <h2 className="text-sm font-semibold text-slate-900">
-                    Daftar Kelas
-                  </h2>
-
-                </div>
-
-                <p className="mt-1 text-[11px] text-slate-400">
-                  {classes.length} kelas terdaftar
-                  dalam sistem
+                <h2 className="text-sm font-semibold">
+                  Daftar Kelas
+                </h2>
+                <p className="mt-0.5 text-[11px] text-[#646970]">
+                  Kelola seluruh kelas yang sudah terdaftar.
                 </p>
-
               </div>
 
               {classes.length > 0 && (
-
                 <button
                   type="button"
-                  onClick={
-                    handleDeleteAll
-                  }
-                  disabled={deletingAll}
-                  className="inline-flex h-8 items-center justify-center gap-1.5 self-start border-b border-red-200 px-1 text-[10px] font-semibold text-red-500 transition hover:border-red-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+                  onClick={handleDeleteAll}
+                  disabled={deletingAll || deletingId !== null}
+                  className="inline-flex h-8 items-center justify-center gap-1.5 self-start rounded border border-[#d63638] px-3 text-[11px] font-medium text-[#d63638] hover:bg-[#fcf0f1] disabled:opacity-50 sm:self-auto"
                 >
-
                   <Trash2 size={13} />
-
-                  {deletingAll
-                    ? 'Menghapus...'
-                    : 'Hapus Semua'}
-
+                  {deletingAll ? 'Menghapus...' : 'Hapus Semua'}
                 </button>
-
               )}
 
             </div>
 
-            {/* EMPTY */}
+            {/* SEARCH & FILTER */}
 
-            {classes.length === 0 ? (
+            <div className="flex flex-col gap-2 border-b border-[#dcdcde] bg-[#f6f7f7] p-3 sm:flex-row">
 
-              <div className="border-y border-dashed border-slate-200 py-14 text-center">
-
-                <School
-                  size={30}
-                  strokeWidth={1.3}
-                  className="mx-auto mb-3 text-slate-300"
+              <div className="relative flex-1">
+                <Search
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#646970]"
                 />
 
-                <p className="text-sm font-medium text-slate-500">
-                  Belum ada kelas
-                </p>
-
-                <p className="mt-1 text-[11px] text-slate-400">
-                  Tambahkan kelas menggunakan formulir
-                  di sebelah kiri.
-                </p>
-
+                <input
+                  type="search"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Cari nama kelas atau tingkat..."
+                  className="h-9 w-full rounded border border-[#c3c4c7] bg-white pl-9 pr-3 text-xs outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
+                />
               </div>
 
+              <select
+                value={filterLevel}
+                onChange={e => setFilterLevel(e.target.value)}
+                className="h-9 rounded border border-[#c3c4c7] bg-white px-3 text-xs outline-none focus:border-[#2271b1]"
+              >
+                <option value="Semua">Semua Jenjang</option>
+                <option value="SMP">SMP</option>
+                <option value="SMA">SMA</option>
+              </select>
+
+            </div>
+
+            {/* TABLE */}
+
+            {fetching ? (
+              <div className="flex items-center justify-center gap-2 py-14 text-xs text-[#646970]">
+                <RefreshCw size={16} className="animate-spin" />
+                Memuat daftar kelas...
+              </div>
+            ) : filteredClasses.length === 0 ? (
+              <div className="px-4 py-14 text-center">
+                <School
+                  size={32}
+                  className="mx-auto mb-3 text-[#a7aaad]"
+                  strokeWidth={1.5}
+                />
+
+                <p className="text-sm font-medium text-[#50575e]">
+                  {classes.length === 0
+                    ? 'Belum ada kelas'
+                    : 'Kelas tidak ditemukan'}
+                </p>
+
+                <p className="mt-1 text-xs text-[#646970]">
+                  {classes.length === 0
+                    ? 'Silakan tambahkan kelas melalui formulir.'
+                    : 'Coba gunakan kata kunci pencarian yang berbeda.'}
+                </p>
+              </div>
             ) : (
-
-              <div className="space-y-8">
-
-                {(
-                  ['SMP', 'SMA'] as const
-                ).map((levelName) => {
-
-                  const levelClasses =
-                    groupedClasses[
-                      levelName
-                    ];
-
-                  if (
-                    levelClasses.length === 0
-                  ) {
-                    return null;
-                  }
-
-                  return (
-
-                    <section
-                      key={levelName}
-                    >
-
-                      {/* LEVEL HEADER */}
-
-                      <div className="mb-2 flex items-center gap-3">
-
-                        <div
-                          className={[
-                            'flex h-6 w-6 items-center justify-center rounded-md',
-                            levelName === 'SMA'
-                              ? 'bg-amber-50 text-amber-700'
-                              : 'bg-emerald-50 text-emerald-700',
-                          ].join(' ')}
-                        >
-
-                          {levelName ===
-                          'SMA' ? (
-                            <GraduationCap
-                              size={13}
-                            />
-                          ) : (
-                            <School
-                              size={13}
-                            />
-                          )}
-
-                        </div>
-
-                        <span
-                          className={[
-                            'text-[10px] font-bold uppercase tracking-[0.18em]',
-                            levelName === 'SMA'
-                              ? 'text-amber-700'
-                              : 'text-emerald-700',
-                          ].join(' ')}
-                        >
-                          {levelName}
-                        </span>
-
-                        <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent" />
-
-                        <span className="text-[10px] text-slate-400">
-                          {levelClasses.length}{' '}
-                          kelas
-                        </span>
-
-                      </div>
-
-                      {/* TABLE HEADER */}
-
-                      <div className="hidden grid-cols-[60px_1fr_110px_120px_76px] gap-4 border-b border-slate-200 px-3 py-2.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 sm:grid">
-
-                        <span>
-                          Tingkat
-                        </span>
-
-                        <span>
-                          Nama Kelas
-                        </span>
-
-                        <span>
-                          Status
-                        </span>
-
-                        <span>
-                          Santri
-                        </span>
-
-                        <span className="text-right">
-                          Aksi
-                        </span>
-
-                      </div>
-
-                      {/* ROWS */}
-
-                      <div>
-
-                        {levelClasses.map(
-                          (cls) => {
-
-                            const active =
-                              cls.status !==
-                              'Tidak Aktif';
-
-                            const deleting =
-                              deletingId ===
-                              cls.id;
-
-                            return (
-
-                              <div
-                                key={cls.id}
-                                className="group border-b border-slate-100 px-3 py-3 transition hover:bg-emerald-50/30"
-                              >
-
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[60px_1fr_110px_120px_76px] sm:items-center sm:gap-4">
-
-                                  {/* GRADE */}
-
-                                  <div className="flex items-center gap-2 sm:block">
-
-                                    <span className="text-[9px] text-slate-400 sm:hidden">
-                                      Tingkat
-                                    </span>
-
-                                    <span className="text-xs font-semibold text-slate-600">
-                                      {cls.grade}
-                                    </span>
-
-                                  </div>
-
-                                  {/* NAME */}
-
-                                  <div className="flex min-w-0 items-center gap-3">
-
-                                    <div
-                                      className={[
-                                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition',
-                                        levelName ===
-                                        'SMA'
-                                          ? 'bg-amber-50 text-amber-700 group-hover:bg-amber-100'
-                                          : 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100',
-                                      ].join(' ')}
-                                    >
-
-                                      {levelName ===
-                                      'SMA' ? (
-                                        <GraduationCap
-                                          size={14}
-                                        />
-                                      ) : (
-                                        <School
-                                          size={14}
-                                        />
-                                      )}
-
-                                    </div>
-
-                                    <div className="min-w-0">
-
-                                      <div className="truncate text-sm font-semibold text-slate-800">
-                                        {cls.name}
-                                      </div>
-
-                                      <div className="mt-0.5 text-[9px] text-slate-400">
-                                        {levelName}
-                                        {' · '}
-                                        Tingkat{' '}
-                                        {cls.grade}
-                                      </div>
-
-                                    </div>
-
-                                  </div>
-
-                                  {/* STATUS */}
-
-                                  <div className="flex items-center gap-2">
-
-                                    <span
-                                      className={[
-                                        'h-1.5 w-1.5 rounded-full',
-                                        active
-                                          ? 'bg-emerald-500'
-                                          : 'bg-slate-300',
-                                      ].join(' ')}
-                                    />
-
-                                    <span
-                                      className={[
-                                        'text-[10px] font-medium',
-                                        active
-                                          ? 'text-emerald-700'
-                                          : 'text-slate-400',
-                                      ].join(' ')}
-                                    >
-                                      {active
-                                        ? 'Aktif'
-                                        : 'Tidak Aktif'}
-                                    </span>
-
-                                  </div>
-
-                                  {/* STUDENT */}
-
-                                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-
-                                    <Users
-                                      size={13}
-                                    />
-
-                                    <span>
-                                      Belum ditentukan
-                                    </span>
-
-                                  </div>
-
-                                  {/* ACTIONS */}
-
-                                  <div className="flex items-center justify-start gap-1 sm:justify-end">
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleEdit(
-                                          cls
-                                        )
-                                      }
-                                      disabled={
-                                        deleting ||
-                                        deletingAll
-                                      }
-                                      title="Edit kelas"
-                                      className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-amber-50 hover:text-amber-600 disabled:cursor-not-allowed disabled:opacity-40"
-                                    >
-
-                                      <Edit3
-                                        size={13}
-                                      />
-
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleDelete(
-                                          cls
-                                        )
-                                      }
-                                      disabled={
-                                        deleting ||
-                                        deletingAll
-                                      }
-                                      title="Hapus kelas"
-                                      className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-                                    >
-
-                                      {deleting ? (
-
-                                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-red-500" />
-
-                                      ) : (
-
-                                        <Trash2
-                                          size={13}
-                                        />
-
-                                      )}
-
-                                    </button>
-
-                                  </div>
-
-                                </div>
+              <>
+                {/* TABLE DESKTOP */}
+
+                <div className="hidden overflow-x-auto sm:block">
+                  <table className="w-full border-collapse text-left text-xs">
+
+                    <thead>
+                      <tr className="border-b border-[#dcdcde] bg-[#f6f7f7] text-[10px] font-semibold uppercase tracking-wide text-[#646970]">
+                        <th className="px-4 py-3">No.</th>
+                        <th className="px-4 py-3">Nama Kelas</th>
+                        <th className="px-4 py-3">Jenjang</th>
+                        <th className="px-4 py-3">Status</th>
+                        <th className="px-4 py-3 text-right">Tindakan</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {filteredClasses.map((cls, index) => {
+                        const isActive = cls.status !== 'Tidak Aktif';
+                        const isDeleting = deletingId === cls.id;
+                        const isSMA = Number(cls.grade) >= 10;
+
+                        return (
+                          <tr
+                            key={cls.id}
+                            className="border-b border-[#f0f0f1] transition hover:bg-[#f6f7f7]"
+                          >
+                            <td className="w-12 px-4 py-3 text-[#646970]">
+                              {index + 1}
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <div className="font-semibold text-[#2271b1]">
+                                {cls.name}
+                              </div>
+                              <div className="mt-0.5 text-[10px] text-[#646970]">
+                                Tingkat {cls.grade}
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-medium ${
+                                isSMA
+                                  ? 'bg-amber-50 text-amber-800'
+                                  : 'bg-emerald-50 text-emerald-800'
+                              }`}>
+                                {isSMA ? (
+                                  <GraduationCap size={12} />
+                                ) : (
+                                  <School size={12} />
+                                )}
+                                {getLevelByGrade(Number(cls.grade))}
+                              </span>
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center gap-1.5 text-[10px] ${
+                                isActive
+                                  ? 'text-emerald-700'
+                                  : 'text-[#646970]'
+                              }`}>
+                                <span className={`h-1.5 w-1.5 rounded-full ${
+                                  isActive ? 'bg-emerald-500' : 'bg-[#a7aaad]'
+                                }`} />
+                                {isActive ? 'Aktif' : 'Tidak Aktif'}
+                              </span>
+                            </td>
+
+                            <td className="px-4 py-3">
+                              <div className="flex justify-end gap-1">
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleEdit(cls)}
+                                  disabled={isDeleting || deletingAll}
+                                  title="Edit kelas"
+                                  className="flex h-8 w-8 items-center justify-center rounded text-[#646970] hover:bg-[#f0f6fc] hover:text-[#2271b1] disabled:opacity-40"
+                                >
+                                  <Edit3 size={15} />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(cls)}
+                                  disabled={isDeleting || deletingAll}
+                                  title="Hapus kelas"
+                                  className="flex h-8 w-8 items-center justify-center rounded text-[#646970] hover:bg-[#fcf0f1] hover:text-[#d63638] disabled:opacity-40"
+                                >
+                                  {isDeleting ? (
+                                    <RefreshCw size={14} className="animate-spin" />
+                                  ) : (
+                                    <Trash2 size={15} />
+                                  )}
+                                </button>
 
                               </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
 
-                            );
-                          }
-                        )}
+                  </table>
+                </div>
 
+                {/* MOBILE */}
+
+                <div className="divide-y divide-[#f0f0f1] sm:hidden">
+                  {filteredClasses.map(cls => {
+                    const isActive = cls.status !== 'Tidak Aktif';
+                    const isSMA = Number(cls.grade) >= 10;
+                    const isDeleting = deletingId === cls.id;
+
+                    return (
+                      <div key={cls.id} className="p-3">
+                        <div className="flex items-start justify-between gap-3">
+
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm">
+                              {cls.name}
+                            </div>
+
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-[#646970]">
+                              <span>Tingkat {cls.grade}</span>
+                              <span>•</span>
+                              <span>{getLevelByGrade(Number(cls.grade))}</span>
+                              <span>•</span>
+                              <span className={isActive ? 'text-emerald-700' : ''}>
+                                {isActive ? 'Aktif' : 'Tidak Aktif'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex shrink-0 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(cls)}
+                              disabled={isDeleting || deletingAll}
+                              aria-label={`Edit kelas ${cls.name}`}
+                              className="flex h-8 w-8 items-center justify-center rounded border border-[#dcdcde] text-[#646970]"
+                            >
+                              <Edit3 size={14} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(cls)}
+                              disabled={isDeleting || deletingAll}
+                              aria-label={`Hapus kelas ${cls.name}`}
+                              className="flex h-8 w-8 items-center justify-center rounded border border-[#dcdcde] text-[#d63638]"
+                            >
+                              {isDeleting ? (
+                                <RefreshCw size={14} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={14} />
+                              )}
+                            </button>
+                          </div>
+
+                        </div>
                       </div>
-
-                    </section>
-
-                  );
-                })}
-
-              </div>
-
+                    );
+                  })}
+                </div>
+              </>
             )}
+
+            {/* FOOTER */}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#dcdcde] bg-[#f6f7f7] px-4 py-3 text-[10px] text-[#646970]">
+              <span>
+                Menampilkan {filteredClasses.length} dari {classes.length} kelas
+              </span>
+
+              <span>
+                SMP: {totalSMP} · SMA: {totalSMA}
+              </span>
+            </div>
 
           </section>
 
         </div>
 
+        {/* INFORMATION */}
+
+        <div className="flex items-start gap-2 rounded border border-[#c3c4c7] bg-white px-4 py-3 text-[11px] text-[#646970]">
+          <BookOpen size={15} className="mt-0.5 shrink-0 text-[#2271b1]" />
+          <p className="leading-5">
+            <strong className="text-[#2c3338]">Informasi:</strong>{' '}
+            Jenjang ditentukan otomatis berdasarkan tingkat kelas.
+            Tingkat 7–9 termasuk SMP, sedangkan tingkat 10–12 termasuk SMA.
+            Data jumlah santri belum ditampilkan karena endpoint kelas yang
+            digunakan saat ini tidak menyediakan jumlah santri.
+          </p>
+        </div>
+
       </main>
-
-      {/* ======================================================
-          ISLAMIC / FUTURISTIC ACCENT
-      ====================================================== */}
-
-      <div className="pointer-events-none fixed bottom-0 right-0 -z-0 hidden h-72 w-72 overflow-hidden opacity-[0.025] lg:block">
-
-        <div className="absolute -bottom-28 -right-28 h-80 w-80 rounded-full border-[16px] border-emerald-800" />
-
-        <div className="absolute -bottom-12 -right-12 h-56 w-56 rounded-full border-[8px] border-emerald-800" />
-
-        <div className="absolute bottom-16 right-16 h-24 w-24 rotate-45 border border-emerald-800" />
-
-      </div>
-
     </div>
   );
 }

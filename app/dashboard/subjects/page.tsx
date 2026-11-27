@@ -10,16 +10,6 @@ type Subject = {
   level?: string;
 };
 
-/* ============================================================
-   DAFTAR MAPEL STANDAR
-
-   Nama dibuat sama dengan nama mapel yang digunakan
-   pada halaman input penilaian dan laporan rapor.
-
-   Jangan menambahkan keterangan bahasa Arab dalam kurung
-   agar pencocokan nama mapel tetap konsisten.
-============================================================ */
-
 const SUBJECTS_BY_LEVEL: Record<'SMP' | 'SMA', string[]> = {
   SMP: [
     'Bahasa Arab',
@@ -27,7 +17,7 @@ const SUBJECTS_BY_LEVEL: Record<'SMP' | 'SMA', string[]> = {
     'Hadis',
     'Imla dan Khot',
     'Mahfudzot',
-    'Muroja\'ah',
+    "Muroja'ah",
     'Nahwu / Sorof',
     'Pendidikan Agama Islam',
     'Pidato',
@@ -36,12 +26,11 @@ const SUBJECTS_BY_LEVEL: Record<'SMP' | 'SMA', string[]> = {
     'Tajwid',
     'Tsaqofah Islamiyah',
   ],
-
   SMA: [
     'Balaghoh & Adab',
     'Fiqih Muqoron',
     'Muhadatsah',
-    'Muroja\'ah Lanjutan',
+    "Muroja'ah Lanjutan",
     'Mustholah Hadis',
     'Nahwu & Sorof Lanjutan',
     'Pidato & Debat',
@@ -53,10 +42,6 @@ const SUBJECTS_BY_LEVEL: Record<'SMP' | 'SMA', string[]> = {
     'Ushul Fiqih',
   ],
 };
-
-/* ============================================================
-   HELPER
-============================================================ */
 
 function normalizeText(value: unknown): string {
   return String(value ?? '')
@@ -75,24 +60,14 @@ async function readResponse(res: Response) {
   }
 }
 
-/* ============================================================
-   MAIN PAGE
-============================================================ */
-
 export default function SubjectsPage() {
   const [activeTabLevel, setActiveTabLevel] =
     useState<'SMP' | 'SMA'>('SMP');
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
-
-  const [selectedSubjectOption, setSelectedSubjectOption] =
-    useState('');
-
-  const [customSubjectName, setCustomSubjectName] =
-    useState('');
-
+  const [selectedSubjectOption, setSelectedSubjectOption] = useState('');
+  const [customSubjectName, setCustomSubjectName] = useState('');
   const [isCustomMode, setIsCustomMode] = useState(false);
-
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const [message, setMessage] = useState('');
@@ -102,13 +77,6 @@ export default function SubjectsPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
 
-  /* ============================================================
-     PILIHAN MAPEL BERDASARKAN JENJANG
-
-     Mapel yang sudah terdaftar tidak ditampilkan lagi
-     sebagai pilihan tambah baru.
-  ============================================================ */
-
   const defaultSubjects = SUBJECTS_BY_LEVEL[activeTabLevel];
 
   const availableDefaultSubjects = useMemo(() => {
@@ -116,12 +84,11 @@ export default function SubjectsPage() {
       subjects.map((subject) => normalizeText(subject.name))
     );
 
-    return defaultSubjects.filter((name) => {
-      // Saat edit, tetap izinkan nama mapel yang sedang diedit.
-      const currentEditingSubject = subjects.find(
-        (subject) => subject.id === editingId
-      );
+    const currentEditingSubject = subjects.find(
+      (subject) => subject.id === editingId
+    );
 
+    return defaultSubjects.filter((name) => {
       if (
         currentEditingSubject &&
         normalizeText(currentEditingSubject.name) === normalizeText(name)
@@ -132,18 +99,6 @@ export default function SubjectsPage() {
       return !registeredNames.has(normalizeText(name));
     });
   }, [defaultSubjects, subjects, editingId]);
-
-  /* ============================================================
-     LOAD DATA MAPEL
-
-     API:
-     GET /api/subjects?level=SMP
-     GET /api/subjects?level=SMA
-
-     Mendukung response:
-     { success: true, data: [...] }
-     maupun response array langsung.
-  ============================================================ */
 
   const fetchSubjects = useCallback(
     async (signal?: AbortSignal) => {
@@ -176,16 +131,10 @@ export default function SubjectsPage() {
             ? data.data
             : [];
 
-        // Pastikan data yang ditampilkan sesuai jenjang aktif.
         const filteredSubjects: Subject[] = subjectData.filter(
           (subject: Subject) => {
-            if (!subject || typeof subject.id !== 'number') {
-              return false;
-            }
-
-            if (!subject.name) {
-              return false;
-            }
+            if (!subject || typeof subject.id !== 'number') return false;
+            if (!subject.name) return false;
 
             return (
               normalizeText(subject.level) ===
@@ -233,14 +182,8 @@ export default function SubjectsPage() {
 
     fetchSubjects(controller.signal);
 
-    return () => {
-      controller.abort();
-    };
+    return () => controller.abort();
   }, [fetchSubjects]);
-
-  /* ============================================================
-     RESET FORM
-  ============================================================ */
 
   const resetForm = () => {
     setEditingId(null);
@@ -248,10 +191,6 @@ export default function SubjectsPage() {
     setCustomSubjectName('');
     setIsCustomMode(false);
   };
-
-  /* ============================================================
-     GANTI JENJANG
-  ============================================================ */
 
   const handleChangeLevel = (level: 'SMP' | 'SMA') => {
     if (level === activeTabLevel) return;
@@ -261,10 +200,6 @@ export default function SubjectsPage() {
     setMessage('');
     resetForm();
   };
-
-  /* ============================================================
-     SIMPAN / UPDATE MAPEL
-  ============================================================ */
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -286,7 +221,6 @@ export default function SubjectsPage() {
       return;
     }
 
-    // Cek duplikat di sisi frontend.
     const duplicate = subjects.find(
       (subject) =>
         normalizeText(subject.name) === normalizeText(finalName) &&
@@ -350,10 +284,6 @@ export default function SubjectsPage() {
     }
   };
 
-  /* ============================================================
-     EDIT MAPEL
-  ============================================================ */
-
   const handleEdit = (subject: Subject) => {
     setEditingId(subject.id);
     setMessage('');
@@ -367,7 +297,6 @@ export default function SubjectsPage() {
       setCustomSubjectName('');
       setIsCustomMode(false);
     } else {
-      // Data lama atau nama khusus tetap bisa diedit.
       setIsCustomMode(true);
       setCustomSubjectName(subject.name);
       setSelectedSubjectOption('');
@@ -378,10 +307,6 @@ export default function SubjectsPage() {
       behavior: 'smooth',
     });
   };
-
-  /* ============================================================
-     HAPUS SATU MAPEL
-  ============================================================ */
 
   const handleDelete = async (id: number) => {
     const subject = subjects.find((item) => item.id === id);
@@ -417,7 +342,6 @@ export default function SubjectsPage() {
       }
 
       setMessage('Sukses! Mata pelajaran berhasil dihapus.');
-
       await fetchSubjects();
     } catch (error) {
       console.error('DELETE SUBJECT ERROR:', error);
@@ -430,13 +354,7 @@ export default function SubjectsPage() {
     }
   };
 
-  /* ============================================================
-     PILIH DATA
-  ============================================================ */
-
-  const handleSelectAll = (
-    e: ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleSelectAll = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       setSelectedIds(subjects.map((subject) => subject.id));
     } else {
@@ -451,10 +369,6 @@ export default function SubjectsPage() {
         : [...previous, id]
     );
   };
-
-  /* ============================================================
-     HAPUS MASSAL
-  ============================================================ */
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
@@ -511,178 +425,161 @@ export default function SubjectsPage() {
     }
   };
 
-  /* ============================================================
-     SUMMARY
-  ============================================================ */
-
   const totalSubjects = subjects.length;
-
   const allSelected =
-    subjects.length > 0 &&
-    selectedIds.length === subjects.length;
+    subjects.length > 0 && selectedIds.length === subjects.length;
 
   const isSuccessMessage = message.startsWith('Sukses');
 
-  /* ============================================================
-     RENDER
-  ============================================================ */
-
   return (
-    <main className="min-h-screen bg-[#f7f9f8] text-slate-800">
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#f0f0f1] px-3 py-5 text-[#1d2327] sm:px-5">
+      <div className="mx-auto max-w-[1400px]">
 
         {/* HEADER */}
-        <header className="mb-5 flex items-center justify-between border-b border-slate-200/80 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
-              <BookIcon />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-                  Mata Pelajaran ({activeTabLevel})
-                </h1>
-
-                <span className="hidden rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700 sm:inline-flex">
-                  Akademik
-                </span>
-              </div>
-
-              <p className="mt-0.5 text-[11px] text-slate-500">
-                Kelola daftar master mata pelajaran berdasarkan jenjang.
-              </p>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-[21px] font-normal leading-tight text-[#1d2327]">
+              Mata Pelajaran
+            </h1>
+            <div className="mt-1 text-xs text-[#646970]">
+              Dashboard <span className="mx-1">›</span> Akademik
+              <span className="mx-1">›</span> Mata Pelajaran
             </div>
           </div>
 
-          <div className="hidden text-right sm:block">
-            <div className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Ulul Albab
-            </div>
-            <div className="mt-0.5 font-serif text-sm text-emerald-700">
-              العلم نور
-            </div>
+          <div className="text-xs text-[#646970]">
+            Sistem Akademik · Ulul Albab
           </div>
-        </header>
+        </div>
 
-        {/* TAB JENJANG */}
-        <div className="mb-5 flex max-w-xs rounded-2xl bg-slate-200/70 p-1.5 shadow-inner">
+        {/* LEVEL TABS */}
+        <div className="mb-4 flex items-center gap-1 border-b border-[#c3c4c7]">
           <button
             type="button"
             onClick={() => handleChangeLevel('SMP')}
-            className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
+            className={`border border-b-0 px-4 py-2 text-xs font-medium ${
               activeTabLevel === 'SMP'
-                ? 'bg-[#064e3b] text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'border-[#c3c4c7] bg-white text-[#1d2327]'
+                : 'border-transparent bg-transparent text-[#50575e] hover:text-[#2271b1]'
             }`}
           >
-            🎓 Jenjang SMP
+            Jenjang SMP
           </button>
 
           <button
             type="button"
             onClick={() => handleChangeLevel('SMA')}
-            className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
+            className={`border border-b-0 px-4 py-2 text-xs font-medium ${
               activeTabLevel === 'SMA'
-                ? 'bg-[#064e3b] text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'border-[#c3c4c7] bg-white text-[#1d2327]'
+                : 'border-transparent bg-transparent text-[#50575e] hover:text-[#2271b1]'
             }`}
           >
-            🎓 Jenjang SMA
+            Jenjang SMA
           </button>
         </div>
 
-        {/* INFO JENJANG */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-100 bg-emerald-50/70 px-3 py-2.5">
-          <div className="flex items-center gap-2">
-            <CheckIcon />
-            <p className="text-[11px] font-medium text-emerald-800">
-              Anda sedang mengelola mata pelajaran jenjang {activeTabLevel}.
-            </p>
-          </div>
-
-          <span className="text-[10px] font-semibold text-emerald-700">
-            {defaultSubjects.length} pilihan standar
+        {/* INFO */}
+        <div className="mb-3 border-l-4 border-[#2271b1] bg-white px-3 py-2 text-xs text-[#50575e] shadow-sm">
+          Anda sedang mengelola mata pelajaran jenjang{' '}
+          <strong className="text-[#1d2327]">{activeTabLevel}</strong>.
+          <span className="ml-2 text-[#646970]">
+            {defaultSubjects.length} pilihan mapel standar.
           </span>
-        </div>
-
-        {/* SUMMARY */}
-        <div className="mb-5 flex flex-wrap items-center divide-x divide-slate-200 rounded-xl border border-slate-200/80 bg-white shadow-[0_2px_12px_rgba(15,23,42,0.03)]">
-          <MiniStat
-            label={`Total Mapel (${activeTabLevel})`}
-            value={totalSubjects}
-            icon={<BookIcon />}
-          />
-
-          <div className="flex min-w-[150px] flex-1 items-center gap-2 px-4 py-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-              <CheckIcon />
-            </div>
-
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold text-slate-800">
-                  Aktif
-                </span>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              </div>
-
-              <div className="text-[9px] font-medium text-slate-400">
-                Status sistem
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* MESSAGE */}
         {message && (
           <div
-            className={`mb-5 flex items-center gap-2.5 rounded-lg border px-3.5 py-2.5 text-xs ${
+            className={`mb-3 border-l-4 bg-white px-3 py-2.5 text-xs shadow-sm ${
               isSuccessMessage
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-red-200 bg-red-50 text-red-700'
+                ? 'border-[#00a32a] text-[#008a20]'
+                : 'border-[#d63638] text-[#b32d2e]'
             }`}
+            role="status"
           >
-            {isSuccessMessage ? <CheckIcon /> : <AlertIcon />}
-            <span>{message}</span>
+            <div className="flex items-start justify-between gap-3">
+              <span>{message}</span>
+              <button
+                type="button"
+                onClick={() => setMessage('')}
+                className="text-base leading-none text-[#787c82] hover:text-[#1d2327]"
+                aria-label="Tutup pesan"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
 
-        {/* MAIN */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+        {/* SUMMARY */}
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="border border-[#dcdcde] bg-white px-4 py-3 shadow-sm">
+            <div className="text-[11px] text-[#646970]">
+              Total Mata Pelajaran
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-[#1d2327]">
+              {totalSubjects}
+            </div>
+            <div className="mt-0.5 text-[10px] text-[#787c82]">
+              Jenjang {activeTabLevel}
+            </div>
+          </div>
+
+          <div className="border border-[#dcdcde] bg-white px-4 py-3 shadow-sm">
+            <div className="text-[11px] text-[#646970]">
+              Pilihan Mapel Standar
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-[#1d2327]">
+              {defaultSubjects.length}
+            </div>
+            <div className="mt-0.5 text-[10px] text-[#787c82]">
+              Daftar kurikulum
+            </div>
+          </div>
+
+          <div className="col-span-2 border border-[#dcdcde] bg-white px-4 py-3 shadow-sm sm:col-span-1">
+            <div className="text-[11px] text-[#646970]">
+              Belum Terdaftar
+            </div>
+            <div className="mt-1 text-2xl font-semibold text-[#2271b1]">
+              {availableDefaultSubjects.length}
+            </div>
+            <div className="mt-0.5 text-[10px] text-[#787c82]">
+              Pilihan standar tersedia
+            </div>
+          </div>
+        </div>
+
+        {/* MAIN GRID */}
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[310px_minmax(0,1fr)]">
 
           {/* FORM */}
-          <section className="h-fit rounded-xl border border-slate-200 bg-white shadow-[0_3px_16px_rgba(15,23,42,0.035)]">
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
-              <div>
-                <h2 className="text-xs font-bold text-slate-800">
-                  {editingId
-                    ? 'Edit Mata Pelajaran'
-                    : `Tambah Mapel (${activeTabLevel})`}
-                </h2>
-
-                <p className="mt-0.5 text-[10px] text-slate-400">
-                  {editingId
-                    ? 'Perbarui data mata pelajaran.'
-                    : 'Pilih mapel sesuai jenjang.'}
-                </p>
-              </div>
-
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="text-[10px] font-semibold text-red-600 hover:text-red-700"
-                >
-                  Batal
-                </button>
-              )}
+          <section className="border border-[#c3c4c7] bg-white shadow-sm">
+            <div className="border-b border-[#dcdcde] px-4 py-3">
+              <h2 className="text-sm font-semibold text-[#1d2327]">
+                {editingId ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran'}
+              </h2>
+              <p className="mt-1 text-[11px] text-[#646970]">
+                {editingId
+                  ? 'Perbarui informasi mata pelajaran.'
+                  : `Tambahkan mapel untuk jenjang ${activeTabLevel}.`}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 p-4">
               <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                  Nama Mata Pelajaran ({activeTabLevel})
+                <label className="mb-1.5 block text-xs font-semibold text-[#1d2327]">
+                  Jenjang
+                </label>
+                <div className="flex h-[34px] items-center border border-[#8c8f94] bg-[#f6f7f7] px-2.5 text-xs text-[#50575e]">
+                  {activeTabLevel}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-[#1d2327]">
+                  Nama Mata Pelajaran
                 </label>
 
                 {!isCustomMode ? (
@@ -693,12 +590,11 @@ export default function SubjectsPage() {
                         setSelectedSubjectOption(e.target.value)
                       }
                       required
-                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
+                      className="h-[36px] w-full rounded-sm border border-[#8c8f94] bg-white px-2 text-xs text-[#1d2327] outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
                     >
                       <option value="">
                         -- Pilih Mapel {activeTabLevel} --
                       </option>
-
                       {availableDefaultSubjects.map((subject) => (
                         <option key={subject} value={subject}>
                           {subject}
@@ -707,9 +603,9 @@ export default function SubjectsPage() {
                     </select>
 
                     {availableDefaultSubjects.length === 0 && (
-                      <p className="text-[10px] text-amber-600">
-                        Semua pilihan mapel standar sudah terdaftar.
-                        Gunakan pilihan tambah mapel khusus jika diperlukan.
+                      <p className="text-[11px] leading-4 text-[#996800]">
+                        Semua pilihan standar sudah terdaftar. Anda masih
+                        dapat menambahkan mapel khusus.
                       </p>
                     )}
 
@@ -719,9 +615,9 @@ export default function SubjectsPage() {
                         setIsCustomMode(true);
                         setSelectedSubjectOption('');
                       }}
-                      className="text-[11px] font-semibold text-emerald-700 hover:underline"
+                      className="text-xs text-[#2271b1] hover:text-[#135e96] hover:underline"
                     >
-                      + Tambah Mapel Lain (Ketik Sendiri)
+                      + Tambah mapel lain (ketik sendiri)
                     </button>
                   </div>
                 ) : (
@@ -734,8 +630,8 @@ export default function SubjectsPage() {
                       }
                       required
                       maxLength={100}
-                      placeholder="Ketik nama mapel..."
-                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-3 focus:ring-emerald-500/10"
+                      placeholder="Ketik nama mata pelajaran..."
+                      className="h-[36px] w-full rounded-sm border border-[#8c8f94] bg-white px-2.5 text-xs outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]"
                     />
 
                     <button
@@ -744,7 +640,7 @@ export default function SubjectsPage() {
                         setIsCustomMode(false);
                         setCustomSubjectName('');
                       }}
-                      className="text-[11px] font-semibold text-slate-500 hover:underline"
+                      className="text-xs text-[#2271b1] hover:underline"
                     >
                       ← Kembali ke pilihan standar
                     </button>
@@ -752,58 +648,85 @@ export default function SubjectsPage() {
                 )}
               </div>
 
-              <div className="rounded-lg bg-slate-50 px-3 py-2">
-                <p className="text-[10px] leading-4 text-slate-500">
-                  Jenjang penyimpanan:
-                  <strong className="ml-1 text-emerald-700">
-                    {activeTabLevel}
-                  </strong>
-                </p>
-                <p className="mt-0.5 text-[9px] leading-4 text-slate-400">
-                  Mapel yang disimpan di sini akan digunakan pada input penilaian
-                  untuk jenjang yang sama.
+              <div className="border border-[#dcdcde] bg-[#f6f7f7] p-3">
+                <div className="text-[11px] font-semibold text-[#1d2327]">
+                  Informasi penyimpanan
+                </div>
+                <p className="mt-1 text-[11px] leading-4 text-[#646970]">
+                  Mata pelajaran akan disimpan pada jenjang{' '}
+                  <strong>{activeTabLevel}</strong> dan digunakan dalam
+                  proses input penilaian serta laporan rapor.
                 </p>
               </div>
 
-              <button
-                type="submit"
-                disabled={
-                  loading ||
-                  (!isCustomMode && availableDefaultSubjects.length === 0 &&
-                    !selectedSubjectOption)
-                }
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? <SpinnerIcon /> : <PlusIcon />}
+              <div className="flex flex-wrap gap-2 border-t border-[#dcdcde] pt-3">
+                <button
+                  type="submit"
+                  disabled={
+                    loading ||
+                    (!isCustomMode &&
+                      availableDefaultSubjects.length === 0 &&
+                      !selectedSubjectOption)
+                  }
+                  className="inline-flex h-[34px] items-center justify-center gap-1.5 rounded-sm border border-[#2271b1] bg-[#2271b1] px-3 text-xs font-medium text-white hover:border-[#135e96] hover:bg-[#135e96] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? <SpinnerIcon /> : <PlusIcon />}
+                  {loading
+                    ? 'Menyimpan...'
+                    : editingId
+                      ? 'Simpan Perubahan'
+                      : 'Tambah Mapel'}
+                </button>
 
-                {loading
-                  ? 'Menyimpan...'
-                  : editingId
-                    ? 'Simpan Perubahan'
-                    : 'Tambah Mata Pelajaran'}
-              </button>
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="h-[34px] rounded-sm border border-[#8c8f94] bg-[#f6f7f7] px-3 text-xs text-[#2c3338] hover:bg-[#f0f0f1]"
+                  >
+                    Batal
+                  </button>
+                )}
+              </div>
             </form>
           </section>
 
-          {/* LIST */}
-          <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_3px_16px_rgba(15,23,42,0.035)]">
-
-            {/* LIST HEADER */}
-            <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+          {/* TABLE */}
+          <section className="min-w-0 border border-[#c3c4c7] bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#dcdcde] px-4 py-3">
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xs font-bold text-slate-800">
-                    Daftar Mata Pelajaran ({activeTabLevel})
-                  </h2>
-
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-500">
-                    {totalSubjects}
-                  </span>
-                </div>
-
-                <p className="mt-0.5 text-[10px] text-slate-400">
-                  Hanya menampilkan mapel jenjang {activeTabLevel}.
+                <h2 className="text-sm font-semibold text-[#1d2327]">
+                  Daftar Mata Pelajaran
+                </h2>
+                <p className="mt-1 text-[11px] text-[#646970]">
+                  Data mapel jenjang {activeTabLevel}.
                 </p>
+              </div>
+
+              <span className="inline-flex h-6 items-center border border-[#dcdcde] bg-[#f6f7f7] px-2 text-[11px] font-medium text-[#50575e]">
+                {totalSubjects} mapel
+              </span>
+            </div>
+
+            {/* BULK ACTION */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#dcdcde] bg-[#f6f7f7] px-3 py-2">
+              <div className="flex items-center gap-2">
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs text-[#50575e]">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleSelectAll}
+                    disabled={subjects.length === 0 || loadingSubjects}
+                    className="h-3.5 w-3.5 accent-[#2271b1]"
+                  />
+                  Pilih semua
+                </label>
+
+                {selectedIds.length > 0 && (
+                  <span className="text-[11px] text-[#646970]">
+                    {selectedIds.length} dipilih
+                  </span>
+                )}
               </div>
 
               {selectedIds.length > 0 && (
@@ -811,10 +734,9 @@ export default function SubjectsPage() {
                   type="button"
                   onClick={handleBulkDelete}
                   disabled={deletingBulk}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-[10px] font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                  className="inline-flex h-[29px] items-center gap-1 rounded-sm border border-[#d63638] bg-white px-2.5 text-[11px] font-medium text-[#d63638] hover:bg-[#fcf0f1] disabled:opacity-60"
                 >
                   <TrashIcon />
-
                   {deletingBulk
                     ? 'Menghapus...'
                     : `Hapus ${selectedIds.length} Terpilih`}
@@ -822,175 +744,128 @@ export default function SubjectsPage() {
               )}
             </div>
 
-            {/* SELECT ALL */}
-            {subjects.length > 0 && !loadingSubjects && (
-              <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-2.5">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={handleSelectAll}
-                  className="h-3.5 w-3.5 cursor-pointer rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedIds(
-                      allSelected
-                        ? []
-                        : subjects.map((subject) => subject.id)
-                    );
-                  }}
-                  className="text-[10px] font-semibold text-slate-500 hover:text-emerald-700"
-                >
-                  {allSelected
-                    ? 'Batalkan Semua'
-                    : `Pilih Semua (${subjects.length})`}
-                </button>
-
-                {selectedIds.length > 0 && (
-                  <span className="ml-auto text-[9px] font-medium text-emerald-600">
-                    {selectedIds.length} dipilih
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* CONTENT */}
-            <div className="p-3">
+            <div className="overflow-x-auto">
               {loadingSubjects ? (
-                <LoadingState />
+                <div className="p-4">
+                  <LoadingState />
+                </div>
               ) : subjects.length === 0 ? (
-                <EmptyState level={activeTabLevel} />
+                <div className="p-4">
+                  <EmptyState level={activeTabLevel} />
+                </div>
               ) : (
-                <div className="overflow-hidden rounded-lg border border-slate-200">
+                <table className="w-full min-w-[520px] border-collapse text-left">
+                  <thead>
+                    <tr className="bg-[#f6f7f7] text-[11px] font-semibold text-[#50575e]">
+                      <th className="w-10 border-b border-[#c3c4c7] px-3 py-2.5 text-center">
+                        No.
+                      </th>
+                      <th className="w-10 border-b border-[#c3c4c7] px-2 py-2.5 text-center">
+                        <span className="sr-only">Pilih</span>
+                        ✓
+                      </th>
+                      <th className="border-b border-[#c3c4c7] px-3 py-2.5">
+                        Nama Mata Pelajaran
+                      </th>
+                      <th className="w-24 border-b border-[#c3c4c7] px-3 py-2.5">
+                        Jenjang
+                      </th>
+                      <th className="w-28 border-b border-[#c3c4c7] px-3 py-2.5 text-right">
+                        Aksi
+                      </th>
+                    </tr>
+                  </thead>
 
-                  {/* TABLE HEADER */}
-                  <div className="hidden grid-cols-[40px_minmax(0,1fr)_90px] items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-slate-400 sm:grid">
-                    <span>No</span>
-                    <span>Mata Pelajaran</span>
-                    <span className="text-right">Aksi</span>
-                  </div>
-
-                  {/* ROWS */}
-                  <div className="divide-y divide-slate-100">
+                  <tbody>
                     {subjects.map((subject, index) => {
                       const isChecked = selectedIds.includes(subject.id);
 
                       return (
-                        <div
+                        <tr
                           key={subject.id}
-                          className={`group grid grid-cols-1 gap-2 px-3 py-3 transition sm:grid-cols-[40px_minmax(0,1fr)_90px] sm:items-center sm:gap-3 ${
-                            isChecked
-                              ? 'bg-emerald-50/60'
-                              : 'bg-white hover:bg-slate-50/70'
+                          className={`group ${
+                            isChecked ? 'bg-[#f0f6fc]' : 'hover:bg-[#f6f7f7]'
                           }`}
                         >
-                          {/* NUMBER + CHECKBOX */}
-                          <div className="flex items-center gap-2">
+                          <td className="border-b border-[#f0f0f1] px-3 py-2.5 text-center text-[11px] text-[#646970]">
+                            {index + 1}
+                          </td>
+
+                          <td className="border-b border-[#f0f0f1] px-2 py-2.5 text-center">
                             <input
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => handleSelectOne(subject.id)}
-                              className="h-3.5 w-3.5 cursor-pointer rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                              className="h-3.5 w-3.5 accent-[#2271b1]"
+                              aria-label={`Pilih ${subject.name}`}
                             />
+                          </td>
 
-                            <span className="text-[9px] font-bold text-slate-400">
-                              {String(index + 1).padStart(2, '0')}
-                            </span>
-                          </div>
-
-                          {/* SUBJECT */}
-                          <div className="min-w-0 pl-5 sm:pl-0">
-                            <div className="flex items-center gap-2">
-                              <h3 className="truncate text-xs font-bold text-slate-800">
-                                {subject.name}
-                              </h3>
-
-                              <span className="hidden shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[8px] font-semibold text-slate-400 sm:inline-block">
-                                ID {subject.id}
-                              </span>
+                          <td className="border-b border-[#f0f0f1] px-3 py-2.5">
+                            <div className="text-xs font-medium text-[#2271b1]">
+                              {subject.name}
                             </div>
+                            <div className="mt-0.5 text-[10px] text-[#8c8f94]">
+                              ID: {subject.id}
+                            </div>
+                          </td>
 
-                            <p className="mt-0.5 text-[9px] text-slate-400">
-                              Jenjang {subject.level || activeTabLevel}
-                            </p>
-                          </div>
+                          <td className="border-b border-[#f0f0f1] px-3 py-2.5">
+                            <span className="inline-flex border border-[#dcdcde] bg-[#f6f7f7] px-2 py-0.5 text-[10px] text-[#50575e]">
+                              {subject.level || activeTabLevel}
+                            </span>
+                          </td>
 
-                          {/* ACTION */}
-                          <div className="flex items-center justify-end gap-1.5 border-t border-slate-100 pt-2 sm:border-0 sm:pt-0">
-                            <button
-                              type="button"
-                              onClick={() => handleEdit(subject)}
-                              title="Edit"
-                              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-amber-50 hover:text-amber-600"
-                            >
-                              <EditIcon />
-                            </button>
+                          <td className="border-b border-[#f0f0f1] px-3 py-2.5">
+                            <div className="flex items-center justify-end gap-3 text-[11px]">
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(subject)}
+                                className="text-[#2271b1] hover:text-[#135e96] hover:underline"
+                              >
+                                Edit
+                              </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(subject.id)}
-                              title="Hapus"
-                              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                            >
-                              <TrashIcon />
-                            </button>
-                          </div>
-                        </div>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(subject.id)}
+                                className="text-[#d63638] hover:text-[#b32d2e] hover:underline"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
                       );
                     })}
-                  </div>
-                </div>
+                  </tbody>
+                </table>
               )}
             </div>
+
+            {!loadingSubjects && subjects.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#dcdcde] bg-[#f6f7f7] px-3 py-2 text-[10px] text-[#646970]">
+                <span>
+                  Menampilkan {subjects.length} mata pelajaran jenjang{' '}
+                  {activeTabLevel}
+                </span>
+                {selectedIds.length > 0 && (
+                  <span>{selectedIds.length} data dipilih</span>
+                )}
+              </div>
+            )}
           </section>
         </div>
 
         {/* FOOTER */}
-        <footer className="mt-5 flex items-center justify-between border-t border-slate-200/70 pt-3 text-[9px] text-slate-400">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#c3c4c7] pt-3 text-[10px] text-[#787c82]">
           <span>
-            Sistem Akademik · Pondok Pesantren Terpadu Ulil Albab
+            Sistem Akademik · Pondok Pesantren Terpadu Ulul Albab
           </span>
-
-          <span className="hidden font-serif text-slate-500 sm:block">
-            العلم نور
-          </span>
-        </footer>
+          <span>العلم نور</span>
+        </div>
       </div>
     </main>
-  );
-}
-
-/* =====================================================
-   MINI STAT
-===================================================== */
-
-function MiniStat({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: number | string;
-  icon: ReactNode;
-}) {
-  return (
-    <div className="flex min-w-[140px] flex-1 items-center gap-2.5 px-4 py-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-        {icon}
-      </div>
-
-      <div>
-        <div className="text-sm font-bold leading-none text-slate-800">
-          {value}
-        </div>
-
-        <div className="mt-1 text-[9px] font-medium text-slate-400">
-          {label}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -1000,15 +875,12 @@ function MiniStat({
 
 function LoadingState() {
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200">
+    <div className="space-y-3 py-2">
       {[1, 2, 3, 4, 5].map((item) => (
-        <div
-          key={item}
-          className="flex h-[54px] animate-pulse items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-3 last:border-0"
-        >
-          <div className="h-3 w-3 rounded bg-slate-200" />
-          <div className="h-3 w-1/3 rounded bg-slate-200" />
-          <div className="ml-auto h-3 w-24 rounded bg-slate-200" />
+        <div key={item} className="flex animate-pulse items-center gap-3">
+          <div className="h-3 w-3 bg-[#dcdcde]" />
+          <div className="h-3 w-1/3 bg-[#dcdcde]" />
+          <div className="ml-auto h-3 w-16 bg-[#dcdcde]" />
         </div>
       ))}
     </div>
@@ -1016,22 +888,18 @@ function LoadingState() {
 }
 
 /* =====================================================
-   EMPTY
+   EMPTY STATE
 ===================================================== */
 
 function EmptyState({ level }: { level: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-        <BookIcon />
-      </div>
-
-      <h3 className="text-xs font-bold text-slate-700">
+    <div className="border border-dashed border-[#c3c4c7] bg-[#f6f7f7] px-4 py-10 text-center">
+      <div className="mb-2 text-2xl text-[#a7aaad]">▤</div>
+      <h3 className="text-sm font-medium text-[#1d2327]">
         Belum ada mata pelajaran {level}
       </h3>
-
-      <p className="mt-1 max-w-xs text-[10px] leading-4 text-slate-400">
-        Tambahkan mata pelajaran menggunakan formulir di sebelah kiri.
+      <p className="mt-1 text-xs text-[#646970]">
+        Tambahkan mata pelajaran melalui formulir di sebelah kiri.
       </p>
     </div>
   );
@@ -1041,152 +909,27 @@ function EmptyState({ level }: { level: string }) {
    ICONS
 ===================================================== */
 
-function BookIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M8 7h8M8 10h6"
-      />
-    </svg>
-  );
-}
-
 function PlusIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="h-4 w-4"
-    >
-      <path strokeLinecap="round" d="M12 5v14" />
-      <path strokeLinecap="round" d="M5 12h14" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="h-4 w-4"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m5 12 4 4L19 6"
-      />
-    </svg>
-  );
-}
-
-function AlertIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="h-4 w-4"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 9v4M12 17h.01"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10.3 3.8 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z"
-      />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+      <path strokeLinecap="round" d="M12 5v14M5 12h14" />
     </svg>
   );
 }
 
 function TrashIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="h-4 w-4"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-      />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 20h9"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z"
-      />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
   );
 }
 
 function SpinnerIcon() {
   return (
-    <svg
-      className="h-4 w-4 animate-spin"
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke="currentColor"
-        strokeOpacity="0.3"
-        strokeWidth="3"
-      />
-      <path
-        d="M21 12a9 9 0 0 0-9-9"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+    <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
     </svg>
   );
 }
